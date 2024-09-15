@@ -13,7 +13,7 @@ const COLUMN_COUNT = 90;
 const BOX_WIDTH = 10;
 const BOX_HEIGHT = 10;
 const ALIVE_THRESHOLD = 0.1;
-const GENERATIONS_INTERVAL = 2000;
+const GENERATIONS_INTERVAL = 3000;
 
 let currentGeneration = 0;
 
@@ -134,5 +134,20 @@ $(document).ready(function() {
             }
         }
     );
+
+    $('.box').click(function(e) {
+        const cellId = $(this).attr("id");
+        console.log(`Cell ${cellId} was clicked.`);
+
+        if ($(this).attr("alive") === "true") {
+            console.log("It will die.");
+            $(this).attr("alive", false);
+            $(this).css('opacity', 0.2);
+        } else {
+            console.log("It will live.");
+            $(this).attr("alive", true);
+            $(this).css('opacity', 0.8);
+        }
+    });
 
 });
