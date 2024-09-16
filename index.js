@@ -21,52 +21,38 @@ const SPECIAL_COLOR = "yellow";
 let currentGeneration = 0;
 
 $(document).ready(function() {
-    console.log("Starting...");
+    console.log("*** Starting...");
 
     createTheGrid(true);
 
     setInterval(function() {
         currentGeneration++;
-        console.log(`Creating next generation: ${currentGeneration}`);
+        console.log(`Creating the next generation: ${currentGeneration}`);
+
+        $(".box").removeClass("highlight");
 
         let liveCount = 0;
 
-        // In the first pass we look at the current condition and set NG.
         for (let r = 0; r < ROW_COUNT; r++) {
             for (let c = 0; c < COLUMN_COUNT; c++) {
                 let cell = $(`#r${r}_c${c}`);
-                let isAlive = cell.attr("alive") === "true";
                 let aliveNeighbors = countAliveNeighbors(r, c);
 
-                if (isAlive) {
+                if (cell.hasClass("alive")) {
                     if (aliveNeighbors >= 2 && aliveNeighbors <= 3) {
                         cell.attr("willLive", true);
-                    } else {
-                        cell.attr("willLive", false);
+                        liveCount++;
                     }
                 } else if (aliveNeighbors == 3) {
                     cell.attr("willLive", true);
-                }
-            }
-        }
-
-        // In the second pass we use the NG to set the condition.
-        for (let r = 0; r < ROW_COUNT; r++) {
-            for (let c = 0; c < COLUMN_COUNT; c++) {
-                let cell = $(`#r${r}_c${c}`);
-
-                $(cell).css("background-color", DEFAULT_COLOR);
-
-                if (cell.attr("willLive") === "true") {
                     liveCount++;
-                    $(cell).css("opacity", 0.8);
-                    $(cell).attr("alive", true);
-                } else {
-                    $(cell).css("opacity", 0.2);
-                    $(cell).attr("alive", false);
                 }
             }
         }
+
+        $(".box[willLive]").addClass("alive");
+        $(".box:not([willLive])").removeClass("alive");
+        $(".box[willLive]").removeAttr("willLive");
 
         let occupationRate = liveCount * 100 / CELL_COUNT;
         console.log(`The live count is ${liveCount}, and the occupation rate is ${occupationRate} %.`);
@@ -94,11 +80,7 @@ $(document).ready(function() {
                 $(cell).addClass("box");
     
                 if (alive) {
-                    $(cell).css("opacity", 0.8);
-                    $(cell).attr("alive", true);
-                } else {
-                    $(cell).css("opacity", 0.2);
-                    $(cell).attr("alive", false);
+                    $(cell).addClass("alive highlight");
                 }
     
                 $(row).append(cell);
@@ -119,7 +101,7 @@ $(document).ready(function() {
                 if (i != r || j != c) {
                     let cell = $(`#r${i}_c${j}`);
 
-                    if (cell.attr("alive") === "true") {
+                    if (cell.hasClass("alive")) {
                         aliveNeighbors++;
                     }
                 }
@@ -135,18 +117,63 @@ $(document).ready(function() {
                 if (row < ROW_COUNT && col < COLUMN_COUNT) {
                     let cellId = `#r${row}_c${col}`;
 
-                    if (image[row - r][col - c] === "*") {
-                        $(cellId).css("background-color", SPECIAL_COLOR);
-    
-                        $(cellId).css("opacity", 0.8);
-                        $(cellId).attr("alive", "true");
+                    if (image[row - r][col - c] != " ") {
+                        $(cellId).addClass("alive highlight");
                     } else {
-                        $(cellId).css("opacity", 0.2);
-                        $(cellId).attr("alive", "false");
+                        $(cellId).removeClass("alive");
                     }
                 }
             }
         }
+    }
+
+    function random(available, size) {
+        let theMax = available - size;
+        return Math.round(Math.random() * theMax);
+    }
+
+    function drawGliderGun() {
+        console.log('*** Creating a glider...');
+
+        const image = [
+            '                                        ',
+            '                                        ',
+            '                           *            ',
+            '                        ****    *       ',
+            '               *       ****     *       ',
+            '              * *      *  *         **  ',
+            '             *   **    ****         **  ',
+            '  **         *   **     ****            ',
+            '  **         *   **        *            ',
+            '              * *                       ',
+            '               *                        ',
+            '                                        ',
+            '                                        '
+        ];
+
+        const r = random(ROW_COUNT, image.length);
+        const c = random(COLUMN_COUNT, image[0].length);
+
+        makeAlive(image, r, c);
+    }
+
+    function drawGlider() {
+        console.log('*** Creating a glider...');
+
+        const image = [
+            '       ',
+            '       ',
+            '  *    ',
+            '   **  ',
+            '  **   ',
+            '       ',
+            '       '
+        ];
+
+        const r = Math.round(Math.random() * ROW_COUNT);
+        const c = Math.round(Math.random() * COLUMN_COUNT);
+
+        makeAlive(image, r, c);
     }
 
     $('.box').hover(
@@ -156,11 +183,7 @@ $(document).ready(function() {
         },
         function() {
             // On mouse out
-            if ($(this).attr("alive") === "true") {
-                $(this).css('opacity', 0.8);
-            } else {
-                $(this).css('opacity', 0.2);
-            }
+            $(this).css('opacity', "");
         }
     );
 
@@ -168,49 +191,20 @@ $(document).ready(function() {
         const cellId = $(this).attr("id");
         console.log(`Cell ${cellId} was clicked.`);
 
-        if ($(this).attr("alive") === "true") {
-            console.log("It will die.");
-            $(this).attr("alive", false);
-            $(this).css('opacity', 0.2);
-        } else {
+        $(this).toggleClass("alive");
+
+        if ($(this).hasClass("alive")) {
             console.log("It will live.");
-            $(this).attr("alive", true);
-            $(this).css('opacity', 0.8);
+        } else {
+            console.log("It will die.");
         }
     });
 
     $(document).keydown(function(e) {
-        const r = Math.round(Math.random() * ROW_COUNT);
-        const c = Math.round(Math.random() * COLUMN_COUNT);
-
-        if (e.key === 'G') {
-            const image = [
-                '                                        ',
-                '                                        ',
-                '                           *            ',
-                '                        ****    *       ',
-                '               *       ****     *       ',
-                '              * *      *  *         **  ',
-                '             *   **    ****         **  ',
-                '  **         *   **     ****            ',
-                '  **         *   **        *            ',
-                '              * *                       ',
-                '               *                        ',
-                '                                        ',
-                '                                        '
-            ];
-
-            console.log(`*** Creating a glider gun at ${r}:${c}...`);
-            makeAlive(image, r, c);
+        if (e.key == 'G') {
+            drawGliderGun();
         } else if (e.key === 'g') {
-            const image = [
-                '*  ',
-                ' **',
-                '** '
-            ];
-
-            console.log(`*** Creating a glider at ${r}:${c}...`);
-            makeAlive(image, r, c);
+            drawGlider();
         } else if (e.key === 'r') {
             createTheGrid(true);
         } else if (e.key === 'c') {

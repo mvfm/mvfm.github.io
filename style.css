@@ -25,3 +25,11 @@ h1 {
     transition: opacity 1s ease;
 }
 
+.alive {
+    opacity: 0.8;
+}
+
+.highlight {
+    background-color: yellow;
+}
+
