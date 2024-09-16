@@ -10,10 +10,11 @@
 
 const ROW_COUNT = 50;
 const COLUMN_COUNT = 90;
+const CELL_COUNT = ROW_COUNT * COLUMN_COUNT;
 const BOX_WIDTH = 10;
 const BOX_HEIGHT = 10;
-const ALIVE_THRESHOLD = 0.1;
-const GENERATIONS_INTERVAL = 3000;
+const ALIVE_THRESHOLD = 0.3;
+const GENERATIONS_INTERVAL = 1000;
 
 let currentGeneration = 0;
 
@@ -52,6 +53,9 @@ $(document).ready(function() {
             for (let c = 0; c < COLUMN_COUNT; c++) {
                 let cell = $(`#r${r}_c${c}`);
 
+                // TODO: Remove after the debug
+                $(cell).css("background-color", "white");
+
                 if (cell.attr("willLive") === "true") {
                     liveCount++;
                     $(cell).css("opacity", 0.8);
@@ -63,7 +67,8 @@ $(document).ready(function() {
             }
         }
 
-        console.log(`Live count is ${liveCount}`);
+        let occupationRate = liveCount * 100 / CELL_COUNT;
+        console.log(`The live count is ${liveCount}, and the occupation rate is ${occupationRate} %.`);
 
     }, GENERATIONS_INTERVAL);
 
@@ -120,6 +125,25 @@ $(document).ready(function() {
         return aliveNeighbors;
     }
 
+    function makeAlive(image, r, c) {
+        for (let row = r; row < r + image.length; row++) {
+            for (let col = c; col < c + image[row - r].length; col++) {
+                let id = `#r${row}_c${col}`;
+
+                if (image[row - r][col - c] === "*") {
+                    // TODO: Remove after the debug
+                    $(id).css("background-color", "yellow");
+
+                    $(id).css("opacity", 0.8);
+                    $(id).attr("alive", "true");
+                } else {
+                    $(id).css("opacity", 0.2);
+                    $(id).attr("alive", "false");
+                }
+            }
+        }
+    }
+
     $('.box').hover(
         function() {
             // On mouse over
@@ -147,6 +171,22 @@ $(document).ready(function() {
             console.log("It will live.");
             $(this).attr("alive", true);
             $(this).css('opacity', 0.8);
+        }
+    });
+
+    $(document).keydown(function(e) {
+        if (e.key === 'g') {
+            const r = Math.round(Math.random() * ROW_COUNT);
+            const c = Math.round(Math.random() * COLUMN_COUNT);
+
+            const image = [
+                "*  ",
+                " **",
+                "** "
+            ];
+
+            console.log(`Creating a glider at ${r}:${c}...`);
+            makeAlive(image, r, c);
         }
     });
 
