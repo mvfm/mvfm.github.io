@@ -15,13 +15,15 @@ const BOX_WIDTH = 10;
 const BOX_HEIGHT = 10;
 const ALIVE_THRESHOLD = 0.3;
 const GENERATIONS_INTERVAL = 1000;
+const DEFAULT_COLOR = "white";
+const SPECIAL_COLOR = "yellow";
 
 let currentGeneration = 0;
 
 $(document).ready(function() {
     console.log("Starting...");
 
-    createTheGrid();
+    createTheGrid(true);
 
     setInterval(function() {
         currentGeneration++;
@@ -53,8 +55,7 @@ $(document).ready(function() {
             for (let c = 0; c < COLUMN_COUNT; c++) {
                 let cell = $(`#r${r}_c${c}`);
 
-                // TODO: Remove after the debug
-                $(cell).css("background-color", "white");
+                $(cell).css("background-color", DEFAULT_COLOR);
 
                 if (cell.attr("willLive") === "true") {
                     liveCount++;
@@ -73,7 +74,10 @@ $(document).ready(function() {
     }, GENERATIONS_INTERVAL);
 
 
-    function createTheGrid() {
+    function createTheGrid(makeAlive) {
+        console.log("*** Creating the grid...");
+        currentGeneration = 0;
+
         let mainElement = $("main");
         $(mainElement).empty();
     
@@ -83,7 +87,7 @@ $(document).ready(function() {
             $(mainElement).append(row);
     
             for (let c = 0; c < COLUMN_COUNT; c++) {
-                let alive = Math.random() <= ALIVE_THRESHOLD;
+                let alive = makeAlive ? Math.random() <= ALIVE_THRESHOLD : false;
     
                 let cell = $("<div>");
                 $(cell).attr("id", `r${r}_c${c}`);
@@ -128,17 +132,18 @@ $(document).ready(function() {
     function makeAlive(image, r, c) {
         for (let row = r; row < r + image.length; row++) {
             for (let col = c; col < c + image[row - r].length; col++) {
-                let id = `#r${row}_c${col}`;
+                if (row < ROW_COUNT && col < COLUMN_COUNT) {
+                    let cellId = `#r${row}_c${col}`;
 
-                if (image[row - r][col - c] === "*") {
-                    // TODO: Remove after the debug
-                    $(id).css("background-color", "yellow");
-
-                    $(id).css("opacity", 0.8);
-                    $(id).attr("alive", "true");
-                } else {
-                    $(id).css("opacity", 0.2);
-                    $(id).attr("alive", "false");
+                    if (image[row - r][col - c] === "*") {
+                        $(cellId).css("background-color", SPECIAL_COLOR);
+    
+                        $(cellId).css("opacity", 0.8);
+                        $(cellId).attr("alive", "true");
+                    } else {
+                        $(cellId).css("opacity", 0.2);
+                        $(cellId).attr("alive", "false");
+                    }
                 }
             }
         }
@@ -175,18 +180,41 @@ $(document).ready(function() {
     });
 
     $(document).keydown(function(e) {
-        if (e.key === 'g') {
-            const r = Math.round(Math.random() * ROW_COUNT);
-            const c = Math.round(Math.random() * COLUMN_COUNT);
+        const r = Math.round(Math.random() * ROW_COUNT);
+        const c = Math.round(Math.random() * COLUMN_COUNT);
 
+        if (e.key === 'G') {
             const image = [
-                "*  ",
-                " **",
-                "** "
+                '                                        ',
+                '                                        ',
+                '                           *            ',
+                '                        ****    *       ',
+                '               *       ****     *       ',
+                '              * *      *  *         **  ',
+                '             *   **    ****         **  ',
+                '  **         *   **     ****            ',
+                '  **         *   **        *            ',
+                '              * *                       ',
+                '               *                        ',
+                '                                        ',
+                '                                        '
             ];
 
-            console.log(`Creating a glider at ${r}:${c}...`);
+            console.log(`*** Creating a glider gun at ${r}:${c}...`);
             makeAlive(image, r, c);
+        } else if (e.key === 'g') {
+            const image = [
+                '*  ',
+                ' **',
+                '** '
+            ];
+
+            console.log(`*** Creating a glider at ${r}:${c}...`);
+            makeAlive(image, r, c);
+        } else if (e.key === 'r') {
+            createTheGrid(true);
+        } else if (e.key === 'c') {
+            createTheGrid();
         }
     });
 
