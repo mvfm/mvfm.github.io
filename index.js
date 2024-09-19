@@ -19,6 +19,7 @@ const DEFAULT_COLOR = "white";
 const SPECIAL_COLOR = "yellow";
 
 let currentGeneration = 0;
+let isDragging = false;
 
 $(document).ready(function() {
     console.log("*** Starting...");
@@ -187,17 +188,20 @@ $(document).ready(function() {
         }
     );
 
-    $('.box').click(function(e) {
-        const cellId = $(this).attr("id");
-        console.log(`Cell ${cellId} was clicked.`);
+    $('.box').mousedown(function() {
+        isDragging = true;
 
-        $(this).toggleClass("alive");
+        $(this).toggleClass('alive');
+    });
 
-        if ($(this).hasClass("alive")) {
-            console.log("It will live.");
-        } else {
-            console.log("It will die.");
+    $('.box').mouseenter(function() {
+        if (isDragging) {
+            $(this).toggleClass('alive');
         }
+    });
+
+    $(document).mouseup(function() {
+        isDragging = false;
     });
 
     $(document).keydown(function(e) {
