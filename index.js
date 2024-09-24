@@ -10,23 +10,81 @@
 
 const ROW_COUNT = 50;
 const COLUMN_COUNT = 90;
-const CELL_COUNT = ROW_COUNT * COLUMN_COUNT;
 const BOX_WIDTH = 10;
 const BOX_HEIGHT = 10;
+const BOX_MARGIN = 1;
 const ALIVE_THRESHOLD = 0.3;
 const GENERATIONS_INTERVAL = 1000;
 const DEFAULT_COLOR = "white";
 const SPECIAL_COLOR = "yellow";
 
+const CELL_COUNT = ROW_COUNT * COLUMN_COUNT;
+const ROW_REAL_WIDTH = (COLUMN_COUNT * BOX_WIDTH) + ((COLUMN_COUNT - 1) * (BOX_MARGIN * 2));
+
 let currentGeneration = 0;
+let realRowWidth = 0;       // Will be changed in createTheStatusLine()
 let isDragging = false;
 
 $(document).ready(function() {
     console.log("*** Starting...");
 
     createTheGrid(true);
+    createTheStatusLine();
 
-    setInterval(function() {
+    setInterval(updateTheGrid, GENERATIONS_INTERVAL);
+
+
+    /*
+     * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+    */
+
+
+    function createTheGrid(makeAlive) {
+        console.log("*** Creating the grid...");
+        currentGeneration = 0;
+
+        let mainElement = $("main");
+        $(mainElement).empty();
+    
+        for (let r = 0; r < ROW_COUNT; r++) {
+            let row = $("<div>");
+            $(row).addClass("row");
+            $(mainElement).append(row);
+    
+            for (let c = 0; c < COLUMN_COUNT; c++) {
+                let alive = makeAlive ? Math.random() <= ALIVE_THRESHOLD : false;
+    
+                let cell = $("<div>");
+                $(cell).attr("id", `r${r}_c${c}`);
+                $(cell).addClass("box");
+    
+                if (alive) {
+                    $(cell).addClass("alive highlight");
+                }
+    
+                $(row).append(cell);
+            }
+        }
+    }
+
+    function createTheStatusLine() {
+        console.log("*** Creating the status line...");
+
+        let cellWidth = parseInt(getCSSPropertyValue("box", "width"), 10);
+        let cellMargin = parseInt(getCSSPropertyValue("box", "margin"), 10);
+        let statusLineWidth = (COLUMN_COUNT * cellWidth) + ((COLUMN_COUNT - 1) * (cellMargin * 2));  // 1078px?
+        console.log(`*** cellWidth: ${cellWidth}, cellMargin: ${cellMargin}, statusLineWIdth: ${statusLineWidth}`);
+
+        let mainElement = $("main");
+        let statusLine = $("<div>");
+        $(statusLine).addClass("status");
+        $(statusLine).css("width", `${statusLineWidth}px`);
+        $(statusLine).text("123/456");
+
+        mainElement.append(statusLine);
+    }
+
+    function updateTheGrid() {
         currentGeneration++;
         console.log(`Creating the next generation: ${currentGeneration}`);
 
@@ -58,35 +116,7 @@ $(document).ready(function() {
         let occupationRate = liveCount * 100 / CELL_COUNT;
         console.log(`The live count is ${liveCount}, and the occupation rate is ${occupationRate} %.`);
 
-    }, GENERATIONS_INTERVAL);
-
-
-    function createTheGrid(makeAlive) {
-        console.log("*** Creating the grid...");
-        currentGeneration = 0;
-
-        let mainElement = $("main");
-        $(mainElement).empty();
-    
-        for (let r = 0; r < ROW_COUNT; r++) {
-            let row = $("<div>");
-            $(row).addClass("row");
-            $(mainElement).append(row);
-    
-            for (let c = 0; c < COLUMN_COUNT; c++) {
-                let alive = makeAlive ? Math.random() <= ALIVE_THRESHOLD : false;
-    
-                let cell = $("<div>");
-                $(cell).attr("id", `r${r}_c${c}`);
-                $(cell).addClass("box");
-    
-                if (alive) {
-                    $(cell).addClass("alive highlight");
-                }
-    
-                $(row).append(cell);
-            }
-        }
+        $(".status").text(`${formatNumber(currentGeneration, 6, 0)} | ${formatNumber(liveCount, 4, 0)}/${formatNumber(CELL_COUNT, 4, 0)} | ${formatNumber(occupationRate, 3, 2)} %`);
     }
 
     function countAliveNeighbors(r, c) {
@@ -131,6 +161,34 @@ $(document).ready(function() {
     function random(available, size) {
         let theMax = available - size;
         return Math.round(Math.random() * theMax);
+    }
+
+    function formatNumber(number, totalIntegerLength, decimalPlaces) {
+        // Convert number to a fixed decimal string
+        let [integerPart, decimalPart] = number
+            .toFixed(decimalPlaces)  // Formats the number with given decimal places
+            .split('.');             // Split into integer and decimal parts
+    
+        // Pad integer part with leading zeros
+        integerPart = integerPart.padStart(totalIntegerLength, '0');
+    
+        // Join integer and decimal parts
+        return decimalPart ? `${integerPart}.${decimalPart}` : integerPart;
+    }
+
+    function getCSSPropertyValue(className, property) {
+        const $tempElement = $('<div>')
+            .addClass(className)
+            .css('display', 'none')
+            .appendTo('body');
+    
+        const value = $tempElement.css(property);
+    
+        // Clean up: Remove the temporary element
+        $tempElement.remove();
+    
+        // Return the CSS property value
+        return value;
     }
 
     function drawGliderGun() {
@@ -215,5 +273,4 @@ $(document).ready(function() {
             createTheGrid();
         }
     });
-
 });

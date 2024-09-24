@@ -1,4 +1,9 @@
 
+@font-face {
+    font-family: "Digital-7 Mono";
+    src: url("fonts/digital-7 (mono italic).ttf");
+}
+
 body {
     color: white;
     background-color: darkred;
@@ -31,5 +36,13 @@ h1 {
 
 .highlight {
     background-color: yellow;
+}
+
+.status {
+    margin-top: 12px;
+    color: white;
+    font-family: "Digital-7 Mono";
+    font-size: 16pt;
+    text-align: right;
 }
 
