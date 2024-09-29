@@ -4,6 +4,46 @@
     src: url("fonts/digital-7 (mono italic).ttf");
 }
 
+nav {
+    background-color: white;
+    color: darkred;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+nav ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 2px;
+}
+
+nav ul li {
+    background-color: white;
+    border-left: 1px solid darkred;
+    border-right: 1px solid darkred;
+    display: inline-block;
+    padding: 0px;
+    text-align: center;
+}
+
+nav ul li a {
+    color: darkred;
+    display: inline-block;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 10px;
+    width: 60px;
+    text-decoration: none;
+}
+
+nav ul li a:hover {
+    background-color: darkred;
+    color: white;
+}
+
 body {
     color: white;
     background-color: darkred;
