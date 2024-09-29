@@ -235,17 +235,6 @@ $(document).ready(function() {
         makeAlive(image, r, c);
     }
 
-    $('.box').hover(
-        function() {
-            // On mouse over
-            $(this).css('opacity', 1);
-        },
-        function() {
-            // On mouse out
-            $(this).css('opacity', "");
-        }
-    );
-
     $('.box').mousedown(function() {
         isDragging = true;
 

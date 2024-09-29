@@ -4,9 +4,15 @@
     src: url("fonts/digital-7 (mono italic).ttf");
 }
 
+body, html {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
 nav {
     background-color: white;
-    color: darkred;
+    color: midnightblue;
     width: 100%;
     margin-bottom: 20px;
 }
@@ -21,15 +27,15 @@ nav ul {
 
 nav ul li {
     background-color: white;
-    border-left: 1px solid darkred;
-    border-right: 1px solid darkred;
+    border-left: 1px solid midnightblue;
+    border-right: 1px solid midnightblue;
     display: inline-block;
     padding: 0px;
     text-align: center;
 }
 
 nav ul li a {
-    color: darkred;
+    color: midnightblue;
     display: inline-block;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 12px;
@@ -40,14 +46,14 @@ nav ul li a {
 }
 
 nav ul li a:hover {
-    background-color: darkred;
+    background-color: midnightblue;
     color: white;
 }
 
 body {
     color: white;
-    background-color: darkred;
-    background-image: url("images/background.png");
+    background-color: midnightblue;
+    background-image: url("images/background.jpg");
     background-size: cover;
 }
 
@@ -68,6 +74,11 @@ h1 {
     margin: 1px;
     opacity: 0.2;
     transition: opacity 1s ease;
+}
+
+.box:hover {
+    background-color: yellow;
+    opacity: 1;
 }
 
 .alive {
