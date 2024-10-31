@@ -30,7 +30,7 @@ nav ul li {
     border-left: 1px solid midnightblue;
     border-right: 1px solid midnightblue;
     display: inline-block;
-    padding: 0px;
+    padding: 0;
     text-align: center;
 }
 
@@ -92,7 +92,7 @@ h1 {
 .status {
     margin-top: 12px;
     color: white;
-    font-family: "Digital-7 Mono";
+    font-family: "Digital-7 Mono", monospace;
     font-size: 16pt;
     text-align: right;
 }
