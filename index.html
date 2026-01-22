@@ -1,33 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script type="text/javascript" src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script type="text/javascript" src="index.js"></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mvfm's website</title>
     <link rel="stylesheet" href="style.css">
-	<title>mvfm's WebSite</title>
 </head>
 <body>
-    <header>
-        <h1>mvfm's WebSite</h1>
-    </header>
-    
-    <nav>
-        <ul>
-            <li><a href="#">Home</a></li>
-            <li><a href="#">About</a></li>
-            <li><a href="resume/resume.pdf">Resume</a></li>
-            <li><a href="#">Contact</a></li>
-        </ul>
-    </nav>
-    
+<div class="app">
+    <header><h1 class="brand">mvfm's website</h1></header>
+    <nav><div class="menu">
+        <button data-route="home" aria-current="page">Home</button>
+        <button data-route="contact">Contact</button>
+        <button data-route="resume">Resume</button>
+        <button data-route="ai">AI</button>
+    </div></nav>
     <main>
-        <p>Hello, world!</p>
+        <canvas id="golCanvas" aria-hidden="true"></canvas>
+        <section id="contentPanel" class="panel" aria-live="polite" aria-atomic="true"></section>
+        <aside id="statsPanel" aria-live="polite" aria-atomic="true">
+            <div class="row"><span class="label">GEN</span><div class="digits" id="genDigits"></div></div>
+            <div class="row"><span class="label">ALIVE</span><div class="digits" id="aliveDigits"></div></div>
+            <div class="row"><span class="label">TOTAL</span><div class="digits" id="totalDigits"></div></div>
+            <div class="row"><span class="label">OCC%</span><div class="digits" id="occDigits"></div><span class="percent">%</span></div>
+        </aside>
     </main>
-    
-    <footer>
-        <p>&copy; 2024 mvfm. All rights reserved.</p>
-    </footer>
+</div>
+<script src="index.js"></script>
 </body>
 </html>

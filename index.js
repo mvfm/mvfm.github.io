@@ -1,265 +1,112 @@
+// --- SPA Router ---
+(function(){
+    const routes = {
+        home: { title:'Welcome', html:`<h2>Welcome</h2><p>Use the menu above to switch sections.</p>` },
+        contact: { title:'Contact', html:`<h2>Contact</h2><ul><li>Email: <a href="mailto:marcus.margarites@hotmail.com">marcus.margarites@hotmail.com</a></li><li>LinkedIn: <a href="https://www.linkedin.com/in/marcusmargarites/">linkedin.com/in/marcusmargarites/</a></li></ul>` },
+        resume: { title:'Resume', html:`<h2>Resume</h2><p>I am a systems engineer with more than 35 years of experience, working with architecture, team leadership, training, systems analysis, and software development.</p><p><a href="resume/resume.pdf">Click to view my resume.</a></p>` },
+        ai: { title:'AI', html:`<h2>AI</h2><p>Soon!</p>` }
+    };
+    const panel = document.getElementById('contentPanel');
+    function setActive(route){
+        const def = routes[route] || routes.home;
+        document.title = `mvfm's website — ${def.title}`;
+        panel.innerHTML = def.html;
+        requestAnimationFrame(()=>panel.classList.add('show'));
+        document.querySelectorAll('.menu button').forEach(btn=>{
+            btn.setAttribute('aria-current', btn.dataset.route===route ? 'page' : 'false');
+        });
+    }
+    document.querySelectorAll('.menu button').forEach(btn=>{
+        btn.addEventListener('click',()=>{ panel.classList.remove('show'); setTimeout(()=>setActive(btn.dataset.route),120); });
+    });
+    setActive('home');
+})();
 
-/*
- * Conway's Game of Life
- * 
- * Any live cell with fewer than two live neighbours dies, as if by underpopulation.
- * Any live cell with two or three live neighbours lives on to the next generation.
- * Any live cell with more than three live neighbours dies, as if by overpopulation.
- * Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
- */
+// --- Game of Life + Seven-seg stats ---
+(function(){
+    const canvas=document.getElementById('golCanvas');
+    const ctx=canvas.getContext('2d',{alpha:true});
+    // Double-buffer to reduce flicker/tearing
+    const off=document.createElement('canvas');
+    const offCtx=off.getContext('2d',{alpha:true});
+    ctx.imageSmoothingEnabled = true;
+    offCtx.imageSmoothingEnabled = true;
 
-const ROW_COUNT = 50;
-const COLUMN_COUNT = 90;
-const BOX_WIDTH = 10;
-const BOX_HEIGHT = 10;
-const BOX_MARGIN = 1;
-const ALIVE_THRESHOLD = 0.3;
-const GENERATIONS_INTERVAL = 1000;
-const DEFAULT_COLOR = "white";
-const SPECIAL_COLOR = "yellow";
+    // Stats elements
+    const genDigits=document.getElementById('genDigits');
+    const aliveDigits=document.getElementById('aliveDigits');
+    const totalDigits=document.getElementById('totalDigits');
+    const occDigits=document.getElementById('occDigits');
 
-const CELL_COUNT = ROW_COUNT * COLUMN_COUNT;
-const ROW_REAL_WIDTH = (COLUMN_COUNT * BOX_WIDTH) + ((COLUMN_COUNT - 1) * (BOX_MARGIN * 2));
+    // Tunables
+    const CELL=8;              // px per cell
+    const STEP_MS=1200;        // slightly faster cadence
+    const CELL_ALPHA=0.7;      // per-cell brightness (canvas also dimmed)
 
-let currentGeneration = 0;
-let realRowWidth = 0;       // Will be changed in createTheStatusLine()
-let isDragging = false;
+    // Seven-seg map
+    const DIGIT={'0':[1,1,1,1,1,1,0],'1':[0,1,1,0,0,0,0],'2':[1,1,0,1,1,0,1],'3':[1,1,1,1,0,0,1],'4':[0,1,1,0,0,1,1],'5':[1,0,1,1,0,1,1],'6':[1,0,1,1,1,1,1],'7':[1,1,1,0,0,0,0],'8':[1,1,1,1,1,1,1],'9':[1,1,1,1,0,1,1]};
 
-$(document).ready(function() {
-    console.log("*** Starting...");
+    function createDigit(){
+        const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+        svg.setAttribute('viewBox','0 0 56 110');
+        svg.setAttribute('width','7ch');
+        svg.setAttribute('height','1.7rem');
+        const r=3; const segs=[];
+        function rect(x,y,w,h){ const el=document.createElementNS('http://www.w3.org/2000/svg','rect'); el.setAttribute('x',x); el.setAttribute('y',y); el.setAttribute('width',w); el.setAttribute('height',h); el.setAttribute('rx',r); el.setAttribute('ry',r); el.setAttribute('class','seg'); return el; }
+        segs.push(rect(8,2,40,8)); segs.push(rect(48,10,8,40)); segs.push(rect(48,58,8,40)); segs.push(rect(8,98,40,8)); segs.push(rect(0,58,8,40)); segs.push(rect(0,10,8,40)); segs.push(rect(8,50,40,8));
+        const dp=document.createElementNS('http://www.w3.org/2000/svg','circle'); dp.setAttribute('cx','54'); dp.setAttribute('cy','106'); dp.setAttribute('r','3'); dp.setAttribute('class','seg');
+        svg.append(...segs); svg.append(dp); svg.segs=segs; svg.dp=dp; return svg;
+    }
+    function setDigit(svg,ch){ if(ch==='.'){ svg.segs.forEach(s=>s.setAttribute('class','seg')); svg.dp.setAttribute('class','seg on'); return;} const map=DIGIT[ch]||[0,0,0,0,0,0,0]; for(let i=0;i<7;i++) svg.segs[i].setAttribute('class', map[i]?'seg on':'seg'); svg.dp.setAttribute('class','seg'); }
+    function render(container,text){ while(container.children.length<text.length) container.appendChild(createDigit()); while(container.children.length>text.length) container.removeChild(container.lastChild); for(let i=0;i<text.length;i++) setDigit(container.children[i], text[i]); }
 
-    createTheGrid(true);
-    createTheStatusLine();
+    function pad8(n){ return Math.floor(Math.max(0,n)).toString().padStart(8,'0'); }
+    function occFmt(alive,total){ const pct=total>0?(alive/total*100):0; const c=Math.min(100,Math.max(0,pct)); const [i,d]=c.toFixed(3).split('.'); return i.padStart(3,'0')+'.'+d; }
 
-    setInterval(updateTheGrid, GENERATIONS_INTERVAL);
+    // Grid state
+    let cols,rows,from,to,buffer; let generation=0; let totalCells=0; let lastStep=0; let raf;
 
-
-    /*
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-    */
-
-
-    function createTheGrid(makeAlive) {
-        console.log("*** Creating the grid...");
-        currentGeneration = 0;
-
-        let mainElement = $("main");
-        $(mainElement).empty();
-    
-        for (let r = 0; r < ROW_COUNT; r++) {
-            let row = $("<div>");
-            $(row).addClass("row");
-            $(mainElement).append(row);
-    
-            for (let c = 0; c < COLUMN_COUNT; c++) {
-                let alive = makeAlive ? Math.random() <= ALIVE_THRESHOLD : false;
-    
-                let cell = $("<div>");
-                $(cell).attr("id", `r${r}_c${c}`);
-                $(cell).addClass("box");
-    
-                if (alive) {
-                    $(cell).addClass("alive highlight");
-                }
-    
-                $(row).append(cell);
+    function resize(){
+        const dpr=Math.max(1,Math.min(window.devicePixelRatio||1,2));
+        const w=canvas.clientWidth, h=canvas.clientHeight;
+        canvas.width=Math.floor(w*dpr);
+        canvas.height=Math.floor(h*dpr);
+        off.width = canvas.width;
+        off.height = canvas.height;
+        ctx.setTransform(dpr,0,0,dpr,0,0);
+        offCtx.setTransform(dpr,0,0,dpr,0,0);
+        init();
+    }
+    function init(){ cols=Math.ceil(canvas.clientWidth/CELL); rows=Math.ceil(canvas.clientHeight/CELL); from=new Uint8Array(cols*rows); to=new Uint8Array(cols*rows); buffer=new Uint8Array(cols*rows); for(let i=0;i<from.length;i++) from[i]=Math.random()<0.10?1:0; stepInto(from,to); lastStep=performance.now(); generation=0; totalCells=cols*rows; updateStats(countAlive(from)); }
+    function idx(x,y){ return y*cols+x; }
+    function stepInto(src,dst){ for(let y=0;y<rows;y++){ for(let x=0;x<cols;x++){ let n=0; for(let j=-1;j<=1;j++){ for(let i=-1;i<=1;i++){ if(i||j){ const xx=(x+i+cols)%cols, yy=(y+j+rows)%rows; n+=src[idx(xx,yy)]; }}} const alive=src[idx(x,y)]===1; dst[idx(x,y)]=(alive&&(n===2||n===3))||(!alive&&n===3)?1:0; }}}
+    function ease(t){ t=Math.max(0,Math.min(1,t)); return t*t*(3-2*t); }
+    function draw(progress){
+        const t=ease(progress);
+        // draw to offscreen first (reduces visible partial repaints)
+        offCtx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);
+        offCtx.fillStyle='#9fb4e3';
+        for(let y=0;y<rows;y++){
+            for(let x=0;x<cols;x++){
+                const i=idx(x,y);
+                const a=(from[i]*(1-t)+to[i]*t)*CELL_ALPHA;
+                if(a<=0) continue;
+                offCtx.globalAlpha=a;
+                offCtx.fillRect(x*CELL,y*CELL,CELL-1,CELL-1);
             }
         }
+        offCtx.globalAlpha=1;
+        // blit
+        ctx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);
+        ctx.drawImage(off, 0, 0, canvas.clientWidth, canvas.clientHeight);
     }
 
-    function createTheStatusLine() {
-        console.log("*** Creating the status line...");
+    function countAlive(arr){ let c=0; for(let i=0;i<arr.length;i++) c+=arr[i]; return c; }
+    function updateStats(alive){ render(genDigits,pad8(generation)); render(aliveDigits,pad8(alive)); render(totalDigits,pad8(totalCells)); render(occDigits,occFmt(alive,totalCells)); }
 
-        let cellWidth = parseInt(getCSSPropertyValue("box", "width"), 10);
-        let cellMargin = parseInt(getCSSPropertyValue("box", "margin"), 10);
-        let statusLineWidth = (COLUMN_COUNT * cellWidth) + ((COLUMN_COUNT - 1) * (cellMargin * 2));  // 1078px?
-        console.log(`*** cellWidth: ${cellWidth}, cellMargin: ${cellMargin}, statusLineWIdth: ${statusLineWidth}`);
+    function loop(now){ const progress=(now-lastStep)/STEP_MS; if(progress>=1){ from.set(to); stepInto(from,buffer); const aliveNext=countAlive(buffer); const tmp=to; to=buffer; buffer=tmp; generation++; lastStep=now; updateStats(aliveNext); } draw(Math.min(progress,1)); raf=requestAnimationFrame(loop); }
 
-        let mainElement = $("main");
-        let statusLine = $("<div>");
-        $(statusLine).addClass("status");
-        $(statusLine).css("width", `${statusLineWidth}px`);
-        $(statusLine).text("123/456");
-
-        mainElement.append(statusLine);
-    }
-
-    function updateTheGrid() {
-        currentGeneration++;
-        console.log(`Creating the next generation: ${currentGeneration}`);
-
-        $(".box").removeClass("highlight");
-
-        let liveCount = 0;
-
-        for (let r = 0; r < ROW_COUNT; r++) {
-            for (let c = 0; c < COLUMN_COUNT; c++) {
-                let cell = $(`#r${r}_c${c}`);
-                let aliveNeighbors = countAliveNeighbors(r, c);
-
-                if (cell.hasClass("alive")) {
-                    if (aliveNeighbors >= 2 && aliveNeighbors <= 3) {
-                        cell.attr("willLive", true);
-                        liveCount++;
-                    }
-                } else if (aliveNeighbors == 3) {
-                    cell.attr("willLive", true);
-                    liveCount++;
-                }
-            }
-        }
-
-        $(".box[willLive]").addClass("alive");
-        $(".box:not([willLive])").removeClass("alive");
-        $(".box[willLive]").removeAttr("willLive");
-
-        let occupationRate = liveCount * 100 / CELL_COUNT;
-        console.log(`The live count is ${liveCount}, and the occupation rate is ${occupationRate} %.`);
-
-        $(".status").text(`${formatNumber(currentGeneration, 6, 0)} | ${formatNumber(liveCount, 4, 0)}/${formatNumber(CELL_COUNT, 4, 0)} | ${formatNumber(occupationRate, 3, 2)} %`);
-    }
-
-    function countAliveNeighbors(r, c) {
-        const minR = r > 1 ? r - 1 : r;
-        const maxR = r < ROW_COUNT - 1 ? r + 1 : r;
-        const minC = c > 1 ? c - 1 : c;
-        const maxC = c < COLUMN_COUNT - 1 ? c + 1 : c;
-
-        let aliveNeighbors = 0;
-
-        for (let i = minR; i <= maxR; i++) {
-            for (let j = minC; j <= maxC; j++) {
-                if (i != r || j != c) {
-                    let cell = $(`#r${i}_c${j}`);
-
-                    if (cell.hasClass("alive")) {
-                        aliveNeighbors++;
-                    }
-                }
-            }
-        }
-
-        return aliveNeighbors;
-    }
-
-    function makeAlive(image, r, c) {
-        for (let row = r; row < r + image.length; row++) {
-            for (let col = c; col < c + image[row - r].length; col++) {
-                if (row < ROW_COUNT && col < COLUMN_COUNT) {
-                    let cellId = `#r${row}_c${col}`;
-
-                    if (image[row - r][col - c] != " ") {
-                        $(cellId).addClass("alive highlight");
-                    } else {
-                        $(cellId).removeClass("alive");
-                    }
-                }
-            }
-        }
-    }
-
-    function random(available, size) {
-        let theMax = available - size;
-        return Math.round(Math.random() * theMax);
-    }
-
-    function formatNumber(number, totalIntegerLength, decimalPlaces) {
-        // Convert number to a fixed decimal string
-        let [integerPart, decimalPart] = number
-            .toFixed(decimalPlaces)  // Formats the number with given decimal places
-            .split('.');             // Split into integer and decimal parts
-    
-        // Pad integer part with leading zeros
-        integerPart = integerPart.padStart(totalIntegerLength, '0');
-    
-        // Join integer and decimal parts
-        return decimalPart ? `${integerPart}.${decimalPart}` : integerPart;
-    }
-
-    function getCSSPropertyValue(className, property) {
-        const $tempElement = $('<div>')
-            .addClass(className)
-            .css('display', 'none')
-            .appendTo('body');
-    
-        const value = $tempElement.css(property);
-    
-        // Clean up: Remove the temporary element
-        $tempElement.remove();
-    
-        // Return the CSS property value
-        return value;
-    }
-
-    function drawGliderGun() {
-        console.log('*** Creating a glider...');
-
-        const image = [
-            '                                        ',
-            '                                        ',
-            '                           *            ',
-            '                        ****    *       ',
-            '               *       ****     *       ',
-            '              * *      *  *         **  ',
-            '             *   **    ****         **  ',
-            '  **         *   **     ****            ',
-            '  **         *   **        *            ',
-            '              * *                       ',
-            '               *                        ',
-            '                                        ',
-            '                                        '
-        ];
-
-        const r = random(ROW_COUNT, image.length);
-        const c = random(COLUMN_COUNT, image[0].length);
-
-        makeAlive(image, r, c);
-    }
-
-    function drawGlider() {
-        console.log('*** Creating a glider...');
-
-        const image = [
-            '       ',
-            '       ',
-            '  *    ',
-            '   **  ',
-            '  **   ',
-            '       ',
-            '       '
-        ];
-
-        const r = Math.round(Math.random() * ROW_COUNT);
-        const c = Math.round(Math.random() * COLUMN_COUNT);
-
-        makeAlive(image, r, c);
-    }
-
-    $('.box').mousedown(function() {
-        isDragging = true;
-
-        $(this).toggleClass('alive');
-    });
-
-    $('.box').mouseenter(function() {
-        if (isDragging) {
-            $(this).toggleClass('alive');
-        }
-    });
-
-    $(document).mouseup(function() {
-        isDragging = false;
-    });
-
-    $(document).keydown(function(e) {
-        if (e.key == 'G') {
-            drawGliderGun();
-        } else if (e.key === 'g') {
-            drawGlider();
-        } else if (e.key === 'r') {
-            createTheGrid(true);
-        } else if (e.key === 'c') {
-            createTheGrid();
-        }
-    });
-});
+    const ro=new ResizeObserver(()=>resize()); ro.observe(canvas);
+    resize(); loop(performance.now());
+    addEventListener('beforeunload',()=>cancelAnimationFrame(raf));
+})();
