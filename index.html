@@ -1,31 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>mvfm's website</title>
+    <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="style.css">
+    <!-- TimelineJS CSS -->
+    <link title="timeline-styles" rel="stylesheet"
+        href="https://cdn.knightlab.com/libs/timeline3/latest/css/timeline.css">
 </head>
+
 <body>
-<div class="app">
-    <header><h1 class="brand">mvfm's website</h1></header>
-    <nav><div class="menu">
-        <button data-route="home" aria-current="page">Home</button>
-        <button data-route="contact">Contact</button>
-        <button data-route="resume">Resume</button>
-        <button data-route="ai">AI</button>
-    </div></nav>
-    <main>
-        <canvas id="golCanvas" aria-hidden="true"></canvas>
-        <section id="contentPanel" class="panel" aria-live="polite" aria-atomic="true"></section>
-        <aside id="statsPanel" aria-live="polite" aria-atomic="true">
-            <div class="row"><span class="label">GEN</span><div class="digits" id="genDigits"></div></div>
-            <div class="row"><span class="label">ALIVE</span><div class="digits" id="aliveDigits"></div></div>
-            <div class="row"><span class="label">TOTAL</span><div class="digits" id="totalDigits"></div></div>
-            <div class="row"><span class="label">OCC%</span><div class="digits" id="occDigits"></div><span class="percent">%</span></div>
-        </aside>
-    </main>
-</div>
-<script src="index.js"></script>
+    <div class="app">
+        <div id="topBar">
+            <header>
+                <h1 class="brand">mvfm's website</h1>
+            </header>
+            <nav>
+                <div class="menu">
+                    <button data-route="home" aria-current="page">Home</button>
+                    <button data-route="contact">Contact</button>
+                    <button data-route="resume">Resume</button>
+                    <button data-route="ai">AI</button>
+                </div>
+            </nav>
+        </div>
+        <main>
+            <canvas id="golCanvas" aria-hidden="true"></canvas>
+            <section id="contentPanel" class="panel" aria-live="polite" aria-atomic="true"></section>
+            <aside id="statsPanel" aria-live="polite" aria-atomic="true">
+                <div class="row"><span class="label">GEN</span>
+                    <div class="digits" id="genDigits"></div>
+                </div>
+                <div class="row"><span class="label">ALIVE</span>
+                    <div class="digits" id="aliveDigits"></div>
+                </div>
+                <div class="row"><span class="label">TOTAL</span>
+                    <div class="digits" id="totalDigits"></div>
+                </div>
+                <div class="row"><span class="label">OCC%</span>
+                    <div class="digits" id="occDigits"></div><span class="percent">%</span>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Tab Content Templates -->
+    <template id="tpl-home">
+        <h2>Welcome</h2>
+        <p>Use the menu above to switch sections.</p>
+    </template>
+
+    <template id="tpl-contact">
+        <h2>Contact</h2>
+        <ul>
+            <li>Email: <a href="mailto:marcus.margarites@hotmail.com">marcus.margarites@hotmail.com</a></li>
+            <li>LinkedIn: <a href="https://www.linkedin.com/in/marcusmargarites/">linkedin.com/in/marcusmargarites/</a>
+            </li>
+        </ul>
+    </template>
+
+    <template id="tpl-resume">
+        <h2>Resume</h2>
+        <p>I am a systems engineer with more than 35 years of experience, working with architecture, team leadership,
+            training, systems analysis, and software development.</p>
+        <p><a href="resume/resume.pdf">Click to view my resume.</a></p>
+    </template>
+
+    <template id="tpl-ai">
+        <h2>AI Timeline</h2>
+        <div id="timeline-embed" style="width: 100%; height: 600px; background: #1a1a1a;">
+            <p style="padding: 20px;">Loading timeline data...</p>
+        </div>
+    </template>
+
+    <!-- TimelineJS JS -->
+    <script src="https://cdn.knightlab.com/libs/timeline3/latest/js/timeline.js"></script>
+    <script type="module" src="js/main.js"></script>
 </body>
+
 </html>
