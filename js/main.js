@@ -38,7 +38,7 @@ const aiRouteOnLoad = async () => {
                 <div style="padding: 2.5rem; color: #ff6b6b; text-align: center; border: 1px dashed #ff6b6b; border-radius: 12px; margin: 1rem;">
                     <h3 style="margin-top:0">Failed to load timeline</h3>
                     <p>${error.message}</p>
-                    <p style="font-size: 0.85rem; opacity: 0.8;">Ensure AIAPI the is running.</code></p>
+                    <p style="font-size: 0.85rem; opacity: 0.8;">Ensure the AIAPI is running.</code></p>
                 </div>`;
         }
     }
