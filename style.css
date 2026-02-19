@@ -74,7 +74,7 @@ header {
     border-bottom: 1px solid #e5e7eb;
     height: 15vh;
     min-height: 48px;
-    overflow: hidden;
+    overflow: visible;
     transition: height var(--trans-slow);
 }
 
@@ -94,7 +94,8 @@ header {
     background: linear-gradient(to top, #5fbaff 0%, #ffffff 50%, #ffffff 100%);
     -webkit-background-clip: text;
     background-clip: text;
-    -webkit-text-stroke: 2px var(--clr-primary);
+    /* Even thinner stroke to satisfy Chrome's rendering weight */
+    -webkit-text-stroke: 0.5px var(--clr-primary);
     filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.4));
 }
 
@@ -143,6 +144,27 @@ nav {
     background: var(--clr-primary);
     color: var(--clr-bg-main);
     border-color: var(--clr-primary);
+}
+
+/* Better handling for notebook screens (1080p @ 150% = 720p effective) */
+@media (max-height: 750px) {
+    :root {
+        /* Increase padding-top to 220px to accommodate wrapped menus on 720p screens */
+        --header-height-full: 220px;
+    }
+
+    header {
+        height: 100px;
+        min-height: 80px;
+    }
+
+    .brand {
+        font-size: clamp(1.8rem, 4vw, 3rem);
+    }
+
+    .app {
+        padding-top: var(--header-height-full);
+    }
 }
 
 /* Background & Main Content Panel */
