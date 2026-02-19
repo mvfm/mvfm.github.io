@@ -13,7 +13,16 @@ const aiRouteOnLoad = async () => {
     const embed = document.getElementById('timeline-embed');
     try {
         console.log(`Fetching timeline data from ${CONFIG.API_BASE_URL}/timeline...`);
-        const response = await fetch(`${CONFIG.API_BASE_URL}/timeline`);
+
+        // Comprehensive timeout handling (60s) for PythonAnywhere cold starts
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+        const response = await fetch(`${CONFIG.API_BASE_URL}/timeline`, {
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
         const data = await response.json();
