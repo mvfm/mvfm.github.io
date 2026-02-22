@@ -5,11 +5,31 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>mvfm's website</title>
-    <link rel="icon" type="image/png" href="favicon.png">
-    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="stylesheet" href="/style.css">
     <!-- TimelineJS CSS -->
     <link title="timeline-styles" rel="stylesheet"
         href="https://cdn.knightlab.com/libs/timeline3/latest/css/timeline.css">
+
+    <!-- Start Single Page Apps for GitHub Pages -->
+    <script type="text/javascript">
+        (function (l) {
+            if (l.search[1] === '/') {
+                var decoded = l.search.slice(1).split('&').map(function (s) {
+                    return s.replace(/~and~/g, '&')
+                }).filter(function (s) {
+                    return s.slice(0, 2) === 'p=/'
+                })[0];
+                if (decoded !== undefined) {
+                    window.history.replaceState(null, null,
+                        l.pathname.slice(0, -1) + decoded.slice(2) +
+                        l.hash
+                    );
+                }
+            }
+        }(window.location))
+    </script>
+    <!-- End Single Page Apps for GitHub Pages -->
 </head>
 
 <body>
@@ -66,7 +86,7 @@
         <h2>Resume</h2>
         <p>I am a systems engineer with more than 35 years of experience, working with architecture, team leadership,
             training, systems analysis, and software development.</p>
-        <p><a href="resume/resume.pdf">Click to view my resume.</a></p>
+        <p><a href="/pdf/resume.pdf">Click to view my resume.</a></p>
     </template>
 
     <template id="tpl-ai">
@@ -78,7 +98,7 @@
 
     <!-- TimelineJS JS -->
     <script src="https://cdn.knightlab.com/libs/timeline3/latest/js/timeline.js"></script>
-    <script type="module" src="js/main.js"></script>
+    <script type="module" src="/js/main.js"></script>
 </body>
 
 </html>

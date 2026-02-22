@@ -1,7 +1,3 @@
-/**
- * SPA Router
- * Handles navigation, content swapping, and view hooks.
- */
 export class Router {
     constructor(routes) {
         this.routes = routes;
@@ -13,25 +9,42 @@ export class Router {
 
     init() {
         this.menuButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
                 const route = btn.dataset.route;
-                this.navigate(route);
+                this.navigate(route, true);
             });
+        });
+
+        // Handle browser Back/Forward navigation
+        window.addEventListener('popstate', () => {
+            const pathSegments = window.location.pathname.split('/').filter(Boolean);
+            const path = pathSegments.pop() || 'home';
+            this.navigate(path, false);
         });
 
         // Initial load
         window.addEventListener('load', () => {
-            const initialRoute = 'home'; // Could be derived from URL hash if needed
-            this.navigate(initialRoute);
+            const pathSegments = window.location.pathname.split('/').filter(Boolean);
+            const path = pathSegments.pop();
+            const initialRoute = (path && this.routes[path]) ? path : 'home';
+            this.navigate(initialRoute, false);
         });
     }
 
-    async navigate(route) {
+    async navigate(route, updateHistory = true) {
         const def = this.routes[route] || this.routes.home;
 
         // Update browser state
         document.title = `mvfm's website — ${def.title}`;
         this.updateMenu(route);
+
+        if (updateHistory) {
+            const newPath = route === 'home' ? '/' : `/${route}`;
+            // Preserve existing hash (important for TimelineJS deep-linking)
+            const url = newPath + window.location.hash;
+            window.history.pushState({ route }, '', url);
+        }
 
         // Start exit transition
         this.panel.classList.remove('show');
