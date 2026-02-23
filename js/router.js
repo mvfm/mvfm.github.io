@@ -37,6 +37,7 @@ export class Router {
 
         // Update browser state
         document.title = `mvfm's website — ${def.title}`;
+        this.updateMetaDescription(def.title);
         this.updateMenu(route);
 
         if (updateHistory) {
@@ -80,5 +81,15 @@ export class Router {
         this.menuButtons.forEach(btn => {
             btn.setAttribute('aria-current', btn.dataset.route === activeRoute ? 'page' : 'false');
         });
+    }
+
+    updateMetaDescription(title) {
+        let meta = document.querySelector('meta[name="description"]');
+        if (!meta) {
+            meta = document.createElement('meta');
+            meta.setAttribute('name', 'description');
+            document.head.appendChild(meta);
+        }
+        meta.setAttribute('content', `mvfm's personal website - ${title}. Exploring AI, systems engineering, and complex systems.`);
     }
 }

@@ -91,8 +91,11 @@
 
     <template id="tpl-ai">
         <h2>AI Timeline</h2>
-        <div id="timeline-embed" style="width: 100%; height: 600px; background: #1a1a1a;">
-            <p style="padding: 20px;">Loading timeline data...</p>
+        <div id="timeline-embed">
+            <div class="spinner-container">
+                <div class="spinner"></div>
+                <p class="loading-text">Loading timeline data...</p>
+            </div>
         </div>
     </template>
 

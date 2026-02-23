@@ -97,6 +97,18 @@ export class GameOfLife {
         this.resizeObserver = new ResizeObserver(() => resize());
         this.resizeObserver.observe(this.canvas);
         resize();
+
+        // Pause simulation when tab is backgrounded
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                cancelAnimationFrame(this.raf);
+                this.raf = null;
+            } else if (!this.raf) {
+                this.lastStep = performance.now();
+                this.loop(this.lastStep);
+            }
+        });
+
         this.loop(performance.now());
         window.addEventListener('beforeunload', () => cancelAnimationFrame(this.raf));
     }

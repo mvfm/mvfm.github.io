@@ -25,7 +25,13 @@ const aiRouteOnLoad = async () => {
     for (let attempt = 1; attempt <= CONFIG.MAX_RETRIES; attempt++) {
         try {
             if (attempt > 1) {
-                if (embed) embed.innerHTML = `<p style="padding: 2.5rem; text-align: center;">Retrying (${attempt} of ${CONFIG.MAX_RETRIES})...</p>`;
+                if (embed) {
+                    embed.innerHTML = `
+                        <div class="spinner-container">
+                            <div class="spinner"></div>
+                            <p class="loading-text">Retrying (${attempt} of ${CONFIG.MAX_RETRIES})...</p>
+                        </div>`;
+                }
                 await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY_MS));
             }
 
