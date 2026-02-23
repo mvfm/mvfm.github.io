@@ -41,13 +41,22 @@ const aiRouteOnLoad = async () => {
         }, 50);
 
     } catch (error) {
+        const isTimeout = error.name === 'AbortError';
+        const errorMsg = isTimeout
+            ? `Request timed out after 60s. The AIAPI might still be starting up.`
+            : `${error.message}`;
+
         console.error("Failed to load timeline:", error);
         if (embed) {
             embed.innerHTML = `
                 <div style="padding: 2.5rem; color: #ff6b6b; text-align: center; border: 1px dashed #ff6b6b; border-radius: 12px; margin: 1rem;">
                     <h3 style="margin-top:0">Failed to load timeline</h3>
-                    <p>${error.message}</p>
-                    <p style="font-size: 0.85rem; opacity: 0.8;">Ensure the AIAPI is running.</code></p>
+                    <p>${errorMsg}</p>
+                    <p style="font-size: 0.85rem; opacity: 0.8;">
+                        URL: <code>${CONFIG.API_BASE_URL}/timeline</code><br>
+                        ${error.name}: Ensure the AIAPI is reachable.
+                    </p>
+                    <button onclick="location.reload()" style="background: transparent; border: 1px solid #ff6b6b; color: #ff6b6b; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; margin-top: 1rem;">Retry Page</button>
                 </div>`;
         }
     }
