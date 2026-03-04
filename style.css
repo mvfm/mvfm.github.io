@@ -201,25 +201,25 @@ main {
 
 .tl-menubar,
 .tl-timenav {
-    background-color: var(--white) !important;
+    background-color: var(--clr-bg-main) !important;
 }
 
 .tl-marker-active .tl-marker-content {
-    background-color: var(--main-color) !important;
-    border-color: var(--main-color) !important;
+    background-color: var(--clr-primary) !important;
+    border-color: var(--clr-primary) !important;
 }
 
 .tl-marker:hover .tl-marker-content {
-    background-color: var(--main-color) !important;
+    background-color: var(--clr-primary) !important;
 }
 
 .tl-slidenav-icon,
 .tl-slidenav-title {
-    color: var(--main-color) !important;
+    color: var(--clr-primary) !important;
 }
 
 .tl-headline-date {
-    color: var(--main-color) !important;
+    color: var(--clr-primary) !important;
 }
 
 #timeline-embed {
