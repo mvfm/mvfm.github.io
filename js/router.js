@@ -24,12 +24,18 @@ export class Router {
         });
 
         // Initial load
-        window.addEventListener('load', () => {
+        const handleInitialRoute = () => {
             const pathSegments = window.location.pathname.split('/').filter(Boolean);
             const path = pathSegments.pop();
             const initialRoute = (path && this.routes[path]) ? path : 'home';
             this.navigate(initialRoute, false);
-        });
+        };
+
+        if (document.readyState === 'complete') {
+            handleInitialRoute();
+        } else {
+            window.addEventListener('load', handleInitialRoute);
+        }
     }
 
     async navigate(route, updateHistory = true) {
