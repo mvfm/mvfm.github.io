@@ -92,7 +92,27 @@
     </template>
 
     <template id="tpl-ai">
-        <h2>AI Timeline</h2>
+        <div class="view-header">
+            <h2>AI Timeline</h2>
+            <button id="search-toggle" class="icon-button" title="Search Timeline">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </button>
+        </div>
+
+        <div id="search-container" class="search-bar">
+            <div class="search-inner">
+                <input type="text" id="search-input" placeholder="Search events..." aria-label="Search events">
+                <div class="search-actions">
+                    <button id="search-submit" class="btn-primary" disabled>Search</button>
+                    <button id="search-cancel" class="btn-secondary">Clear</button>
+                </div>
+            </div>
+        </div>
+
         <div id="timeline-embed">
             <div class="spinner-container">
                 <div class="spinner"></div>

@@ -48,8 +48,8 @@ export class Router {
 
         if (updateHistory) {
             const newPath = route === 'home' ? '/' : `/${route}`;
-            // Preserve existing hash (important for TimelineJS deep-linking)
-            const url = newPath + window.location.hash;
+            // Preserve existing hash and search (important for TimelineJS and search functionality)
+            const url = newPath + window.location.search + window.location.hash;
             window.history.pushState({ route }, '', url);
         }
 
