@@ -21,20 +21,27 @@ const CONFIG = (() => {
 
 const aiRouteOnLoad = async () => {
     const embed = document.getElementById('timeline-embed');
+    const urlParams = new URLSearchParams(window.location.search);
+    const query = urlParams.get('q');
+
+    const showLoading = (message) => {
+        if (embed) {
+            embed.innerHTML = `
+                <div class="spinner-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px; gap: 1.5rem; font-family: system-ui, -apple-system, sans-serif;">
+                    <div class="spinner" style="width: 48px; height: 48px; border: 3px solid rgba(27, 170, 255, 0.2); border-radius: 50%; border-top-color: var(--clr-accent); animation: spin 0.8s linear infinite;"></div>
+                    <p class="loading-text" style="color: var(--clr-accent); font-weight: 600; text-align: center; margin: 0; font-family: inherit;">${message}</p>
+                </div>`;
+        }
+    };
 
     for (let attempt = 1; attempt <= CONFIG.MAX_RETRIES; attempt++) {
         try {
-            if (embed) {
-                const message = attempt > 1
-                    ? `Retrying (${attempt} of ${CONFIG.MAX_RETRIES})...`
-                    : `Loading timeline data...`;
+            const baseMessage = query ? `Searching for "${query}"...` : `Loading timeline data...`;
+            const message = attempt > 1
+                ? `Retrying (${attempt} of ${CONFIG.MAX_RETRIES})...`
+                : baseMessage;
 
-                embed.innerHTML = `
-                    <div class="spinner-container">
-                        <div class="spinner"></div>
-                        <p class="loading-text">${message}</p>
-                    </div>`;
-            }
+            showLoading(message);
 
             if (attempt > 1) {
                 await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY_MS));
