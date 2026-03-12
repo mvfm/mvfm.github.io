@@ -85,7 +85,48 @@ const getTopicInitials = (topicName) => {
 const aiRouteOnLoad = async () => {
     const embed = document.getElementById('timeline-embed');
     const urlParams = new URLSearchParams(window.location.search);
-    const query = urlParams.get('q');
+    
+    // 1. Initial State Restoration (URL takes precedence, then localStorage)
+    let query = urlParams.get('q');
+    let topicsParam = urlParams.get('topics');
+    let currentHash = window.location.hash;
+
+    let needsUrlUpdate = false;
+    const newUrl = new URL(window.location.href);
+
+    // Restore search/topics if missing from URL
+    if (!query && !topicsParam) {
+        const savedQ = localStorage.getItem('timeline_q');
+        const savedTopics = localStorage.getItem('timeline_topics');
+        
+        if (savedQ || savedTopics) {
+            query = savedQ;
+            topicsParam = savedTopics;
+            if (query) newUrl.searchParams.set('q', query);
+            if (topicsParam) newUrl.searchParams.set('topics', topicsParam);
+            needsUrlUpdate = true;
+        }
+    }
+
+    // Restore hash if missing from URL
+    if (!currentHash) {
+        const savedHash = localStorage.getItem('timeline_hash');
+        if (savedHash) {
+            newUrl.hash = savedHash;
+            needsUrlUpdate = true;
+        }
+    }
+
+    if (needsUrlUpdate) {
+        window.history.replaceState({}, '', newUrl);
+    }
+
+    // Update selectedTopics based on restored/URL state
+    if (topicsParam) {
+        selectedTopics = new Set(topicsParam.split(',').filter(Boolean));
+    } else {
+        selectedTopics = new Set();
+    }
 
     const showLoading = (message) => {
         if (embed) {
@@ -111,16 +152,11 @@ const aiRouteOnLoad = async () => {
             }
 
             const queryUrl = new URL(`${CONFIG.API_BASE_URL}/timeline`);
-            const urlParams = new URL(window.location.href).searchParams;
-            if (urlParams.has('q')) {
-                queryUrl.searchParams.append('q', urlParams.get('q'));
+            if (query) {
+                queryUrl.searchParams.append('q', query);
             }
-            if (urlParams.has('topics')) {
-                queryUrl.searchParams.append('topics', urlParams.get('topics'));
-                // Update selectedTopics set from URL
-                selectedTopics = new Set(urlParams.get('topics').split(',').filter(Boolean));
-            } else {
-                selectedTopics = new Set();
+            if (topicsParam) {
+                queryUrl.searchParams.append('topics', topicsParam);
             }
 
             console.log(`Attempt ${attempt}: Fetching timeline data from ${queryUrl}...`);
@@ -198,10 +234,27 @@ const aiRouteOnLoad = async () => {
                         setTimeout(relocateLabels, 100);
                         setTimeout(relocateLabels, 1000);
 
-                        // Watch for slide changes to catch slides that are lazily rendered
-                        window.timeline.on('change', () => {
+                        // Flag to prevent initial "change" events from overwriting the restored hash
+                        let isTimelineInitialized = false;
+
+                        window.timeline.on('change', (e) => {
                             setTimeout(relocateLabels, 50);
+                            
+                            if (isTimelineInitialized) {
+                                // Persist current unique_id as hash position
+                                // We use the event's unique_id if available, otherwise fallback to hash
+                                const newId = e.unique_id || (window.timeline.getCurrentSlide()?.data?.unique_id);
+                                if (newId) {
+                                    const newHash = `#event-${newId}`;
+                                    localStorage.setItem('timeline_hash', newHash);
+                                }
+                            }
                         });
+
+                        // Enable persistence after a short delay to allow TimelineJS to "settle" on the bookmark
+                        setTimeout(() => {
+                            isTimelineInitialized = true;
+                        }, 1500);
                     }
                 } else {
                     // Handle empty results gracefully
@@ -342,18 +395,27 @@ const initTimelineSearch = () => {
 
     const performSearch = () => {
         const query = input.value.trim();
+        const topics = Array.from(selectedTopics).join(',');
         const url = new URL(window.location.href);
         
+        // Always clear hash when performing a NEW search
+        url.hash = '';
+        localStorage.removeItem('timeline_hash');
+
         if (query) {
             url.searchParams.set('q', query);
+            localStorage.setItem('timeline_q', query);
         } else {
             url.searchParams.delete('q');
+            localStorage.removeItem('timeline_q');
         }
 
-        if (selectedTopics.size > 0) {
-            url.searchParams.set('topics', Array.from(selectedTopics).join(','));
+        if (topics) {
+            url.searchParams.set('topics', topics);
+            localStorage.setItem('timeline_topics', topics);
         } else {
             url.searchParams.delete('topics');
+            localStorage.removeItem('timeline_topics');
         }
 
         window.history.pushState({}, '', url);
@@ -364,9 +426,16 @@ const initTimelineSearch = () => {
         input.value = '';
         selectedTopics.clear();
         container.classList.remove('show');
+        
+        localStorage.removeItem('timeline_q');
+        localStorage.removeItem('timeline_topics');
+        localStorage.removeItem('timeline_hash');
+
         const url = new URL(window.location.href);
         url.searchParams.delete('q');
         url.searchParams.delete('topics');
+        url.hash = '';
+        
         window.history.pushState({}, '', url);
         aiRouteOnLoad();
     };

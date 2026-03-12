@@ -27,7 +27,21 @@ export class Router {
         const handleInitialRoute = () => {
             const pathSegments = window.location.pathname.split('/').filter(Boolean);
             const path = pathSegments.pop();
-            const initialRoute = (path && this.routes[path]) ? path : 'home';
+            
+            let initialRoute = 'home';
+            if (path && this.routes[path]) {
+                initialRoute = path;
+            } else if (!path || path === '/') {
+                // If on root, try to restore from localStorage
+                const savedRoute = localStorage.getItem('lastRoute');
+                if (savedRoute && this.routes[savedRoute]) {
+                    initialRoute = savedRoute;
+                    // Update URL to match restored route without adding history entry
+                    const newPath = initialRoute === 'home' ? '/' : `/${initialRoute}`;
+                    window.history.replaceState({ route: initialRoute }, '', newPath + window.location.search + window.location.hash);
+                }
+            }
+            
             this.navigate(initialRoute, false);
         };
 
@@ -45,6 +59,7 @@ export class Router {
         document.title = `mvfm's website — ${def.title}`;
         this.updateMetaDescription(def.title);
         this.updateMenu(route);
+        localStorage.setItem('lastRoute', route);
 
         if (updateHistory) {
             const newPath = route === 'home' ? '/' : `/${route}`;
