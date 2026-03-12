@@ -347,13 +347,29 @@ main {
 }
 
 /* Constrain only the actual readable content for better UX */
-.tl-text .tl-headline,
+.tl-text .tl-headline {
+    max-width: 650px !important;
+    margin-left: 0 !important;
+    margin-right: auto !important;
+    text-align: left !important;
+}
+
 .tl-text .tl-text-content p,
 .tl-text .tl-text-content ul,
 .tl-text .tl-text-content ol {
     max-width: 650px !important;
-    margin-left: auto !important;
+    margin-left: 0 !important;
     margin-right: auto !important;
+}
+
+/* Fix caption overflow and ensure it wraps within media area */
+.tl-media .tl-caption {
+    max-width: 450px !important;
+    white-space: normal !important;
+    margin-left: 0 !important;
+    margin-right: auto !important;
+    text-align: left !important;
+    overflow-wrap: break-word !important;
 }
 
 /* Base style for labels, we'll move them in the DOM via JS */
