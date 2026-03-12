@@ -308,6 +308,99 @@ main {
     gap: 1rem;
 }
 
+.topic-filter-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    justify-content: center;
+}
+
+.topic-pill {
+    padding: 0.4rem 0.8rem;
+    border-radius: var(--radius-full);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--trans-fast);
+    border: 1px solid transparent;
+    user-select: none;
+    text-transform: lowercase;
+}
+
+.topic-pill:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Event Card Topic Labels */
+.tl-text {
+    position: relative !important;
+    vertical-align: top !important;
+    padding-top: 1rem !important; /* Spacing at top */
+}
+
+/* Allow the text content to be full width so labels can hit the right edge */
+.tl-text .tl-text-content {
+    max-width: none !important;
+    padding: 0 !important;
+}
+
+/* Constrain only the actual readable content for better UX */
+.tl-text .tl-headline,
+.tl-text .tl-text-content p,
+.tl-text .tl-text-content ul,
+.tl-text .tl-text-content ol {
+    max-width: 650px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+/* Base style for labels, we'll move them in the DOM via JS */
+.topic-labels-container {
+    position: absolute; /* Relative to text area initially */
+    top: 0;
+    right: 0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0; /* Hidden until relocated by JS to avoid jitter */
+    transition: opacity 0.3s ease;
+}
+
+/* When labels are moved to be child of .tl-slide in JS */
+.tl-slide > .topic-labels-container {
+    position: sticky;
+    top: 1.5rem;
+    z-index: 1000;
+    display: flex;
+    justify-content: flex-end;
+    width: auto;
+    height: 0; /* Don't take up vertical space */
+    overflow: visible; /* Allow pills to be seen */
+    margin: 0;
+    padding-right: 1rem; /* Moved closer to the right edge */
+    pointer-events: none; /* Allow interaction with text behind */
+}
+
+.event-topic-label {
+    pointer-events: auto; /* Ensure pills are still clickable */
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: lowercase;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 @media (min-width: 640px) {
     .search-inner {
         flex-direction: row;

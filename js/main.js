@@ -19,6 +19,69 @@ const CONFIG = (() => {
     };
 })();
 
+// Global state for topics
+let allTopics = [];
+let selectedTopics = new Set();
+let topicMnemonics = new Map();
+
+/**
+ * Topic Utility Functions
+ */
+const generateMnemonics = (topics) => {
+    topicMnemonics.clear();
+    const used = new Set();
+    
+    // Sort topics for consistency
+    const sorted = [...topics].sort();
+    
+    sorted.forEach(topic => {
+        const words = topic.toLowerCase().split(' ');
+        let mnemonic = "";
+
+        // 1. Try first letter of each word (if > 1 word)
+        if (words.length > 1) {
+            mnemonic = words.map(w => w[0]).join('').slice(0, 3);
+        }
+
+        // 2. If single word or collision, try first 2 letters
+        if (!mnemonic || used.has(mnemonic)) {
+            mnemonic = topic.slice(0, 2).toLowerCase();
+        }
+
+        // 3. Fallback: try different letters from the topic
+        let len = 2;
+        while (used.has(mnemonic) && len < topic.length) {
+            mnemonic = (topic[0] + topic[++len - 1]).toLowerCase();
+        }
+        
+        // 4. Final: if still duplicate, just append a character (unlikely for 2 letters)
+        if (used.has(mnemonic)) {
+            mnemonic = topic.slice(0, 2).toLowerCase() + used.size;
+        }
+
+        used.add(mnemonic);
+        topicMnemonics.set(topic, mnemonic);
+    });
+};
+
+const getTopicColor = (topicName, isEnabled = true) => {
+    // Determine index based on alphabetical order of allTopics
+    const index = allTopics.sort().indexOf(topicName);
+    if (index === -1) return isEnabled ? 'var(--clr-primary)' : '#cbd5e1';
+
+    // Distribute 20 colors around the wheel (360 / 20 = 18 degrees per step)
+    const hue = (index * 18) % 360;
+    const saturation = isEnabled ? 70 : 15;
+    const lightness = isEnabled ? 45 : 85;
+    const alpha = isEnabled ? 1 : 0.6;
+
+    return `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
+};
+
+const getTopicInitials = (topicName) => {
+    return topicMnemonics.get(topicName) || topicName.slice(0, 2).toLowerCase();
+};
+
 const aiRouteOnLoad = async () => {
     const embed = document.getElementById('timeline-embed');
     const urlParams = new URLSearchParams(window.location.search);
@@ -48,9 +111,16 @@ const aiRouteOnLoad = async () => {
             }
 
             const queryUrl = new URL(`${CONFIG.API_BASE_URL}/timeline`);
-            const urlParams = new URLSearchParams(window.location.search);
+            const urlParams = new URL(window.location.href).searchParams;
             if (urlParams.has('q')) {
                 queryUrl.searchParams.append('q', urlParams.get('q'));
+            }
+            if (urlParams.has('topics')) {
+                queryUrl.searchParams.append('topics', urlParams.get('topics'));
+                // Update selectedTopics set from URL
+                selectedTopics = new Set(urlParams.get('topics').split(',').filter(Boolean));
+            } else {
+                selectedTopics = new Set();
             }
 
             console.log(`Attempt ${attempt}: Fetching timeline data from ${queryUrl}...`);
@@ -67,6 +137,34 @@ const aiRouteOnLoad = async () => {
 
             const data = await response.json();
 
+            // Store topics globally for color consistency
+            if (data.topics) {
+                allTopics = data.topics;
+                generateMnemonics(allTopics);
+            }
+
+            // Inject topic labels into event data
+            if (data.events) {
+                data.events.forEach(event => {
+                    if (event.topics && event.topics.length > 0) {
+                        const labelsHtml = `
+                            <div class="topic-labels-container">
+                                ${event.topics.map(t => `
+                                    <div class="event-topic-label" 
+                                         style="background-color: ${getTopicColor(t)}" 
+                                         title="${t}">
+                                        ${getTopicInitials(t)}
+                                    </div>
+                                `).join('')}
+                            </div>`;
+                        
+                        // TimelineJS renders text.text as HTML
+                        if (!event.text) event.text = { text: "" };
+                        event.text.text = labelsHtml + (event.text.text || "");
+                    }
+                });
+            }
+
             // Success: Initialize TimelineJS or show empty message
             setTimeout(() => {
                 if (data.events && data.events.length > 0) {
@@ -77,6 +175,32 @@ const aiRouteOnLoad = async () => {
                             hash_bookmark: true,
                             timenav_position: "bottom",
                             font: "default"
+                        });
+
+                        // RELOCATE LABELS: Move labels to be children of .tl-slide to allow true corner pinning
+                        const relocateLabels = () => {
+                            const slides = document.querySelectorAll('.tl-slide');
+                            slides.forEach(slide => {
+                                const labels = slide.querySelector('.topic-labels-container:not([data-relocated="true"])');
+                                if (labels && labels.parentElement.classList.contains('tl-text-content')) {
+                                    // Move to slide container
+                                    slide.prepend(labels);
+                                    labels.setAttribute('data-relocated', 'true');
+                                    // Make visible after relocation to avoid jitter
+                                    requestAnimationFrame(() => {
+                                        labels.style.opacity = '1';
+                                    });
+                                }
+                            });
+                        };
+
+                        // Initial relocation attempts
+                        setTimeout(relocateLabels, 100);
+                        setTimeout(relocateLabels, 1000);
+
+                        // Watch for slide changes to catch slides that are lazily rendered
+                        window.timeline.on('change', () => {
+                            setTimeout(relocateLabels, 50);
                         });
                     }
                 } else {
@@ -142,6 +266,9 @@ const aiRouteOnLoad = async () => {
  * Initialize Timeline Search UI interactions
  */
 const initTimelineSearch = () => {
+    // This will be defined inside initTimelineSearch but we need to call it from outside
+    window.refreshTopicFilters = () => {}; 
+
     const toggle = document.getElementById('search-toggle');
     const container = document.getElementById('search-container');
     const input = document.getElementById('search-input');
@@ -150,17 +277,63 @@ const initTimelineSearch = () => {
 
     if (!toggle || !container || !input || !submit || !cancel) return;
 
-    // Prevent double initialization
-    if (toggle.dataset.initialized) return;
+    // Prevent double initialization but allow refreshing filters
+    if (toggle.dataset.initialized) {
+        if (window.refreshTopicFilters) window.refreshTopicFilters();
+        return;
+    }
     toggle.dataset.initialized = "true";
 
     // Set initial value from URL
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URL(window.location.href).searchParams;
     if (urlParams.has('q')) {
         input.value = urlParams.get('q');
         container.classList.add('show');
-        submit.disabled = !input.value.trim();
     }
+    
+    // Initial sync of selectedTopics from URL params
+    if (urlParams.has('topics')) {
+        selectedTopics = new Set(urlParams.get('topics').split(',').filter(Boolean));
+    }
+    
+    submit.disabled = !input.value.trim() && selectedTopics.size === 0;
+
+    const renderTopicFilters = () => {
+        const filterContainer = document.getElementById('topic-filter-container');
+        if (!filterContainer) return;
+
+        filterContainer.innerHTML = '';
+        if (allTopics.length === 0) {
+            filterContainer.style.display = 'none';
+            return;
+        }
+        filterContainer.style.display = 'flex';
+
+        allTopics.sort().forEach(topic => {
+            const isSelected = selectedTopics.has(topic);
+            const pill = document.createElement('div');
+            pill.className = `topic-pill ${isSelected ? 'selected' : ''}`;
+            pill.textContent = topic;
+            pill.style.backgroundColor = getTopicColor(topic, isSelected);
+            pill.style.color = isSelected ? 'white' : 'var(--clr-text-muted)';
+            pill.style.borderColor = isSelected ? 'transparent' : getTopicColor(topic, false);
+
+            pill.addEventListener('click', () => {
+                if (selectedTopics.has(topic)) {
+                    selectedTopics.delete(topic);
+                } else {
+                    selectedTopics.add(topic);
+                }
+                renderTopicFilters();
+                submit.disabled = !input.value.trim() && selectedTopics.size === 0;
+            });
+
+            filterContainer.appendChild(pill);
+        });
+    };
+
+    window.refreshTopicFilters = renderTopicFilters;
+    renderTopicFilters();
 
     const toggleSearch = () => {
         const isShowing = container.classList.toggle('show');
@@ -169,24 +342,33 @@ const initTimelineSearch = () => {
 
     const performSearch = () => {
         const query = input.value.trim();
+        const url = new URL(window.location.href);
+        
         if (query) {
-            const url = new URL(window.location.href);
             url.searchParams.set('q', query);
-            window.history.pushState({}, '', url);
-            // Re-trigger load
-            aiRouteOnLoad();
+        } else {
+            url.searchParams.delete('q');
         }
+
+        if (selectedTopics.size > 0) {
+            url.searchParams.set('topics', Array.from(selectedTopics).join(','));
+        } else {
+            url.searchParams.delete('topics');
+        }
+
+        window.history.pushState({}, '', url);
+        aiRouteOnLoad();
     };
 
     const clearSearch = () => {
         input.value = '';
+        selectedTopics.clear();
         container.classList.remove('show');
         const url = new URL(window.location.href);
-        if (url.searchParams.has('q')) {
-            url.searchParams.delete('q');
-            window.history.pushState({}, '', url);
-            aiRouteOnLoad();
-        }
+        url.searchParams.delete('q');
+        url.searchParams.delete('topics');
+        window.history.pushState({}, '', url);
+        aiRouteOnLoad();
     };
 
     toggle.addEventListener('click', toggleSearch);
@@ -194,7 +376,7 @@ const initTimelineSearch = () => {
     submit.addEventListener('click', performSearch);
 
     input.addEventListener('input', () => {
-        submit.disabled = !input.value.trim();
+        submit.disabled = !input.value.trim() && selectedTopics.size === 0;
     });
 
     input.addEventListener('keydown', (e) => {
