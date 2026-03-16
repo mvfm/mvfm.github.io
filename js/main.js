@@ -23,6 +23,7 @@ const CONFIG = (() => {
 let allTopics = [];
 let selectedTopics = new Set();
 let topicMnemonics = new Map();
+let cartClickHandlerAdded = false;
 
 /**
  * Topic Utility Functions
@@ -179,23 +180,41 @@ const aiRouteOnLoad = async () => {
                 generateMnemonics(allTopics);
             }
 
-            // Inject topic labels into event data
+            // Inject topic labels and purchase link cart icon into event data
             if (data.events) {
                 data.events.forEach(event => {
+                    if (!event.text) event.text = { text: "" };
+
+                    if (event.purchase_links && event.purchase_links.length > 0) {
+                        const linksHtml = event.purchase_links.map(l =>
+                            `<a class="purchase-link" href="${l.url}" target="_new">${l.label}</a>`
+                        ).join('');
+                        const cartHtml = `
+                            <div class="purchase-links-container">
+                                <button class="cart-btn" aria-label="Purchase links" title="Purchase links">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                         fill="none" stroke="currentColor" stroke-width="2"
+                                         stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                                    </svg>
+                                </button>
+                                <div class="purchase-dropdown">${linksHtml}</div>
+                            </div>`;
+                        event.text.text = cartHtml + (event.text.text || "");
+                    }
+
                     if (event.topics && event.topics.length > 0) {
                         const labelsHtml = `
                             <div class="topic-labels-container">
                                 ${event.topics.map(t => `
-                                    <div class="event-topic-label" 
-                                         style="background-color: ${getTopicColor(t)}" 
+                                    <div class="event-topic-label"
+                                         style="background-color: ${getTopicColor(t)}"
                                          title="${t}">
                                         ${getTopicInitials(t)}
                                     </div>
                                 `).join('')}
                             </div>`;
-                        
-                        // TimelineJS renders text.text as HTML
-                        if (!event.text) event.text = { text: "" };
                         event.text.text = labelsHtml + (event.text.text || "");
                     }
                 });
@@ -213,22 +232,41 @@ const aiRouteOnLoad = async () => {
                             font: "default"
                         });
 
-                        // RELOCATE LABELS: Move labels to be children of .tl-slide to allow true corner pinning
+                        // RELOCATE LABELS: Move labels/cart to be children of .tl-slide to allow true corner pinning
+                        const relocateContainer = (slide, selector) => {
+                            const el = slide.querySelector(`${selector}:not([data-relocated="true"])`);
+                            if (el && el.parentElement.classList.contains('tl-text-content')) {
+                                slide.prepend(el);
+                                el.setAttribute('data-relocated', 'true');
+                                requestAnimationFrame(() => { el.style.opacity = '1'; });
+                            }
+                        };
+
                         const relocateLabels = () => {
-                            const slides = document.querySelectorAll('.tl-slide');
-                            slides.forEach(slide => {
-                                const labels = slide.querySelector('.topic-labels-container:not([data-relocated="true"])');
-                                if (labels && labels.parentElement.classList.contains('tl-text-content')) {
-                                    // Move to slide container
-                                    slide.prepend(labels);
-                                    labels.setAttribute('data-relocated', 'true');
-                                    // Make visible after relocation to avoid jitter
-                                    requestAnimationFrame(() => {
-                                        labels.style.opacity = '1';
-                                    });
-                                }
+                            document.querySelectorAll('.tl-slide').forEach(slide => {
+                                relocateContainer(slide, '.topic-labels-container');
+                                relocateContainer(slide, '.purchase-links-container');
                             });
                         };
+
+                        // Cart icon click handler (event delegation — added only once)
+                        if (!cartClickHandlerAdded) {
+                        cartClickHandlerAdded = true;
+                        document.getElementById('timeline-embed').addEventListener('click', (e) => {
+                            const btn = e.target.closest('.cart-btn');
+                            if (!btn) {
+                                document.querySelectorAll('.purchase-dropdown.open')
+                                    .forEach(d => d.classList.remove('open'));
+                                return;
+                            }
+                            e.stopPropagation();
+                            const dropdown = btn.nextElementSibling;
+                            const isOpen = dropdown.classList.contains('open');
+                            document.querySelectorAll('.purchase-dropdown.open')
+                                .forEach(d => d.classList.remove('open'));
+                            if (!isOpen) dropdown.classList.add('open');
+                        });
+                        } // end cartClickHandlerAdded guard
 
                         // Initial relocation attempts
                         setTimeout(relocateLabels, 100);
