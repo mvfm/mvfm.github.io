@@ -1,6 +1,7 @@
 import { GameOfLife } from './gol.js';
 import { Router } from './router.js';
 import { initUI } from './ui.js';
+import { track } from './analytics.js';
 
 /**
  * App Configuration & Initialization
@@ -84,6 +85,10 @@ const getTopicInitials = (topicName) => {
 };
 
 const aiRouteOnLoad = async () => {
+    // The router replaces the entire panel innerHTML on each navigation, so the
+    // old #timeline-embed (and its listeners) is gone. Reset the guard so that
+    // handlers are re-attached to the freshly-created element.
+    cartClickHandlerAdded = false;
     const embed = document.getElementById('timeline-embed');
     const urlParams = new URLSearchParams(window.location.search);
     
@@ -174,6 +179,9 @@ const aiRouteOnLoad = async () => {
 
             const data = await response.json();
 
+            // Track timeline search analytics
+            if (query) track('timeline_search', { query, result_count: data.events?.length || 0 });
+
             // Store topics globally for color consistency
             if (data.topics) {
                 allTopics = data.topics;
@@ -191,7 +199,7 @@ const aiRouteOnLoad = async () => {
                         ).join('');
                         const cartHtml = `
                             <div class="purchase-links-container">
-                                <button class="cart-btn" aria-label="Purchase links" title="Purchase links">
+                                <button class="cart-btn" aria-label="Purchase links" title="Purchase links" data-event-id="${event.unique_id}" data-event-title="${event.text?.headline || ''}">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                                          fill="none" stroke="currentColor" stroke-width="2"
                                          stroke-linecap="round" stroke-linejoin="round">
@@ -260,11 +268,41 @@ const aiRouteOnLoad = async () => {
                                 return;
                             }
                             e.stopPropagation();
+
+                            // Track timeline_purchase_click
+                            const eventId = btn.getAttribute('data-event-id');
+                            const eventTitle = btn.getAttribute('data-event-title');
+                            track('timeline_purchase_click', { event_id: eventId, event_title: eventTitle });
+
                             const dropdown = btn.nextElementSibling;
                             const isOpen = dropdown.classList.contains('open');
                             document.querySelectorAll('.purchase-dropdown.open')
                                 .forEach(d => d.classList.remove('open'));
                             if (!isOpen) dropdown.classList.add('open');
+                        });
+
+                        // Purchase link click handler
+                        document.getElementById('timeline-embed').addEventListener('click', (e) => {
+                            const link = e.target.closest('.purchase-link');
+                            if (!link) return;
+
+                            // Find the cart button to get event_id and event_title
+                            const cartBtn = link.closest('.purchase-dropdown').previousElementSibling;
+                            const eventId = cartBtn.getAttribute('data-event-id');
+                            const eventTitle = cartBtn.getAttribute('data-event-title');
+                            const optionTitle = link.textContent;
+                            const optionUrl = link.href; // DOM property resolves relative URLs to absolute
+
+                            // Track timeline_purchase_option_click
+                            track('timeline_purchase_option_click', {
+                                event_id: eventId,
+                                event_title: eventTitle,
+                                option_title: optionTitle,
+                                option_url: optionUrl
+                            });
+
+                            // Close open dropdowns
+                            document.querySelectorAll('.purchase-dropdown.open').forEach(d => d.classList.remove('open'));
                         });
                         } // end cartClickHandlerAdded guard
 
@@ -275,9 +313,23 @@ const aiRouteOnLoad = async () => {
                         // Flag to prevent initial "change" events from overwriting the restored hash
                         let isTimelineInitialized = false;
 
+                        // Dwell timer for timeline event view tracking
+                        let dwellTimer = null;
+
                         window.timeline.on('change', (e) => {
                             setTimeout(relocateLabels, 50);
-                            
+
+                            // Cancel any existing dwell timer
+                            clearTimeout(dwellTimer);
+
+                            // Start a new 500ms dwell timer
+                            dwellTimer = setTimeout(() => {
+                                const slide = window.timeline.getCurrentSlide?.();
+                                const eventId = String(e.unique_id || slide?.data?.unique_id || '');
+                                const eventTitle = slide?.data?.text?.headline || '';
+                                if (eventId) track('timeline_event_view', { event_id: eventId, event_title: eventTitle });
+                            }, 500);
+
                             if (isTimelineInitialized) {
                                 // Persist current unique_id as hash position
                                 // We use the event's unique_id if available, otherwise fallback to hash
@@ -415,6 +467,7 @@ const initTimelineSearch = () => {
                 } else {
                     selectedTopics.add(topic);
                 }
+                track('timeline_topic_filter', { topic, active_topics: Array.from(selectedTopics) });
                 renderTopicFilters();
                 submit.disabled = !input.value.trim() && selectedTopics.size === 0;
             });
@@ -482,6 +535,9 @@ const initTimelineSearch = () => {
     cancel.addEventListener('click', clearSearch);
     submit.addEventListener('click', performSearch);
 
+    // No debounce needed here: this listener only toggles submit.disabled.
+    // Search (and analytics tracking) only fires on explicit submit — button click
+    // or Enter keydown — so there is no real-time search loop to debounce.
     input.addEventListener('input', () => {
         submit.disabled = !input.value.trim() && selectedTopics.size === 0;
     });

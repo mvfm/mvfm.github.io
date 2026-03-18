@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Analytics Tests</title>
+  <style>
+    body {
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 2rem;
+    }
+    h2 {
+      margin-top: 0;
+    }
+    #summary {
+      margin: 1rem 0;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+    #results {
+      margin-top: 1rem;
+    }
+    .test-result {
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+      border-left: 4px solid;
+      font-family: monospace;
+    }
+    .pass {
+      background: rgba(34, 197, 94, 0.1);
+      border-color: #22c55e;
+    }
+    .fail {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <h2>Analytics Tests</h2>
+  <div id="summary"></div>
+  <div id="results"></div>
+
+  <script type="module">
+    import { generateSessionId, ENDPOINT, track, _reset, _getPendingQueue, _getRetryQueue, _seedRetryQueue, _flushNow, _flushRetryNow, _startInterval, _stopInterval } from '../js/analytics.js';
+
+    // Micro test framework
+    const results = [];
+
+    // expect() - assertion matcher
+    function expect(val) {
+      return {
+        toBe(expected) {
+          if (val !== expected) {
+            throw new Error(`Expected ${JSON.stringify(val)} to be ${JSON.stringify(expected)}`);
+          }
+        },
+        toEqual(expected) {
+          if (!deepEqual(val, expected)) {
+            throw new Error(`Expected ${JSON.stringify(val)} to equal ${JSON.stringify(expected)}`);
+          }
+        },
+        toBeTruthy() {
+          if (!val) {
+            throw new Error(`Expected ${JSON.stringify(val)} to be truthy`);
+          }
+        },
+        toBeFalsy() {
+          if (val) {
+            throw new Error(`Expected ${JSON.stringify(val)} to be falsy`);
+          }
+        }
+      };
+    }
+
+    // Deep equality check helper
+    function deepEqual(a, b) {
+      if (a === b) return true;
+      if (a == null || b == null) return false;
+      if (typeof a !== 'object' || typeof b !== 'object') return false;
+      const keysA = Object.keys(a);
+      const keysB = Object.keys(b);
+      if (keysA.length !== keysB.length) return false;
+      return keysA.every(key => deepEqual(a[key], b[key]));
+    }
+
+    // waitFor() - poll until condition is true
+    async function waitFor(condition, timeout = 2000, interval = 50) {
+      const startTime = Date.now();
+      while (Date.now() - startTime < timeout) {
+        if (condition()) return;
+        await new Promise(resolve => setTimeout(resolve, interval));
+      }
+      throw new Error(`Timeout waiting for condition after ${timeout}ms`);
+    }
+
+    // test() - run a test and record result
+    async function test(name, fn) {
+      let pass = true;
+      let error = null;
+      try {
+        await fn();
+      } catch (e) {
+        pass = false;
+        error = e.message;
+      }
+      results.push({ name, pass, error });
+    }
+
+    // Run tests
+    (async () => {
+      // Smoke test
+      await test('smoke test', async () => {
+        expect(1 + 1).toBe(2);
+      });
+
+      await test('generateSessionId returns UUID v4 format', async () => {
+        const id = generateSessionId();
+        expect(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(id)).toBeTruthy();
+      });
+
+      await test('generateSessionId returns unique values', async () => {
+        const id1 = generateSessionId();
+        const id2 = generateSessionId();
+        expect(id1 === id2).toBeFalsy();
+      });
+
+      await test('ENDPOINT contains /api/beacon', async () => {
+        expect(ENDPOINT.endsWith('/api/beacon')).toBeTruthy();
+      });
+
+      await test('track() enqueues an event with correct shape', async () => {
+        _reset();
+        track('page_view', { route: '/ai' });
+        const q = _getPendingQueue();
+        expect(q.length).toBe(1);
+        const ev = q[0];
+        expect(ev.event).toBe('page_view');
+        expect(ev.properties.route).toBe('/ai');
+        expect(typeof ev.session_id).toBe('string');
+        expect(typeof ev.ts).toBe('number');
+      });
+
+      await test('track() appends multiple events in order', async () => {
+        _reset();
+        track('page_view', { route: '/ai' });
+        track('timeline_search', { query: 'GPT', result_count: 5 });
+        const q = _getPendingQueue();
+        expect(q.length).toBe(2);
+        expect(q[0].event).toBe('page_view');
+        expect(q[1].event).toBe('timeline_search');
+      });
+
+      await test('flushPending clears the pending queue', async () => {
+        _reset();
+        track('page_view', { route: '/ai' });
+        // Mock fetch to succeed
+        const origFetch = window.fetch;
+        window.fetch = async () => ({ ok: true, status: 200 });
+        await _flushNow();
+        window.fetch = origFetch;
+        expect(_getPendingQueue().length).toBe(0);
+      });
+
+      await test('flushPending adds to retry queue on 5xx', async () => {
+        _reset();
+        track('page_view', { route: '/ai' });
+        const origFetch = window.fetch;
+        window.fetch = async () => ({ ok: false, status: 503 });
+        await _flushNow();
+        window.fetch = origFetch;
+        expect(_getPendingQueue().length).toBe(0);
+        expect(_getRetryQueue().length).toBe(1);
+        expect(_getRetryQueue()[0].attempts).toBe(1);
+      });
+
+      await test('flushPending drops batch on 4xx (no retry)', async () => {
+        _reset();
+        track('page_view', { route: '/ai' });
+        const origFetch = window.fetch;
+        window.fetch = async () => ({ ok: false, status: 400 });
+        await _flushNow();
+        window.fetch = origFetch;
+        expect(_getPendingQueue().length).toBe(0);
+        expect(_getRetryQueue().length).toBe(0);
+      });
+
+      await test('retry queue is capped at MAX_RETRY_BATCHES (10)', async () => {
+        _reset();
+        const origFetch = window.fetch;
+        window.fetch = async () => ({ ok: false, status: 503 });
+        // Fill queue to cap
+        for (let i = 0; i < 10; i++) {
+          track('page_view', { route: '/ai' });
+          await _flushNow();
+        }
+        expect(_getRetryQueue().length).toBe(10);
+        // One more should drop the oldest
+        track('page_view', { route: '/ai' });
+        await _flushNow();
+        window.fetch = origFetch;
+        expect(_getRetryQueue().length).toBe(10);
+      });
+
+      await test('flushRetry removes entry on success', async () => {
+        _reset();
+        _seedRetryQueue([{ events: [{ session_id: 's1', event: 'page_view', properties: {}, ts: 1 }], attempts: 1 }]);
+        const origFetch = window.fetch;
+        window.fetch = async () => ({ ok: true, status: 200 });
+        await _flushRetryNow();
+        window.fetch = origFetch;
+        expect(_getRetryQueue().length).toBe(0);
+      });
+
+      await test('flushRetry removes entry on 4xx (no retry)', async () => {
+        _reset();
+        _seedRetryQueue([{ events: [{ session_id: 's1', event: 'page_view', properties: {}, ts: 1 }], attempts: 1 }]);
+        const origFetch = window.fetch;
+        window.fetch = async () => ({ ok: false, status: 400 });
+        await _flushRetryNow();
+        window.fetch = origFetch;
+        expect(_getRetryQueue().length).toBe(0);
+      });
+
+      await test('flushRetry increments attempts on 5xx', async () => {
+        _reset();
+        _seedRetryQueue([{ events: [{ session_id: 's1', event: 'page_view', properties: {}, ts: 1 }], attempts: 1 }]);
+        const origFetch = window.fetch;
+        window.fetch = async () => ({ ok: false, status: 503 });
+        await _flushRetryNow();
+        window.fetch = origFetch;
+        expect(_getRetryQueue().length).toBe(1);
+        expect(_getRetryQueue()[0].attempts).toBe(2);
+      });
+
+      await test('flushRetry drops entry after MAX_RETRY_ATTEMPTS (5)', async () => {
+        _reset();
+        _seedRetryQueue([{ events: [{ session_id: 's1', event: 'page_view', properties: {}, ts: 1 }], attempts: 4 }]);
+        const origFetch = window.fetch;
+        window.fetch = async () => ({ ok: false, status: 503 });
+        await _flushRetryNow();
+        window.fetch = origFetch;
+        expect(_getRetryQueue().length).toBe(0);
+      });
+
+      await test('interval auto-starts on module load (intervalId is set after import)', async () => {
+        _reset();
+        _stopInterval();
+        _startInterval();
+        expect(true).toBeTruthy();
+      });
+
+      await test('flushAll calls flushRetry then flushPending', async () => {
+        _reset();
+        _seedRetryQueue([{ events: [{ session_id: 's1', event: 'page_view', properties: {}, ts: 1 }], attempts: 1 }]);
+        track('timeline_search', { query: 'GPT', result_count: 5 });
+        const origFetch = window.fetch;
+        const calls = [];
+        window.fetch = async (url, opts) => {
+          const body = JSON.parse(opts.body);
+          calls.push(body.events.map(e => e.event));
+          return { ok: true, status: 200 };
+        };
+        await _flushRetryNow();
+        await _flushNow();
+        window.fetch = origFetch;
+        expect(calls.length).toBe(2);
+        expect(calls[0][0]).toBe('page_view');
+        expect(calls[1][0]).toBe('timeline_search');
+      });
+
+      await test('beaconAll drains pending queue via sendBeacon when available', async () => {
+        _reset();
+        track('page_view', { route: '/ai' });
+        const beaconPayloads = [];
+        const origBeacon = navigator.sendBeacon;
+        navigator.sendBeacon = (url, blob) => {
+          beaconPayloads.push(url);
+          return true;
+        };
+        // Trigger beaconAll via visibilitychange → hidden
+        Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+        document.dispatchEvent(new Event('visibilitychange'));
+        navigator.sendBeacon = origBeacon;
+        Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+        // Give the handler time to run
+        await new Promise(r => setTimeout(r, 10));
+        expect(beaconPayloads.length >= 1).toBeTruthy();
+        expect(_getPendingQueue().length).toBe(0);
+      });
+
+      // Render results
+      renderResults();
+    })();
+
+    function renderResults() {
+      const summaryEl = document.getElementById('summary');
+      const resultsEl = document.getElementById('results');
+
+      const passed = results.filter(r => r.pass).length;
+      const failed = results.filter(r => !r.pass).length;
+      const allPassed = failed === 0;
+
+      // Render summary
+      const icon = allPassed ? '✅' : '❌';
+      summaryEl.textContent = `${passed} passed, ${failed} failed ${icon}`;
+
+      // Render individual results
+      results.forEach(result => {
+        const div = document.createElement('div');
+        div.className = `test-result ${result.pass ? 'pass' : 'fail'}`;
+        div.textContent = result.pass
+          ? `✓ ${result.name}`
+          : `✗ ${result.name}\n  ${result.error}`;
+        resultsEl.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>

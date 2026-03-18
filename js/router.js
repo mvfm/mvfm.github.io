@@ -1,3 +1,7 @@
+import { track } from './analytics.js';
+
+let _analyticsReady = false;
+
 export class Router {
     constructor(routes) {
         this.routes = routes;
@@ -60,6 +64,10 @@ export class Router {
         this.updateMetaDescription(def.title);
         this.updateMenu(route);
         localStorage.setItem('lastRoute', route);
+        if (_analyticsReady) {
+            track('page_view', { route: route === 'home' ? '/' : `/${route}` });
+        }
+        _analyticsReady = true;
 
         if (updateHistory) {
             const newPath = route === 'home' ? '/' : `/${route}`;
