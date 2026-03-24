@@ -288,12 +288,13 @@ async function loadGeo() {
     const outerColors = d.countries.map((_, i) => GEO_COLORS[i % GEO_COLORS.length]);
     const outerLabels = d.countries.map(c => `${c.name} (${c.code})`);
 
-    const innerData = [], innerColors = [], innerLabels = [];
+    const innerData = [], innerColors = [], innerLabels = [], innerCountryLabels = [];
     d.countries.forEach((c, i) => {
       c.cities.forEach(city => {
         innerData.push(city.sessions);
         innerColors.push(GEO_COLORS_LIGHT[i % GEO_COLORS_LIGHT.length]);
         innerLabels.push(`${city.name} (${c.code})`);
+        innerCountryLabels.push(`${c.name} (${c.code})`);
       });
     });
 
@@ -304,7 +305,6 @@ async function loadGeo() {
           { data: outerData, backgroundColor: outerColors, label: 'Countries' },
           { data: innerData, backgroundColor: innerColors, label: 'Cities' },
         ],
-        labels: outerLabels,
       },
       options: {
         cutout: '40%',
@@ -312,6 +312,12 @@ async function loadGeo() {
           legend: { display: false },
           tooltip: {
             callbacks: {
+              title: items => {
+                const item = items[0];
+                return item.datasetIndex === 0
+                  ? outerLabels[item.dataIndex]
+                  : innerCountryLabels[item.dataIndex];
+              },
               label: ctx => {
                 const lbl = ctx.datasetIndex === 0 ? outerLabels[ctx.dataIndex] : innerLabels[ctx.dataIndex];
                 return ` ${lbl}: ${ctx.parsed}`;
@@ -588,14 +594,39 @@ const MODAL_DEFS = {
     buildChart: (raw) => {
       const outerData   = raw.countries.map(c => c.sessions);
       const outerColors = raw.countries.map((_, i) => GEO_COLORS[i % GEO_COLORS.length]);
-      const innerData = [], innerColors = [];
+      const outerLabels = raw.countries.map(c => `${c.name} (${c.code})`);
+      const innerData = [], innerColors = [], innerLabels = [], innerCountryLabels = [];
       raw.countries.forEach((c, i) => {
-        c.cities.forEach(city => { innerData.push(city.sessions); innerColors.push(GEO_COLORS_LIGHT[i % GEO_COLORS_LIGHT.length]); });
+        c.cities.forEach(city => {
+          innerData.push(city.sessions);
+          innerColors.push(GEO_COLORS_LIGHT[i % GEO_COLORS_LIGHT.length]);
+          innerLabels.push(`${city.name} (${c.code})`);
+          innerCountryLabels.push(`${c.name} (${c.code})`);
+        });
       });
       return {
         type: 'doughnut',
         data: { datasets: [{ data: outerData, backgroundColor: outerColors }, { data: innerData, backgroundColor: innerColors }] },
-        options: { cutout: '40%', plugins: { legend: { display: false } } },
+        options: {
+          cutout: '40%',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: items => {
+                  const item = items[0];
+                  return item.datasetIndex === 0
+                    ? outerLabels[item.dataIndex]
+                    : innerCountryLabels[item.dataIndex];
+                },
+                label: ctx => {
+                  const lbl = ctx.datasetIndex === 0 ? outerLabels[ctx.dataIndex] : innerLabels[ctx.dataIndex];
+                  return ` ${lbl}: ${ctx.parsed}`;
+                },
+              },
+            },
+          },
+        },
       };
     },
     buildTable: (raw) => {
