@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --bg-card:   #1e2333;
+      --bg-header: #161b27;
+      --border:    rgba(255,255,255,0.07);
+      --accent:    #6366f1;
+      --text:      #e2e8f0;
+      --muted:     #94a3b8;
+      --faint:     #475569;
+      --green:     #22c55e;
+      --red:       #ef4444;
+      --amber:     #f59e0b;
+      --teal:      #10b981;
+      --purple:    #a855f7;
+      --pink:      #ec4899;
+    }
+
+    body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; }
+
+    /* ── Header ── */
+    #dash-header {
+      position: sticky; top: 0; z-index: 10;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.75rem 1.5rem;
+      background: var(--bg-header);
+      border-bottom: 1px solid var(--border);
+    }
+    #dash-header h1 { font-size: 1rem; font-weight: 700; }
+    .header-controls { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .range-btn {
+      background: transparent; border: 1px solid var(--border);
+      color: var(--muted); padding: 3px 10px; border-radius: 5px;
+      font-size: 0.7rem; cursor: pointer; transition: all 0.15s;
+    }
+    .range-btn:hover, .range-btn.active {
+      background: var(--accent); border-color: var(--accent); color: #fff;
+    }
+    #custom-range { display: none; gap: 0.4rem; align-items: center; }
+    #custom-range input[type="date"] {
+      background: var(--bg-card); border: 1px solid var(--border);
+      color: var(--muted); padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;
+    }
+    #refresh-btn {
+      background: transparent; border: 1px solid var(--border);
+      color: var(--muted); width: 28px; height: 28px; border-radius: 5px;
+      font-size: 0.9rem; cursor: pointer; transition: all 0.15s;
+    }
+    #refresh-btn:hover { color: var(--text); border-color: var(--muted); }
+    #last-updated { font-size: 0.65rem; color: var(--faint); }
+
+    /* ── Layout ── */
+    #dash-body { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
+
+    /* ── Sections ── */
+    .dash-section {
+      border-radius: 10px; padding: 1rem;
+      border: 1px solid var(--border);
+    }
+    .section-title {
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; margin-bottom: 0.75rem;
+    }
+
+    /* ── KPI cards ── */
+    .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin-bottom: 0.75rem; }
+    .kpi-card { background: var(--bg-card); border-radius: 6px; padding: 0.65rem 0.8rem; }
+    .kpi-label { font-size: 0.6rem; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+    .kpi-value { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
+    .kpi-delta { font-size: 0.65rem; margin-top: 2px; }
+    .delta-up   { color: var(--green); }
+    .delta-down { color: var(--red); }
+    .delta-flat { color: var(--muted); }
+
+    /* ── Chart cards ── */
+    .chart-grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 0.6rem; }
+    .chart-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
+    .chart-grid-2-eq { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .chart-card {
+      background: var(--bg-card); border-radius: 6px; padding: 0.75rem 0.9rem;
+      position: relative; cursor: pointer;
+      border: 1px solid transparent; transition: border-color 0.15s, transform 0.12s;
+    }
+    .chart-card:hover { border-color: rgba(99,102,241,0.4); transform: translateY(-1px); }
+    .chart-card-title { font-size: 0.7rem; color: var(--muted); margin-bottom: 0.5rem; }
+    .expand-icon {
+      position: absolute; top: 8px; right: 10px;
+      font-size: 0.7rem; color: var(--faint); opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .chart-card:hover .expand-icon { opacity: 1; color: var(--accent); }
+
+    /* ── Heatmap ── */
+    .heatmap-grid { display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px; }
+    .heatmap-cell {
+      height: 22px; border-radius: 3px;
+      background: rgba(236,72,153,0.08);
+      cursor: default; transition: opacity 0.1s;
+      position: relative;
+    }
+    .heatmap-cell:hover::after {
+      content: attr(data-label);
+      position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%);
+      background: #1e2333; border: 1px solid var(--border);
+      color: var(--text); font-size: 0.6rem; padding: 2px 6px;
+      border-radius: 4px; white-space: nowrap; z-index: 5;
+      pointer-events: none;
+    }
+
+    /* ── Ranked list ── */
+    .ranked-list { display: flex; flex-direction: column; gap: 4px; }
+    .ranked-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; }
+    .ranked-row .label { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%; }
+    .zero-results-list .ranked-row .value { color: var(--red); }
+    .section-sublabel { font-size: 0.6rem; color: var(--red); margin: 0.5rem 0 0.25rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* ── Funnel bar ── */
+    .funnel-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .funnel-bar-label { font-size: 0.65rem; color: var(--muted); width: 90px; flex-shrink: 0; }
+    .funnel-bar-track { flex: 1; background: #1a2035; border-radius: 3px; height: 18px; }
+    .funnel-bar-fill { height: 100%; border-radius: 3px; display: flex; align-items: center; padding: 0 6px; font-size: 0.6rem; color: #fff; white-space: nowrap; transition: width 0.4s; }
+
+    /* ── Tables ── */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
+    .data-table th { text-align: left; color: var(--faint); text-transform: uppercase; font-size: 0.6rem; letter-spacing: 0.04em; padding: 5px 8px; border-bottom: 1px solid var(--border); }
+    .data-table td { padding: 6px 8px; color: var(--muted); border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .data-table tr:hover td { background: rgba(255,255,255,0.025); }
+    .data-table td:first-child { color: var(--text); font-family: monospace; font-size: 0.68rem; }
+    .bounce-row td { color: var(--red) !important; }
+
+    /* ── Skeleton loading ── */
+    .skeleton { background: linear-gradient(90deg,#1e2333 25%,#252d42 50%,#1e2333 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 6px; }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    .skeleton-block { height: 100px; }
+
+    /* ── Error ── */
+    .section-error { color: var(--red); font-size: 0.75rem; padding: 0.5rem 0; }
+
+    /* ── Load more ── */
+    #load-more-btn {
+      background: transparent; border: 1px solid var(--border);
+      color: var(--muted); padding: 5px 16px; border-radius: 5px;
+      font-size: 0.7rem; cursor: pointer; margin-top: 0.75rem;
+      transition: all 0.15s; display: block; width: 100%;
+    }
+    #load-more-btn:hover { border-color: var(--muted); color: var(--text); }
+
+    /* ── Modal ── */
+    #chart-modal {
+      display: none; position: fixed; inset: 0; z-index: 100;
+      background: rgba(10,12,20,0.75);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      align-items: center; justify-content: center; padding: 2rem;
+    }
+    #chart-modal.open { display: flex; }
+    .modal-panel {
+      background: rgba(22,27,39,0.95);
+      border: 1px solid rgba(99,102,241,0.25);
+      border-radius: 16px; padding: 1.5rem;
+      width: 100%; max-width: 860px; max-height: 88vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+      position: relative;
+    }
+    #modal-close {
+      position: absolute; top: 1rem; right: 1rem;
+      background: rgba(255,255,255,0.07); border: none;
+      color: var(--muted); width: 30px; height: 30px;
+      border-radius: 6px; font-size: 1rem; cursor: pointer;
+      transition: background 0.15s;
+    }
+    #modal-close:hover { background: rgba(255,255,255,0.14); color: var(--text); }
+    #modal-title { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+    #modal-subtitle { font-size: 0.72rem; color: var(--faint); margin-bottom: 1.25rem; }
+    #modal-chart-wrap { background: var(--bg-header); border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem; }
+    #modal-table-label { font-size: 0.6rem; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────────────────────────────────────── -->
+<header id="dash-header">
+  <h1>📊 Analytics Dashboard</h1>
+  <div class="header-controls">
+    <button class="range-btn active" data-range="7d">7d</button>
+    <button class="range-btn" data-range="30d">30d</button>
+    <button class="range-btn" data-range="all">All</button>
+    <button class="range-btn" data-range="custom">Custom ▾</button>
+    <div id="custom-range">
+      <input type="date" id="from-date">
+      <span style="color:var(--faint);font-size:0.7rem">→</span>
+      <input type="date" id="to-date">
+      <button class="range-btn" id="apply-custom">Apply</button>
+    </div>
+    <button id="refresh-btn" title="Refresh all">↻</button>
+    <span id="last-updated"></span>
+  </div>
+</header>
+
+<!-- ── Dashboard body ─────────────────────────────────────────────────────── -->
+<main id="dash-body">
+
+  <!-- ① Traffic Overview -->
+  <section class="dash-section" id="s-traffic">
+    <div class="section-title" style="color:var(--accent)">① Traffic Overview</div>
+    <div class="kpi-row" id="traffic-kpis"></div>
+    <div class="chart-grid-2">
+      <div class="chart-card" id="card-views-over-time" onclick="openModal('viewsOverTime')">
+        <span class="expand-icon">⤢</span>
+        <div class="chart-card-title">Page views over time</div>
+        <canvas id="chart-views-over-time" height="100"></canvas>
+      </div>
+      <div class="chart-card" id="card-views-by-route" onclick="openModal('viewsByRoute')">
+        <span class="expand-icon">⤢</span>
+        <div class="chart-card-title">Views by route</div>
+        <canvas id="chart-views-by-route" height="100"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ② Session Behavior -->
+  <section class="dash-section" id="s-behavior">
+    <div class="section-title" style="color:var(--purple)">② Session Behavior</div>
+    <div class="kpi-row" id="behavior-kpis"></div>
+    <div class="chart-grid-2-eq">
+      <div class="chart-card" id="card-duration-dist" onclick="openModal('durationDist')">
+        <span class="expand-icon">⤢</span>
+        <div class="chart-card-title">Session duration distribution</div>
+        <canvas id="chart-duration-dist" height="100"></canvas>
+      </div>
+      <div class="chart-card" id="card-events-per-session" onclick="openModal('eventsPerSession')">
+        <span class="expand-icon">⤢</span>
+        <div class="chart-card-title">Events per session</div>
+        <canvas id="chart-events-per-session" height="100"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ③ Audience & Geography -->
+  <section class="dash-section" id="s-geo">
+    <div class="section-title" style="color:var(--pink)">③ Audience &amp; Geography</div>
+    <div class="chart-grid-2-eq">
+      <div class="chart-card" id="card-geo-doughnut" onclick="openModal('geoDoughnut')">
+        <span class="expand-icon">⤢</span>
+        <div class="chart-card-title">Visitors by country / city</div>
+        <div style="max-width:220px;margin:0 auto">
+          <canvas id="chart-geo-doughnut"></canvas>
+        </div>
+      </div>
+      <div class="chart-card" id="card-heatmap" onclick="openModal('heatmap')">
+        <span class="expand-icon">⤢</span>
+        <div class="chart-card-title">Sessions by hour of day</div>
+        <div class="heatmap-grid" id="heatmap-grid"></div>
+        <div style="font-size:0.55rem;color:var(--faint);margin-top:6px;text-align:center">All times UTC</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ④ AI Timeline Engagement -->
+  <section class="dash-section" id="s-timeline">
+    <div class="section-title" style="color:var(--amber)">④ AI Timeline Engagement</div>
+    <div class="kpi-row" id="timeline-kpis"></div>
+    <div class="chart-grid-3">
+      <div class="chart-card" id="card-top-events" onclick="openModal('topEvents')">
+        <span class="expand-icon">⤢</span>
+        <div class="chart-card-title">Top 10 viewed events</div>
+        <canvas id="chart-top-events" height="120"></canvas>
+      </div>
+      <div class="chart-card" id="card-searches">
+        <div class="chart-card-title">Top searches</div>
+        <div class="ranked-list" id="top-searches-list"></div>
+        <div class="section-sublabel">Zero results</div>
+        <div class="ranked-list zero-results-list" id="zero-results-list"></div>
+      </div>
+      <div class="chart-card" id="card-topic-filters" onclick="openModal('topicFilters')">
+        <span class="expand-icon">⤢</span>
+        <div class="chart-card-title">Topic filter popularity</div>
+        <canvas id="chart-topic-filters" height="120"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑤ Conversion Funnel -->
+  <section class="dash-section" id="s-funnel">
+    <div class="section-title" style="color:var(--teal)">⑤ Conversion Funnel</div>
+    <div class="chart-grid-2-eq">
+      <div class="chart-card" id="card-funnel" onclick="openModal('funnel')">
+        <span class="expand-icon">⤢</span>
+        <div class="chart-card-title">Event views → cart clicks → option clicks</div>
+        <div id="funnel-bars"></div>
+      </div>
+      <div class="chart-card" id="card-top-purchase">
+        <div class="chart-card-title">Top purchase-clicked events</div>
+        <table class="data-table" id="purchase-table">
+          <thead><tr><th>Event</th><th>Cart</th><th>Option</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑥ Recent Sessions -->
+  <section class="dash-section" id="s-sessions">
+    <div class="section-title" style="color:var(--muted)">⑥ Recent Sessions</div>
+    <table class="data-table" id="sessions-table">
+      <thead>
+        <tr>
+          <th>IP</th><th>Country</th><th>Org</th><th>Started</th><th>Duration</th><th>Events</th>
+        </tr>
+      </thead>
+      <tbody id="sessions-tbody"></tbody>
+    </table>
+    <button id="load-more-btn">Load more (last 50)</button>
+  </section>
+
+</main>
+
+<!-- ── Chart Zoom Modal ───────────────────────────────────────────────────── -->
+<div id="chart-modal" onclick="handleModalBackdropClick(event)">
+  <div class="modal-panel">
+    <button id="modal-close" onclick="closeModal()">✕</button>
+    <div id="modal-title"></div>
+    <div id="modal-subtitle"></div>
+    <div id="modal-chart-wrap"><canvas id="modal-chart"></canvas></div>
+    <div id="modal-table-label">Raw data</div>
+    <div id="modal-table-wrap"></div>
+  </div>
+</div>
+
+<script src="js/dashboard.js"></script>
+</body>
+</html>
