@@ -465,7 +465,7 @@ async function loadFunnel() {
 // ── Section ⑥: Recent Sessions ───────────────────────────────────────────────
 async function loadRecentSessions(limit = 10) {
   const tbody = document.getElementById('sessions-tbody');
-  tbody.innerHTML = '<tr><td colspan="6" class="skeleton" style="height:60px"></td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7" class="skeleton" style="height:60px"></td></tr>';
   try {
     const d = await apiFetch('/api/analytics/sessions/recent', { limit });
 
@@ -477,6 +477,7 @@ async function loadRecentSessions(limit = 10) {
       return `<tr class="${rowClass}">
         <td>${s.ip || '—'}</td>
         <td>${flag} ${s.country_code || '—'}</td>
+        <td style="color:var(--muted);font-size:0.75rem">${s.city || '—'}</td>
         <td style="color:var(--muted);font-size:0.65rem">${s.org || '—'}</td>
         <td>${relativeTime(s.started_at)}</td>
         <td>${dur}</td>
