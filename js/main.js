@@ -182,6 +182,32 @@ const aiRouteOnLoad = async () => {
             // Track timeline search analytics
             if (query) track('timeline_search', { query, result_count: data.events?.length || 0 });
 
+            // Inject structured data (JSON-LD) for Googlebot
+            if (data.events?.length > 0) {
+                const itemList = {
+                    '@context': 'https://schema.org',
+                    '@type': 'ItemList',
+                    name: 'AI History Timeline',
+                    description: 'An interactive timeline of major events in the history of Artificial Intelligence, curated by Marcus Vinicius Freitas Margarites.',
+                    author: { '@type': 'Person', name: 'Marcus Vinicius Freitas Margarites' },
+                    itemListElement: data.events.map((event, i) => {
+                        const d = event.start_date;
+                        const startDate = d ? [d.year, d.month, d.day].filter(Boolean).join('-') : undefined;
+                        const item = { '@type': 'Event', name: event.text?.headline || '' };
+                        if (startDate) item.startDate = startDate;
+                        return { '@type': 'ListItem', position: i + 1, item };
+                    })
+                };
+                let ld = document.getElementById('ld-timeline');
+                if (!ld) {
+                    ld = document.createElement('script');
+                    ld.type = 'application/ld+json';
+                    ld.id = 'ld-timeline';
+                    document.head.appendChild(ld);
+                }
+                ld.textContent = JSON.stringify(itemList);
+            }
+
             // Store topics globally for color consistency
             if (data.topics) {
                 allTopics = data.topics;

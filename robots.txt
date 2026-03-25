@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+Disallow: /dashboard.html
+Disallow: /tests/
+
+Sitemap: https://mvfm.digital/sitemap.xml
