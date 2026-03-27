@@ -501,19 +501,39 @@ function initSessionsSection() {
   document.getElementById('load-more-btn').addEventListener('click', () => {
     loadRecentSessions(50);
   });
-
-  let intervalId = setInterval(() => loadRecentSessions(), 60000);
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      clearInterval(intervalId);
-      intervalId = null;
-    } else {
-      loadRecentSessions();
-      intervalId = setInterval(() => loadRecentSessions(), 60000);
-    }
-  });
 }
+
+// ── Auto-refresh scheduler ────────────────────────────────────────────────────
+// Group A (5 min):  traffic, behavior, recent sessions  — session-level metrics
+// Group B (15 min): geo, timeline, funnel               — slow-changing aggregates
+const REFRESH_A = 5 * 60 * 1000;
+const REFRESH_B = 15 * 60 * 1000;
+
+let _timers = [];
+
+function _clearTimers() {
+  _timers.forEach(clearInterval);
+  _timers = [];
+}
+
+function startAutoRefresh() {
+  _clearTimers();
+  _timers.push(setInterval(() => loadTraffic(),         REFRESH_A));
+  _timers.push(setInterval(() => loadBehavior(),        REFRESH_A));
+  _timers.push(setInterval(() => loadRecentSessions(),  REFRESH_A));
+  _timers.push(setInterval(() => loadGeo(),             REFRESH_B));
+  _timers.push(setInterval(() => loadTimeline(),        REFRESH_B));
+  _timers.push(setInterval(() => loadFunnel(),          REFRESH_B));
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    _clearTimers();
+  } else {
+    // refreshAll already calls startAutoRefresh internally
+    refreshAll();
+  }
+});
 
 // ── Chart zoom modal ──────────────────────────────────────────────────────────
 let _modalChart = null;
@@ -731,6 +751,8 @@ function openModal(key) {
 async function refreshAll() {
   _lastRefresh = Date.now();
   document.getElementById('last-updated').textContent = 'Updated just now';
+  // Reset intervals so they don't fire shortly after a manual refresh
+  startAutoRefresh();
   await Promise.all([
     loadTraffic(),
     loadBehavior(),
