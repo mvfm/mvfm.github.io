@@ -197,10 +197,10 @@ export class GameOfLife {
             this.preRender(this.to, this.toCtx);
 
             this.generation++;
-            this.lastStep = now;
+            this.lastStep += this.STEP_MS;
             this.updateStats(aliveNext);
         }
-        this.draw(Math.min(progress, 1));
+        this.draw((now - this.lastStep) / this.STEP_MS);
         this.raf = requestAnimationFrame((n) => this.loop(n));
     }
 
