@@ -24,7 +24,7 @@ const CONFIG = (() => {
 let allTopics = [];
 let selectedTopics = new Set();
 let topicMnemonics = new Map();
-let cartClickHandlerAdded = false;
+let cartClickHandlerElement = null;
 
 /**
  * Topic Utility Functions
@@ -88,7 +88,9 @@ const aiRouteOnLoad = async () => {
     // The router replaces the entire panel innerHTML on each navigation, so the
     // old #timeline-embed (and its listeners) is gone. Reset the guard so that
     // handlers are re-attached to the freshly-created element.
-    cartClickHandlerAdded = false;
+    // NOTE: do not reset cartClickHandlerElement here — the check below compares
+    // the actual element reference, so it naturally handles both router-navigation
+    // (new element) and search reloads (same element, skip re-registration).
     const embed = document.getElementById('timeline-embed');
     const urlParams = new URLSearchParams(window.location.search);
     
@@ -283,9 +285,9 @@ const aiRouteOnLoad = async () => {
                             });
                         };
 
-                        // Cart icon click handler (event delegation — added only once)
-                        if (!cartClickHandlerAdded) {
-                        cartClickHandlerAdded = true;
+                        // Cart icon click handler (event delegation — added once per element)
+                        if (cartClickHandlerElement !== document.getElementById('timeline-embed')) {
+                        cartClickHandlerElement = document.getElementById('timeline-embed');
                         document.getElementById('timeline-embed').addEventListener('click', (e) => {
                             const btn = e.target.closest('.cart-btn');
                             if (!btn) {
