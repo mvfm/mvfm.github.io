@@ -579,10 +579,29 @@ const initTimelineSearch = () => {
     });
 };
 
+const resumeRouteOnLoad = async () => {
+    const container = document.getElementById('resume-quip');
+    if (!container) return;
+    try {
+        const response = await fetch(`${CONFIG.API_BASE_URL}/quip`);
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!data.text) return;
+        const block = document.createElement('div');
+        block.className = 'quip-block';
+        const p = document.createElement('p');
+        p.textContent = data.text;
+        block.appendChild(p);
+        container.appendChild(block);
+    } catch {
+        // Silent failure — quip is decorative
+    }
+};
+
 const routes = {
     home: { title: 'Welcome', template: 'tpl-home' },
     contact: { title: 'Contact', template: 'tpl-contact' },
-    resume: { title: 'Resume', template: 'tpl-resume' },
+    resume: { title: 'Resume', template: 'tpl-resume', onLoad: resumeRouteOnLoad },
     ai: { title: 'AI', template: 'tpl-ai', onLoad: aiRouteOnLoad }
 };
 
