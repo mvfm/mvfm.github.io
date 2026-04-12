@@ -183,6 +183,42 @@
     #modal-subtitle { font-size: 0.72rem; color: var(--faint); margin-bottom: 1.25rem; }
     #modal-chart-wrap { background: var(--bg-header); border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem; }
     #modal-table-label { font-size: 0.6rem; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+
+    /* ── Session row ── */
+    .session-row { cursor: pointer; }
+
+    /* ── Session detail modal ── */
+    #session-modal {
+      display: none; position: fixed; inset: 0; z-index: 100;
+      background: rgba(10,12,20,0.75);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      align-items: center; justify-content: center; padding: 2rem;
+    }
+    #session-modal.open { display: flex; }
+
+    .session-meta {
+      font-size: 0.7rem; color: var(--muted);
+      margin-bottom: 0.75rem; line-height: 1.8;
+    }
+    .session-bounce-badge {
+      color: var(--red); font-size: 0.6rem; font-weight: 700;
+      border: 1px solid var(--red); border-radius: 3px;
+      padding: 1px 5px; margin-left: 6px; vertical-align: middle;
+    }
+    .session-summary-row {
+      display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;
+    }
+    .session-summary-row .kpi-card { flex: 1; min-width: 80px; }
+    .session-summary-row .kpi-value { font-size: 1.1rem; }
+
+    .modal-close-btn {
+      position: absolute; top: 1rem; right: 1rem;
+      background: rgba(255,255,255,0.07); border: none;
+      color: var(--muted); width: 30px; height: 30px;
+      border-radius: 6px; font-size: 1rem; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .modal-close-btn:hover { background: rgba(255,255,255,0.14); color: var(--text); }
   </style>
 </head>
 <body>
@@ -327,12 +363,24 @@
 <!-- ── Chart Zoom Modal ───────────────────────────────────────────────────── -->
 <div id="chart-modal" onclick="handleModalBackdropClick(event)">
   <div class="modal-panel">
-    <button id="modal-close" onclick="closeModal()">✕</button>
+    <button id="modal-close" class="modal-close-btn" onclick="closeModal()">✕</button>
     <div id="modal-title"></div>
     <div id="modal-subtitle"></div>
     <div id="modal-chart-wrap"><canvas id="modal-chart"></canvas></div>
     <div id="modal-table-label">Raw data</div>
     <div id="modal-table-wrap"></div>
+  </div>
+</div>
+
+<!-- ── Session Detail Modal ─────────────────────────────────────────────── -->
+<div id="session-modal" onclick="handleSessionModalBackdropClick(event)">
+  <div class="modal-panel">
+    <button id="session-modal-close" class="modal-close-btn" onclick="closeSessionModal()">✕</button>
+    <div id="session-modal-title" style="font-size:0.8rem;font-weight:700;font-family:monospace;margin-bottom:0.5rem"></div>
+    <div id="session-modal-meta" class="session-meta"></div>
+    <div id="session-modal-summary" class="session-summary-row"></div>
+    <div style="font-size:0.6rem;color:var(--faint);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.4rem">Event log</div>
+    <div id="session-modal-events"></div>
   </div>
 </div>
 

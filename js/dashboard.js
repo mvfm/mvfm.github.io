@@ -47,7 +47,7 @@ function showSkeleton(el) {
 }
 
 function showError(el, msg = 'Failed to load — check your token or try refreshing.') {
-  el.innerHTML = `<p class="section-error">⚠ ${msg}</p>`;
+  el.innerHTML = `<p class="section-error">⚠ ${escHtml(msg)}</p>`;
 }
 
 // ── KPI card builder ──────────────────────────────────────────────────────────
@@ -474,7 +474,7 @@ async function loadRecentSessions(limit = 10) {
       const rowClass = isBounce ? 'bounce-row' : '';
       const dur = fmtDuration(s.duration_s) + (isBounce ? ' <span style="color:var(--red);font-size:0.6rem">(bounce)</span>' : '');
       const flag = s.country_code ? countryFlag(s.country_code) : '';
-      return `<tr class="${rowClass}">
+      return `<tr class="${rowClass} session-row" data-session-id="${escHtml(s.session_id)}">
         <td>${s.ip || '—'}</td>
         <td>${flag} ${s.country_code || '—'}</td>
         <td style="color:var(--muted);font-size:0.75rem">${s.city || '—'}</td>
@@ -500,6 +500,11 @@ function countryFlag(code) {
 function initSessionsSection() {
   document.getElementById('load-more-btn').addEventListener('click', () => {
     loadRecentSessions(50);
+  });
+
+  document.getElementById('sessions-tbody').addEventListener('click', e => {
+    const row = e.target.closest('.session-row');
+    if (row) openSessionModal(row.dataset.sessionId);
   });
 }
 
@@ -547,7 +552,104 @@ function handleModalBackdropClick(e) {
   if (e.target === document.getElementById('chart-modal')) closeModal();
 }
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+function closeSessionModal() {
+  document.getElementById('session-modal').classList.remove('open');
+}
+
+function handleSessionModalBackdropClick(e) {
+  if (e.target === document.getElementById('session-modal')) closeSessionModal();
+}
+
+function escHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function fmtEventData(data) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return '—';
+  return Object.entries(data)
+    .filter(([k]) => k !== 'event_id')
+    .map(([k, v]) => `${escHtml(k)}: ${escHtml(v)}`)
+    .join(' · ') || '—';
+}
+
+async function openSessionModal(sessionId) {
+  const modal   = document.getElementById('session-modal');
+  const title   = document.getElementById('session-modal-title');
+  const meta    = document.getElementById('session-modal-meta');
+  const summary = document.getElementById('session-modal-summary');
+  const events  = document.getElementById('session-modal-events');
+
+  // Reset + open immediately
+  title.textContent   = sessionId;
+  meta.innerHTML      = '';
+  summary.innerHTML   = '';
+  events.innerHTML    = '<div class="skeleton skeleton-block"></div>';
+  modal.classList.add('open');
+
+  try {
+    const url = `${API_BASE}/api/analytics/sessions/${sessionId}`;
+    const res = await fetch(url, { headers: { 'Authorization': `Bearer ${TOKEN}` } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const d = await res.json();
+
+    // ── Metadata strip ────────────────────────────────────────────────────────
+    const flag       = d.country_code ? countryFlag(d.country_code) : '';
+    const geoLabel   = [d.country_name, d.city].filter(Boolean).map(escHtml).join(' / ');
+    const bounceBadge = d.is_bounce
+      ? '<span class="session-bounce-badge">BOUNCE</span>'
+      : '';
+    meta.innerHTML = `
+      ${escHtml(d.ip) || '—'} &nbsp;·&nbsp;
+      ${flag} ${geoLabel || '—'} &nbsp;·&nbsp;
+      ${escHtml(d.org) || '—'} &nbsp;·&nbsp;
+      Started: ${relativeTime(d.started_at)} &nbsp;·&nbsp;
+      Duration: ${fmtDuration(d.duration_s)}
+      ${bounceBadge}`;
+
+    // ── Summary KPI row ───────────────────────────────────────────────────────
+    const s = d.summary ?? {};
+    summary.innerHTML =
+      kpiCard('Events',        escHtml(s.total_events  ?? '—'), '') +
+      kpiCard('Page Views',    escHtml(s.page_views    ?? '—'), '') +
+      kpiCard('Entry Views',   escHtml(s.entry_views   ?? '—'), '') +
+      kpiCard('Searches',      escHtml(s.searches      ?? '—'), '') +
+      kpiCard('Topic Filters', escHtml(s.topic_filters ?? '—'), '');
+
+    // ── Event log table ───────────────────────────────────────────────────────
+    const startMs = new Date(d.started_at).getTime();
+    const rows = (d.events ?? []).map(ev => {
+      const offsetS = Math.max(0, Math.round((new Date(ev.ts).getTime() - startMs) / 1000));
+      const offsetStr = '+' + fmtDuration(offsetS);
+      return `<tr>
+        <td style="font-family:monospace;white-space:nowrap">${offsetStr}</td>
+        <td>${escHtml(ev.type)}</td>
+        <td style="color:var(--muted)">${fmtEventData(ev.data)}</td>
+      </tr>`;
+    }).join('');
+
+    events.innerHTML = `
+      <table class="data-table">
+        <thead><tr><th>Time</th><th>Type</th><th>Data</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+
+  } catch (err) {
+    showError(events, err.message);
+    summary.innerHTML = '';
+    meta.innerHTML = '';
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeModal();
+    closeSessionModal();
+  }
+});
 
 const MODAL_DEFS = {
   viewsOverTime: {
