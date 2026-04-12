@@ -603,9 +603,16 @@ const resumeRouteOnLoad = async () => {
     }
 };
 
+const contactRouteOnLoad = () => {
+    const linkedInLink = document.querySelector('a[href="https://www.linkedin.com/in/marcusmargarites/"]');
+    if (linkedInLink) {
+        linkedInLink.addEventListener('click', () => track('contact_linkedin_click'));
+    }
+};
+
 const routes = {
     home: { title: 'Welcome', template: 'tpl-home' },
-    contact: { title: 'Contact', template: 'tpl-contact' },
+    contact: { title: 'Contact', template: 'tpl-contact', onLoad: contactRouteOnLoad },
     resume: { title: 'Resume', template: 'tpl-resume', onLoad: resumeRouteOnLoad },
     ai: { title: 'AI', template: 'tpl-ai', onLoad: aiRouteOnLoad }
 };
