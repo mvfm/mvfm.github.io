@@ -103,7 +103,9 @@ export class GameOfLife {
             if (document.hidden) {
                 cancelAnimationFrame(this.raf);
                 this.raf = null;
-            } else if (!this.raf) {
+            } else {
+                cancelAnimationFrame(this.raf);
+                this.raf = null;
                 this.lastStep = performance.now();
                 this.loop(this.lastStep);
             }
