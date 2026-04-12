@@ -580,6 +580,11 @@ const initTimelineSearch = () => {
 };
 
 const resumeRouteOnLoad = async () => {
+    const resumeLink = document.querySelector('a[href="/pdf/resume.pdf"]');
+    if (resumeLink) {
+        resumeLink.addEventListener('click', () => track('resume_download_click'));
+    }
+
     const container = document.getElementById('resume-quip');
     if (!container) return;
     try {
