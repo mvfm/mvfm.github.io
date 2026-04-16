@@ -258,14 +258,20 @@ async function loadBehavior() {
       data: { datasets: [{ backgroundColor: color }] },
     });
 
+    const titleOpts = (text) => ({ display: true, text, color: '#64748b', font: { size: 10 } });
+
     const durCfg = barOpts('rgba(168,85,247,0.65)');
     durCfg.data.labels = d.duration_buckets.map(b => b.label);
     durCfg.data.datasets[0].data = d.duration_buckets.map(b => b.count);
+    durCfg.options.scales.x.title = titleOpts('Duration');
+    durCfg.options.scales.y.title = titleOpts('Sessions');
     makeChart('chart-duration-dist', durCfg);
 
     const evtCfg = barOpts('rgba(168,85,247,0.65)');
     evtCfg.data.labels = d.events_per_session_buckets.map(b => b.label);
     evtCfg.data.datasets[0].data = d.events_per_session_buckets.map(b => b.count);
+    evtCfg.options.scales.x.title = titleOpts('Events');
+    evtCfg.options.scales.y.title = titleOpts('Sessions');
     makeChart('chart-events-per-session', evtCfg);
 
     _charts['chart-duration-dist']._raw = d;
@@ -310,6 +316,7 @@ async function loadGeo() {
         cutout: '40%',
         plugins: {
           legend: { display: false },
+          centerText: { totalSessions: d.total_sessions },
           tooltip: {
             callbacks: {
               title: items => {
@@ -331,14 +338,15 @@ async function loadGeo() {
     Chart.register({
       id: 'centerText',
       beforeDraw(chart) {
-        if (chart.canvas.id !== 'chart-geo-doughnut') return;
+        const opts = chart.config.options?.plugins?.centerText;
+        if (!opts?.totalSessions) return;
         const { ctx, chartArea: { top, bottom, left, right } } = chart;
         const cx = (left + right) / 2, cy = (top + bottom) / 2;
         ctx.save();
         ctx.font = 'bold 14px system-ui';
         ctx.fillStyle = '#e2e8f0';
         ctx.textAlign = 'center';
-        ctx.fillText(d.total_sessions.toLocaleString(), cx, cy - 4);
+        ctx.fillText(opts.totalSessions.toLocaleString(), cx, cy - 4);
         ctx.font = '10px system-ui';
         ctx.fillStyle = '#64748b';
         ctx.fillText('sessions', cx, cy + 12);
@@ -346,8 +354,11 @@ async function loadGeo() {
       }
     });
 
+    document.getElementById('geo-error').innerHTML = '';
+
     const maxCount = Math.max(...d.hourly_sessions.map(h => h.count), 1);
     const grid = document.getElementById('heatmap-grid');
+    if (!grid) return;
     grid.innerHTML = d.hourly_sessions.map(h => {
       const intensity = h.count / maxCount;
       return `<div class="heatmap-cell"
@@ -358,7 +369,7 @@ async function loadGeo() {
     _charts['chart-geo-doughnut']._raw = d;
 
   } catch (e) {
-    showError(document.getElementById('s-geo'), e.message);
+    showError(document.getElementById('geo-error'), e.message);
   }
 }
 
@@ -690,7 +701,7 @@ const MODAL_DEFS = {
     buildChart: (raw) => ({
       type: 'bar',
       data: { labels: raw.duration_buckets.map(b => b.label), datasets: [{ data: raw.duration_buckets.map(b => b.count), backgroundColor: 'rgba(168,85,247,0.65)' }] },
-      options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#475569' } }, y: { ticks: { color: '#475569' } } } },
+      options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#475569' }, title: { display: true, text: 'Duration', color: '#64748b', font: { size: 10 } } }, y: { ticks: { color: '#475569' }, title: { display: true, text: 'Sessions', color: '#64748b', font: { size: 10 } } } } },
     }),
     buildTable: (raw) => {
       const total = raw.duration_buckets.reduce((s, b) => s + b.count, 0) || 1;
@@ -704,7 +715,7 @@ const MODAL_DEFS = {
     buildChart: (raw) => ({
       type: 'bar',
       data: { labels: raw.events_per_session_buckets.map(b => b.label), datasets: [{ data: raw.events_per_session_buckets.map(b => b.count), backgroundColor: 'rgba(168,85,247,0.65)' }] },
-      options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#475569' } }, y: { ticks: { color: '#475569' } } } },
+      options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#475569' }, title: { display: true, text: 'Events', color: '#64748b', font: { size: 10 } } }, y: { ticks: { color: '#475569' }, title: { display: true, text: 'Sessions', color: '#64748b', font: { size: 10 } } } } },
     }),
     buildTable: (raw) => {
       const rows = raw.events_per_session_buckets.map(b => `<tr><td>${b.label}</td><td>${b.count}</td></tr>`).join('');
@@ -734,6 +745,7 @@ const MODAL_DEFS = {
           cutout: '40%',
           plugins: {
             legend: { display: false },
+            centerText: { totalSessions: raw.total_sessions },
             tooltip: {
               callbacks: {
                 title: items => {
