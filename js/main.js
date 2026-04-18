@@ -158,12 +158,17 @@ const showTimelineModal = (data) => {
     modal.querySelector('.modal-close').addEventListener('click', dismiss);
     modal.addEventListener('click', (e) => { if (e.target === modal) dismiss(); });
 
+    const trackTab = (tabId) => track('timeline_modal_tab_view', { tab: tabId.replace(/-/g, '_') });
+
+    trackTab(defaultTab);
+
     modal.querySelectorAll('.modal-tab:not([disabled])').forEach(tab => {
         tab.addEventListener('click', () => {
             modal.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
             modal.querySelectorAll('.modal-tab-content').forEach(c => c.classList.remove('active'));
             tab.classList.add('active');
             document.getElementById(`modal-panel-${tab.dataset.tab}`)?.classList.add('active');
+            trackTab(tab.dataset.tab);
         });
     });
 
