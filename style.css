@@ -737,3 +737,198 @@ ol li {
     visibility: hidden !important;
     pointer-events: none !important;
 }
+
+/* AI Timeline Modal (What's New / On This Day) */
+
+.modal-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    background: rgba(12, 45, 107, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity var(--trans-slow);
+}
+
+.modal-overlay.modal-visible {
+    opacity: 1;
+}
+
+.modal-card {
+    position: relative;
+    background: var(--clr-panel-bg);
+    backdrop-filter: blur(6px);
+    border: 1px solid var(--clr-panel-border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.25);
+    max-width: 520px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    transform: scale(0.96);
+    transition: transform var(--trans-slow);
+}
+
+.modal-overlay.modal-visible .modal-card {
+    transform: scale(1);
+}
+
+.modal-hero {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    object-position: left center;
+    display: block;
+}
+
+.modal-close {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    background: rgba(0, 0, 0, 0.45);
+    border: none;
+    color: #fff;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    line-height: 1;
+    padding: 0;
+    transition: background var(--trans-fast);
+}
+
+.modal-close:hover {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.modal-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--clr-panel-border);
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.modal-tab {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-top: 3px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--clr-text-muted);
+    font-family: inherit;
+    transition: color var(--trans-fast), background var(--trans-fast), border-top-color var(--trans-fast);
+}
+
+.modal-tab:hover:not([disabled]) {
+    color: var(--clr-text);
+    background: rgba(27, 170, 255, 0.05);
+}
+
+.modal-tab.active {
+    background: #fff;
+    color: var(--clr-text);
+    border-top-color: var(--clr-accent);
+}
+
+.modal-tab[disabled] {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.modal-tab-content {
+    display: none;
+}
+
+.modal-tab-content.active {
+    display: block;
+    position: relative;
+}
+
+.modal-tab-content.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 32px;
+    background: linear-gradient(to bottom, transparent, var(--clr-panel-bg));
+    pointer-events: none;
+}
+
+.modal-entry-list {
+    list-style: none;
+    margin: 0;
+    padding: 0.4rem 0 2rem;
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.modal-entry {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    border-left: 3px solid transparent;
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+    color: var(--clr-primary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    font-family: inherit;
+    line-height: 1.4;
+    transition: background var(--trans-fast), border-left-color var(--trans-fast);
+}
+
+.modal-entry:hover {
+    background: rgba(27, 170, 255, 0.08);
+    border-left-color: var(--clr-accent);
+}
+
+.modal-footer {
+    padding: 0.6rem 1rem;
+    border-top: 1px solid var(--clr-panel-border);
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.modal-dismiss-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--clr-text-muted);
+    cursor: pointer;
+    user-select: none;
+}
+
+.modal-dismiss-label input[type="checkbox"] {
+    accent-color: var(--clr-accent);
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+    .modal-overlay {
+        padding: 1.5rem;
+    }
+
+    .modal-entry-list {
+        max-height: 260px;
+    }
+}

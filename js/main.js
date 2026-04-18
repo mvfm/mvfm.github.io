@@ -84,6 +84,101 @@ const getTopicInitials = (topicName) => {
     return topicMnemonics.get(topicName) || topicName.slice(0, 2).toLowerCase();
 };
 
+const escHtml = (str) => String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+const showTimelineModal = (data) => {
+    if (document.getElementById('timeline-modal')) return;
+    if (localStorage.getItem('timeline_modal_dismissed') === 'true') return;
+    const today = new Date().toISOString().slice(0, 10);
+    if (localStorage.getItem('timeline_modal_date') === today) return;
+
+    const hasOnThisDay = data.on_this_day?.length > 0;
+    const hasWhatsNew = data.new_events?.length > 0;
+    if (!hasOnThisDay && !hasWhatsNew) return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('q') || urlParams.get('topics')) return;
+
+    const defaultTab = hasOnThisDay ? 'on-this-day' : 'whats-new';
+
+    const buildEntries = (events) => events.map(e =>
+        `<li><button class="modal-entry" data-slug="${escHtml(e.slug)}">${escHtml(e.headline)}</button></li>`
+    ).join('');
+
+    const modal = document.createElement('div');
+    modal.id = 'timeline-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-card">
+            <img class="modal-hero" src="/img/modal-hero.jpg" alt="" aria-hidden="true">
+            <button class="modal-close" aria-label="Close">&#x2715;</button>
+            <div class="modal-tabs">
+                <button class="modal-tab${defaultTab === 'on-this-day' ? ' active' : ''}${!hasOnThisDay ? ' disabled' : ''}"
+                    data-tab="on-this-day"${!hasOnThisDay ? ' disabled' : ''}>On This Day</button>
+                <button class="modal-tab${defaultTab === 'whats-new' ? ' active' : ''}${!hasWhatsNew ? ' disabled' : ''}"
+                    data-tab="whats-new"${!hasWhatsNew ? ' disabled' : ''}>What's New</button>
+            </div>
+            <div class="modal-tab-content${defaultTab === 'on-this-day' ? ' active' : ''}" id="modal-panel-on-this-day">
+                <ul class="modal-entry-list">${hasOnThisDay ? buildEntries(data.on_this_day) : ''}</ul>
+            </div>
+            <div class="modal-tab-content${defaultTab === 'whats-new' ? ' active' : ''}" id="modal-panel-whats-new">
+                <ul class="modal-entry-list">${hasWhatsNew ? buildEntries(data.new_events) : ''}</ul>
+            </div>
+            <div class="modal-footer">
+                <label class="modal-dismiss-label">
+                    <input type="checkbox" id="modal-dont-show-again">
+                    Don't show again
+                </label>
+            </div>
+        </div>`;
+
+    const panel = document.getElementById('contentPanel');
+    if (!panel) return;
+    panel.appendChild(modal);
+    requestAnimationFrame(() => requestAnimationFrame(() => modal.classList.add('modal-visible')));
+
+    const onKeydown = (e) => { if (e.key === 'Escape') dismiss(); };
+
+    const dismiss = () => {
+        document.removeEventListener('keydown', onKeydown);
+        const permanent = document.getElementById('modal-dont-show-again')?.checked;
+        localStorage.setItem('timeline_modal_date', today);
+        if (permanent) localStorage.setItem('timeline_modal_dismissed', 'true');
+        modal.classList.remove('modal-visible');
+        setTimeout(() => modal.remove(), 300);
+    };
+
+    document.addEventListener('keydown', onKeydown);
+
+    modal.querySelector('.modal-close').addEventListener('click', dismiss);
+    modal.addEventListener('click', (e) => { if (e.target === modal) dismiss(); });
+
+    modal.querySelectorAll('.modal-tab:not([disabled])').forEach(tab => {
+        tab.addEventListener('click', () => {
+            modal.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+            modal.querySelectorAll('.modal-tab-content').forEach(c => c.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById(`modal-panel-${tab.dataset.tab}`)?.classList.add('active');
+        });
+    });
+
+    modal.querySelectorAll('.modal-entry').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const { slug } = btn.dataset;
+            dismiss();
+            // Allow modal CSS transition to start before navigating
+            setTimeout(() => {
+                window.timeline?.goToId?.(slug);
+            }, 50);
+        });
+    });
+};
+
 const aiRouteOnLoad = async () => {
     // The router replaces the entire panel innerHTML on each navigation, so the
     // old #timeline-embed (and its listeners) is gone. Reset the guard so that
@@ -337,6 +432,8 @@ const aiRouteOnLoad = async () => {
                         // Initial relocation attempts
                         setTimeout(relocateLabels, 100);
                         setTimeout(relocateLabels, 1000);
+
+                        showTimelineModal(data);
 
                         // Flag to prevent initial "change" events from overwriting the restored hash
                         let isTimelineInitialized = false;
