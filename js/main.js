@@ -107,7 +107,7 @@ const showTimelineModal = (data) => {
     const defaultTab = hasOnThisDay ? 'on-this-day' : 'whats-new';
 
     const buildEntries = (events) => events.map(e =>
-        `<li><button class="modal-entry" data-slug="${escHtml(e.slug)}">${escHtml(e.headline)}</button></li>`
+        `<li><button class="modal-entry" data-slug="${escHtml(e.slug)}" data-headline="${escHtml(e.headline)}">${escHtml(e.headline)}</button></li>`
     ).join('');
 
     const modal = document.createElement('div');
@@ -174,7 +174,12 @@ const showTimelineModal = (data) => {
 
     modal.querySelectorAll('.modal-entry').forEach(btn => {
         btn.addEventListener('click', () => {
-            const { slug } = btn.dataset;
+            const { slug, headline } = btn.dataset;
+            const panelId = btn.closest('.modal-tab-content')?.id;
+            const eventName = panelId === 'modal-panel-on-this-day'
+                ? 'timeline_modal_on_this_day_click'
+                : 'timeline_modal_new_event_click';
+            track(eventName, { event_id: slug, event_title: headline });
             dismiss();
             // Allow modal CSS transition to start before navigating
             setTimeout(() => {
