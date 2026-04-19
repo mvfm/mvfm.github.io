@@ -652,16 +652,15 @@ const initTimelineSearch = () => {
         input.value = '';
         selectedTopics.clear();
         container.classList.remove('show');
-        
+
         localStorage.removeItem('timeline_q');
         localStorage.removeItem('timeline_topics');
-        localStorage.removeItem('timeline_hash');
 
         const url = new URL(window.location.href);
         url.searchParams.delete('q');
         url.searchParams.delete('topics');
-        url.hash = '';
-        
+        // Preserve hash so the user stays on the current slide
+
         window.history.pushState({}, '', url);
         aiRouteOnLoad();
     };
