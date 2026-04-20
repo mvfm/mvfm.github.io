@@ -106,9 +106,17 @@ const showTimelineModal = (data) => {
 
     const defaultTab = hasOnThisDay ? 'on-this-day' : 'whats-new';
 
-    const buildEntries = (events) => events.map(e =>
-        `<li><button class="modal-entry" data-slug="${escHtml(e.slug)}" data-headline="${escHtml(e.headline)}">${escHtml(e.headline)}</button></li>`
-    ).join('');
+    const buildEntries = (events) => events.map(e => {
+        const year = e.date || '';
+        const pillsHtml = (e.topics || []).map(t =>
+            `<span class="modal-topic-pill" style="background-color:${getTopicColor(t)}" title="${escHtml(t)}">${escHtml(getTopicInitials(t))}</span>`
+        ).join('');
+        return `<li><button class="modal-entry" data-slug="${escHtml(e.slug)}" data-headline="${escHtml(e.headline)}">` +
+            `<span class="modal-entry-date">${escHtml(year)}</span>` +
+            `<span class="modal-entry-title">${escHtml(e.headline)}</span>` +
+            `<span class="modal-entry-pills">${pillsHtml}</span>` +
+            `</button></li>`;
+    }).join('');
 
     const modal = document.createElement('div');
     modal.id = 'timeline-modal';

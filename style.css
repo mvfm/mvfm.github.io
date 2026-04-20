@@ -878,7 +878,9 @@ ol li {
 }
 
 .modal-entry {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     width: 100%;
     text-align: left;
     background: none;
@@ -897,6 +899,46 @@ ol li {
 .modal-entry:hover {
     background: rgba(27, 170, 255, 0.08);
     border-left-color: var(--clr-accent);
+}
+
+.modal-entry-date {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--clr-text-muted);
+    min-width: 5.5rem;
+}
+
+.modal-entry-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.modal-entry-pills {
+    display: flex;
+    gap: 0.25rem;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.modal-topic-pill {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: lowercase;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
 }
 
 .modal-footer {
