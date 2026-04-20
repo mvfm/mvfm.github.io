@@ -305,6 +305,12 @@ main {
     margin: 0;
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
 .icon-button {
     background: transparent;
     border: 1px solid var(--clr-panel-border);
@@ -736,6 +742,31 @@ ol li {
     opacity: 0 !important;
     visibility: hidden !important;
     pointer-events: none !important;
+}
+
+/* Bell button wrapper (positions the badge dot) */
+.bell-wrap {
+    position: relative;
+    display: inline-flex;
+}
+
+/* Notification badge on bell button */
+.modal-bell-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 8px;
+    height: 8px;
+    background: var(--clr-primary);
+    border-radius: 50%;
+    border: 2px solid var(--clr-panel-bg);
+    pointer-events: none;
+}
+
+#modal-bell-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
 /* AI Timeline Modal (What's New / On This Day) */

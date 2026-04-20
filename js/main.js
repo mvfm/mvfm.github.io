@@ -25,6 +25,7 @@ let allTopics = [];
 let selectedTopics = new Set();
 let topicMnemonics = new Map();
 let cartClickHandlerElement = null;
+let lastTimelineData = null;
 
 /**
  * Topic Utility Functions
@@ -84,6 +85,30 @@ const getTopicInitials = (topicName) => {
     return topicMnemonics.get(topicName) || topicName.slice(0, 2).toLowerCase();
 };
 
+const updateBellState = (data) => {
+    const btn = document.getElementById('modal-bell-btn');
+    const badge = document.getElementById('modal-bell-badge');
+    if (!btn || !badge) return;
+
+    const allSlugs = [
+        ...(data.new_events || []).map(e => e.slug),
+        ...(data.on_this_day || []).map(e => e.slug)
+    ];
+
+    const hasContent = allSlugs.length > 0;
+    btn.disabled = !hasContent;
+
+    if (hasContent) {
+        const seenRaw = localStorage.getItem('timeline_modal_seen_slugs');
+        const seen = seenRaw ? JSON.parse(seenRaw) : [];
+        const seenSet = new Set(seen);
+        const hasUnseen = allSlugs.some(slug => !seenSet.has(slug));
+        badge.hidden = !hasUnseen;
+    } else {
+        badge.hidden = true;
+    }
+};
+
 const escHtml = (str) => String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -91,24 +116,25 @@ const escHtml = (str) => String(str)
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
-const showTimelineModal = (data) => {
+const showTimelineModal = (data, { force = false } = {}) => {
     if (document.getElementById('timeline-modal')) return;
-    if (localStorage.getItem('timeline_modal_dismissed') === 'true') return;
     const today = new Date().toISOString().slice(0, 10);
-    if (localStorage.getItem('timeline_modal_date') === today) return;
+    if (!force) {
+        if (localStorage.getItem('timeline_modal_dismissed') === 'true') return;
+        if (localStorage.getItem('timeline_modal_date') === today) return;
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('q') || urlParams.get('topics')) return;
+    }
 
     const hasOnThisDay = data.on_this_day?.length > 0;
     const hasWhatsNew = data.new_events?.length > 0;
     if (!hasOnThisDay && !hasWhatsNew) return;
 
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('q') || urlParams.get('topics')) return;
-
     const defaultTab = hasOnThisDay ? 'on-this-day' : 'whats-new';
 
     const buildEntries = (events) => events.map(e => {
         const year = e.date || '';
-        const pillsHtml = (e.topics || []).map(t =>
+        const pillsHtml = [...(e.topics || [])].sort().map(t =>
             `<span class="modal-topic-pill" style="background-color:${getTopicColor(t)}" title="${escHtml(t)}">${escHtml(getTopicInitials(t))}</span>`
         ).join('');
         return `<li><button class="modal-entry" data-slug="${escHtml(e.slug)}" data-headline="${escHtml(e.headline)}">` +
@@ -148,6 +174,15 @@ const showTimelineModal = (data) => {
     const panel = document.getElementById('contentPanel');
     if (!panel) return;
     panel.appendChild(modal);
+
+    // Mark current slugs as seen and refresh bell badge
+    const seenSlugs = [
+        ...(data.new_events || []).map(e => e.slug),
+        ...(data.on_this_day || []).map(e => e.slug)
+    ];
+    localStorage.setItem('timeline_modal_seen_slugs', JSON.stringify(seenSlugs));
+    updateBellState(data);
+
     requestAnimationFrame(() => requestAnimationFrame(() => modal.classList.add('modal-visible')));
 
     const onKeydown = (e) => { if (e.key === 'Escape') dismiss(); };
@@ -356,7 +391,7 @@ const aiRouteOnLoad = async () => {
                     if (event.topics && event.topics.length > 0) {
                         const labelsHtml = `
                             <div class="topic-labels-container">
-                                ${event.topics.map(t => `
+                                ${[...event.topics].sort().map(t => `
                                     <div class="event-topic-label"
                                          style="background-color: ${getTopicColor(t)}"
                                          title="${t}">
@@ -451,6 +486,8 @@ const aiRouteOnLoad = async () => {
                         setTimeout(relocateLabels, 100);
                         setTimeout(relocateLabels, 1000);
 
+                        lastTimelineData = data;
+                        updateBellState(data);
                         showTimelineModal(data);
 
                         // Flag to prevent initial "change" events from overwriting the restored hash
@@ -691,6 +728,15 @@ const initTimelineSearch = () => {
             container.classList.remove('show');
         }
     });
+
+    const bellBtn = document.getElementById('modal-bell-btn');
+    if (bellBtn) {
+        bellBtn.addEventListener('click', () => {
+            if (!lastTimelineData) return;
+            track('timeline_modal_reopen');
+            showTimelineModal(lastTimelineData, { force: true });
+        });
+    }
 };
 
 const resumeRouteOnLoad = async () => {
