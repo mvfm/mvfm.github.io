@@ -771,10 +771,33 @@ const contactRouteOnLoad = () => {
 };
 
 const routes = {
-    home: { title: 'Welcome', template: 'tpl-home' },
-    contact: { title: 'Contact', template: 'tpl-contact', onLoad: contactRouteOnLoad },
-    resume: { title: 'Resume', template: 'tpl-resume', onLoad: resumeRouteOnLoad },
-    ai: { title: 'AI', template: 'tpl-ai', onLoad: aiRouteOnLoad }
+    home: {
+        title: 'Marcus Vinicius Freitas Margarites — Systems Engineer & AI Researcher',
+        description: 'Senior software engineer and solution designer with a long track record of modernizing enterprise systems across multiple generations of technology.',
+        canonicalUrl: 'https://mvfm.digital/',
+        template: 'tpl-home'
+    },
+    contact: {
+        title: 'Contact — Marcus Vinicius Freitas Margarites',
+        description: 'Get in touch with Marcus Vinicius Freitas Margarites, senior software engineer and solution designer, for professional opportunities and collaboration.',
+        canonicalUrl: 'https://mvfm.digital/contact',
+        template: 'tpl-contact',
+        onLoad: contactRouteOnLoad
+    },
+    resume: {
+        title: 'Résumé — Marcus Vinicius Freitas Margarites',
+        description: 'Senior software engineer and solution designer with nearly four decades of experience in architecture, cloud, AI-enabled solutions, and technical leadership.',
+        canonicalUrl: 'https://mvfm.digital/resume',
+        template: 'tpl-resume',
+        onLoad: resumeRouteOnLoad
+    },
+    ai: {
+        title: 'AI History Timeline — Marcus Vinicius Freitas Margarites',
+        description: 'From Turing\'s question to today\'s transformers: The pivotal moments that shaped modern AI, in an interactive timeline.',
+        canonicalUrl: 'https://mvfm.digital/ai',
+        template: 'tpl-ai',
+        onLoad: aiRouteOnLoad
+    }
 };
 
 // Start application

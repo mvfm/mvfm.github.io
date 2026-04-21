@@ -60,8 +60,8 @@ export class Router {
         const def = this.routes[route] || this.routes.home;
 
         // Update browser state
-        document.title = `mvfm's website — ${def.title}`;
-        this.updateMetaDescription(def.title);
+        document.title = def.title;
+        this.updatePageMeta(def);
         this.updateMenu(route);
         localStorage.setItem('lastRoute', route);
         if (_analyticsReady) {
@@ -112,13 +112,25 @@ export class Router {
         });
     }
 
-    updateMetaDescription(title) {
-        let meta = document.querySelector('meta[name="description"]');
-        if (!meta) {
-            meta = document.createElement('meta');
-            meta.setAttribute('name', 'description');
-            document.head.appendChild(meta);
+    updatePageMeta(def) {
+        const url = def.canonicalUrl || 'https://mvfm.digital/';
+        this.setMeta('name', 'description', def.description);
+        this.setMeta('property', 'og:title', def.title);
+        this.setMeta('property', 'og:description', def.description);
+        this.setMeta('property', 'og:url', url);
+        this.setMeta('name', 'twitter:title', def.title);
+        this.setMeta('name', 'twitter:description', def.description);
+        const canonical = document.querySelector('link[rel="canonical"]');
+        if (canonical) canonical.setAttribute('href', url);
+    }
+
+    setMeta(attrName, attrValue, content) {
+        let el = document.querySelector(`meta[${attrName}="${attrValue}"]`);
+        if (!el) {
+            el = document.createElement('meta');
+            el.setAttribute(attrName, attrValue);
+            document.head.appendChild(el);
         }
-        meta.setAttribute('content', `mvfm's personal website - ${title}. Exploring AI, systems engineering, and complex systems.`);
+        el.setAttribute('content', content);
     }
 }
