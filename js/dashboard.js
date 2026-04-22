@@ -859,6 +859,14 @@ async function loadContentStats() {
             labels: { color: '#94a3b8', font: { size: 9 }, boxWidth: 10 },
           },
           centerText: { totalSessions: d.total, label: 'entries' },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const pct = Math.round(ctx.parsed / d.total * 100);
+                return ` ${ctx.parsed.toLocaleString()} (${pct}%)`;
+              },
+            },
+          },
         },
       },
     });
@@ -1192,6 +1200,14 @@ const MODAL_DEFS = {
         plugins: {
           legend: { display: true, position: 'right', labels: { color: '#94a3b8', font: { size: 11 }, boxWidth: 12 } },
           centerText: { totalSessions: raw.total, label: 'entries' },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const pct = Math.round(ctx.parsed / raw.total * 100);
+                return ` ${ctx.parsed.toLocaleString()} (${pct}%)`;
+              },
+            },
+          },
         },
       },
     }),
