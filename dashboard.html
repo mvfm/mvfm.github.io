@@ -211,6 +211,32 @@
     .session-summary-row .kpi-card { flex: 1; min-width: 80px; }
     .session-summary-row .kpi-value { font-size: 1.1rem; }
 
+    /* ── Entry drilldown modal ── */
+    #entry-modal {
+      display: none; position: fixed; inset: 0; z-index: 100;
+      background: rgba(10,12,20,0.75);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      align-items: center; justify-content: center; padding: 2rem;
+    }
+    #entry-modal.open { display: flex; }
+    .entry-search-row {
+      display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem;
+    }
+    .entry-search-row input[type="text"] {
+      flex: 1; background: var(--bg-card); border: 1px solid var(--border);
+      color: var(--text); padding: 5px 10px; border-radius: 5px;
+      font-size: 0.75rem; outline: none;
+    }
+    .entry-search-row input[type="text"]:focus { border-color: var(--accent); }
+    #entry-modal-status { font-size: 0.65rem; color: var(--faint); min-height: 1rem; margin-bottom: 0.5rem; }
+    .entry-lookup-btn {
+      background: transparent; border: 1px solid var(--border);
+      color: var(--faint); padding: 2px 6px; border-radius: 4px;
+      font-size: 0.65rem; cursor: pointer; transition: all 0.15s;
+      margin-left: 0.35rem; vertical-align: middle; line-height: 1.4;
+    }
+    .entry-lookup-btn:hover { color: var(--amber); border-color: var(--amber); }
+
     .modal-close-btn {
       position: absolute; top: 1rem; right: 1rem;
       background: rgba(255,255,255,0.07); border: none;
@@ -307,9 +333,12 @@
     <div class="section-title" style="color:var(--amber)">④ AI Timeline Engagement</div>
     <div class="kpi-row" id="timeline-kpis"></div>
     <div class="chart-grid-3">
-      <div class="chart-card" id="card-top-events" onclick="openModal('topEvents')">
+      <div class="chart-card" id="card-top-events" onclick="if(event.target.tagName!=='CANVAS')openModal('topEvents')">
         <span class="expand-icon">⤢</span>
-        <div class="chart-card-title">Top 10 viewed events</div>
+        <div class="chart-card-title" style="display:flex;align-items:center">
+          Top 10 viewed events
+          <button class="entry-lookup-btn" title="Look up any entry" onclick="event.stopPropagation();openEntryModal(null,null)">⌕ look up</button>
+        </div>
         <canvas id="chart-top-events" height="120"></canvas>
       </div>
       <div class="chart-card" id="card-searches">
@@ -322,6 +351,13 @@
         <span class="expand-icon">⤢</span>
         <div class="chart-card-title">Topic filter popularity</div>
         <canvas id="chart-topic-filters" height="120"></canvas>
+      </div>
+    </div>
+    <div style="margin-top:0.6rem">
+      <div class="chart-card" id="card-entry-views-over-time" onclick="openModal('entryViewsOverTime')">
+        <span class="expand-icon">⤢</span>
+        <div class="chart-card-title">Event views over time</div>
+        <canvas id="chart-entry-views-over-time" height="80"></canvas>
       </div>
     </div>
   </section>
@@ -359,6 +395,61 @@
     <button id="load-more-btn">Load more (last 50)</button>
   </section>
 
+  <!-- ⑦ Content Catalog -->
+  <section class="dash-section" id="s-content">
+    <div class="section-title" style="color:var(--green)">
+      ⑦ Content Catalog
+      <span id="content-total-count" style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.75rem;color:var(--muted);margin-left:0.4rem"></span>
+    </div>
+
+    <div class="section-sublabel" style="color:var(--faint)">Composition</div>
+    <div class="chart-grid-2-eq">
+      <div class="chart-card" id="card-content-by-group" onclick="openModal('contentByGroup')">
+        <span class="expand-icon">⤢</span>
+        <div class="chart-card-title">By group</div>
+        <div style="max-width:180px;margin:0 auto">
+          <canvas id="chart-content-by-group"></canvas>
+        </div>
+      </div>
+      <div class="chart-card" id="card-content-by-topic" onclick="openModal('contentByTopic')">
+        <span class="expand-icon">⤢</span>
+        <div class="chart-card-title">By topic (top 10)</div>
+        <canvas id="chart-content-by-topic" height="120"></canvas>
+      </div>
+    </div>
+
+    <div class="section-sublabel" style="color:var(--faint);margin-top:0.6rem">Over time</div>
+    <div class="chart-card" id="card-content-temporal" onclick="openModal('contentTemporal')">
+      <span class="expand-icon">⤢</span>
+      <div class="chart-card-title" style="display:flex;align-items:center;gap:0.4rem">
+        Entries by
+        <button class="range-btn active" id="content-decade-btn"
+          onclick="event.stopPropagation();setContentView(true)">Decades</button>
+        <button class="range-btn" id="content-year-btn"
+          onclick="event.stopPropagation();setContentView(false)">Years</button>
+      </div>
+      <canvas id="chart-content-temporal" height="80"></canvas>
+      <div id="content-gap-note" style="font-size:0.55rem;color:var(--faint);margin-top:4px;text-align:right"></div>
+    </div>
+
+    <div class="section-sublabel" style="color:var(--faint);margin-top:0.6rem">Connections &amp; health</div>
+    <div class="chart-grid-2-eq">
+      <div class="chart-card" id="card-content-heatmap" onclick="openModal('contentTopicHeatmap')">
+        <span class="expand-icon">⤢</span>
+        <div class="chart-card-title">Topic co-occurrence</div>
+        <div id="content-heatmap-grid" style="margin-top:0.4rem;overflow:auto"></div>
+      </div>
+      <div class="chart-card" id="card-content-missing"
+        onclick="openModal('contentMissingSource')"
+        style="border-color:rgba(239,68,68,0.2)">
+        <span class="expand-icon">⤢</span>
+        <div class="chart-card-title" style="color:var(--red)">⚠ Research without source</div>
+        <div id="content-missing-count" class="kpi-value" style="color:var(--red);margin-top:0.3rem"></div>
+        <div style="font-size:0.6rem;color:var(--faint);margin-top:4px">entries · click to see list ⤢</div>
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <!-- ── Chart Zoom Modal ───────────────────────────────────────────────────── -->
@@ -382,6 +473,21 @@
     <div id="session-modal-summary" class="session-summary-row"></div>
     <div style="font-size:0.6rem;color:var(--faint);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.4rem">Event log</div>
     <div id="session-modal-events"></div>
+  </div>
+</div>
+
+<!-- ── Entry Drilldown Modal ──────────────────────────────────────────────── -->
+<div id="entry-modal" onclick="handleEntryModalBackdropClick(event)">
+  <div class="modal-panel">
+    <button class="modal-close-btn" onclick="closeEntryModal()">✕</button>
+    <div id="entry-modal-title" style="font-size:1rem;font-weight:700;margin-bottom:0.75rem">Entry views over time</div>
+    <div class="entry-search-row">
+      <input id="entry-search-input" type="text" placeholder="Event slug or title…" onkeydown="if(event.key==='Enter')handleEntrySearch()">
+      <button onclick="handleEntrySearch()" class="range-btn active" style="padding:4px 12px;font-size:0.7rem">Look up</button>
+    </div>
+    <div id="entry-modal-status"></div>
+    <div id="entry-modal-chart-wrap" style="background:var(--bg-header);border-radius:8px;padding:1rem;margin-bottom:1.25rem;display:none"></div>
+    <div id="entry-modal-table-wrap"></div>
   </div>
 </div>
 

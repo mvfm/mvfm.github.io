@@ -9,6 +9,10 @@ const TOKEN = new URLSearchParams(location.search).get('token') || '';  // from 
 let _lastRefresh = Date.now();
 let _currentRange = { type: '7d' };  // { type: '7d'|'30d'|'all'|'custom', from?, to? }
 let _funnelRaw = null;               // cached for zoom modal (no chart instance to attach to)
+let _entryModalChart = null;
+let _timelineTopEvents = [];
+let _contentStatsRaw  = null;
+let _contentDecadeView = true;
 
 // ── URL helpers ───────────────────────────────────────────────────────────────
 function buildUrl(path, extraParams = {}) {
@@ -171,6 +175,24 @@ function startUpdatedTicker() {
 
 // ── Chart registry (track instances for destroy-on-redraw) ───────────────────
 const _charts = {};
+Chart.register({
+  id: 'centerText',
+  beforeDraw(chart) {
+    const opts = chart.config.options?.plugins?.centerText;
+    if (!opts?.totalSessions) return;
+    const { ctx, chartArea: { top, bottom, left, right } } = chart;
+    const cx = (left + right) / 2, cy = (top + bottom) / 2;
+    ctx.save();
+    ctx.font = 'bold 14px system-ui';
+    ctx.fillStyle = '#e2e8f0';
+    ctx.textAlign = 'center';
+    ctx.fillText(opts.totalSessions.toLocaleString(), cx, cy - 4);
+    ctx.font = '10px system-ui';
+    ctx.fillStyle = '#64748b';
+    ctx.fillText(opts.label ?? 'sessions', cx, cy + 12);
+    ctx.restore();
+  }
+});
 function makeChart(id, config) {
   if (_charts[id]) _charts[id].destroy();
   _charts[id] = new Chart(document.getElementById(id), config);
@@ -335,25 +357,6 @@ async function loadGeo() {
       },
     });
 
-    Chart.register({
-      id: 'centerText',
-      beforeDraw(chart) {
-        const opts = chart.config.options?.plugins?.centerText;
-        if (!opts?.totalSessions) return;
-        const { ctx, chartArea: { top, bottom, left, right } } = chart;
-        const cx = (left + right) / 2, cy = (top + bottom) / 2;
-        ctx.save();
-        ctx.font = 'bold 14px system-ui';
-        ctx.fillStyle = '#e2e8f0';
-        ctx.textAlign = 'center';
-        ctx.fillText(opts.totalSessions.toLocaleString(), cx, cy - 4);
-        ctx.font = '10px system-ui';
-        ctx.fillStyle = '#64748b';
-        ctx.fillText('sessions', cx, cy + 12);
-        ctx.restore();
-      }
-    });
-
     document.getElementById('geo-error').innerHTML = '';
 
     const maxCount = Math.max(...d.hourly_sessions.map(h => h.count), 1);
@@ -385,6 +388,7 @@ async function loadTimeline() {
       kpiCard('Event Views',   d.total_event_views.toLocaleString(),      '') +
       kpiCard('Topic Filters', d.total_topic_filter_uses.toLocaleString(), '');
 
+    _timelineTopEvents = d.top_events;
     makeChart('chart-top-events', {
       type: 'bar',
       data: {
@@ -392,9 +396,39 @@ async function loadTimeline() {
         datasets: [{ data: d.top_events.map(e => e.views), backgroundColor: 'rgba(245,158,11,0.65)' }],
       },
       options: {
+        onClick: (e, elements) => {
+          if (elements.length) {
+            e.native.stopPropagation();
+            const entry = d.top_events[elements[0].index];
+            openEntryModal(entry.event_id, entry.event_title);
+          }
+        },
+        onHover: (e, elements) => {
+          e.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+        },
         plugins: { legend: { display: false } },
         scales: {
           x: { ticks: { color: '#475569', maxRotation: 30 } },
+          y: { ticks: { color: '#475569' } },
+        },
+      },
+    });
+
+    const entryPerDay = fillDates(d.entry_views_per_day ?? []);
+    makeChart('chart-entry-views-over-time', {
+      type: 'line',
+      data: {
+        labels: entryPerDay.map(r => r.date),
+        datasets: [{
+          data: entryPerDay.map(r => r.count),
+          borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)',
+          tension: 0.3, fill: true, pointRadius: 2,
+        }],
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#475569', maxTicksLimit: 7 } },
           y: { ticks: { color: '#475569' } },
         },
       },
@@ -430,6 +464,7 @@ async function loadTimeline() {
 
     _charts['chart-top-events']._raw = d;
     _charts['chart-topic-filters']._raw = d;
+    _charts['chart-entry-views-over-time']._raw = d;
 
   } catch (e) {
     showError(kpis, e.message);
@@ -524,6 +559,7 @@ function initSessionsSection() {
 // Group B (15 min): geo, timeline, funnel               — slow-changing aggregates
 const REFRESH_A = 5 * 60 * 1000;
 const REFRESH_B = 15 * 60 * 1000;
+const REFRESH_C = 60 * 60 * 1000;  // content catalog — 1 hour
 
 let _timers = [];
 
@@ -540,6 +576,7 @@ function startAutoRefresh() {
   _timers.push(setInterval(() => loadGeo(),             REFRESH_B));
   _timers.push(setInterval(() => loadTimeline(),        REFRESH_B));
   _timers.push(setInterval(() => loadFunnel(),          REFRESH_B));
+  _timers.push(setInterval(() => loadContentStats(),    REFRESH_C));
 }
 
 document.addEventListener('visibilitychange', () => {
@@ -659,8 +696,308 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeModal();
     closeSessionModal();
+    closeEntryModal();
   }
 });
+
+// ── Fill missing dates with 0 ─────────────────────────────────────────────────
+function fillDates(perDay) {
+  if (!perDay.length) return perDay;
+  const today = new Date().toISOString().slice(0, 10);
+  let from, to;
+  if (_currentRange.type !== 'all' && _currentRange.from) {
+    from = _currentRange.from;
+    to   = _currentRange.to;
+  } else {
+    from = perDay[0].date;
+    to   = perDay[perDay.length - 1].date;
+  }
+  if (to < today) to = today;
+  const map = Object.fromEntries(perDay.map(r => [r.date, r.count]));
+  const result = [];
+  const cur = new Date(from + 'T00:00:00Z');
+  const end = new Date(to   + 'T00:00:00Z');
+  while (cur <= end) {
+    const d = cur.toISOString().slice(0, 10);
+    result.push({ date: d, count: map[d] ?? 0 });
+    cur.setUTCDate(cur.getUTCDate() + 1);
+  }
+  return result;
+}
+
+// ── Content heatmap builder ───────────────────────────────────────────────────
+function buildTopicHeatmapHtml(pairs, topN = null) {
+  if (!pairs || !pairs.length) {
+    return '<p style="font-size:0.7rem;color:var(--faint)">No data</p>';
+  }
+
+  // Rank topics by total co-occurrence weight
+  const totals = {};
+  pairs.forEach(p => {
+    totals[p.topic_a] = (totals[p.topic_a] || 0) + p.count;
+    totals[p.topic_b] = (totals[p.topic_b] || 0) + p.count;
+  });
+  let topics = Object.keys(totals).sort((a, b) => totals[b] - totals[a]);
+  if (topN !== null) topics = topics.slice(0, topN);
+
+  // Pair lookup (symmetric)
+  const pairMap = {};
+  pairs.forEach(p => {
+    pairMap[`${p.topic_a}|${p.topic_b}`] = p.count;
+    pairMap[`${p.topic_b}|${p.topic_a}`] = p.count;
+  });
+
+  const maxCount = Math.max(...pairs.map(p => p.count), 1);
+  const compact  = topN !== null;
+  const cell     = compact ? 14 : 20;
+  const maxLen   = compact ? 7  : 10;
+  const lblW     = compact ? 55 : 80;
+
+  const abbr = t => escHtml(t.length > maxLen ? t.slice(0, maxLen - 1) + '…' : t);
+
+  let html = `<div style="display:grid;grid-template-columns:${lblW}px repeat(${topics.length},${cell}px);gap:2px;font-size:0.5rem;overflow-x:auto">`;
+
+  // Column headers (vertical text)
+  html += '<div></div>';
+  topics.forEach(t => {
+    html += `<div style="color:var(--faint);writing-mode:vertical-rl;white-space:nowrap;overflow:hidden;max-height:${lblW}px;padding:2px 0" title="${escHtml(t)}">${abbr(t)}</div>`;
+  });
+
+  // Rows
+  topics.forEach(row => {
+    html += `<div style="color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;align-self:center;padding:2px 0" title="${escHtml(row)}">${abbr(row)}</div>`;
+    topics.forEach(col => {
+      if (row === col) {
+        html += `<div style="background:rgba(255,255,255,0.03);border-radius:2px;height:${cell}px"></div>`;
+      } else {
+        const n   = pairMap[`${row}|${col}`] || 0;
+        const bg  = n > 0
+          ? `rgba(16,185,129,${(0.08 + (n / maxCount) * 0.85).toFixed(2)})`
+          : 'rgba(255,255,255,0.02)';
+        html += `<div style="background:${bg};border-radius:2px;height:${cell}px;cursor:default" title="${escHtml(row)} + ${escHtml(col)}: ${n}"></div>`;
+      }
+    });
+  });
+
+  html += '</div>';
+  return html;
+}
+
+function renderTemporalChart() {
+  if (!_contentStatsRaw) return;
+  const d = _contentStatsRaw;
+  const rows     = _contentDecadeView ? d.by_group_per_decade : d.by_group_per_year;
+  const labelKey = _contentDecadeView ? 'decade' : 'year';
+
+  makeChart('chart-content-temporal', {
+    type: 'bar',
+    data: {
+      labels: rows.map(r => r[labelKey]),
+      datasets: [
+        { label: 'Research',    data: rows.map(r => r.research),    backgroundColor: 'rgba(99,102,241,0.7)',  stack: 'a' },
+        { label: 'Industry',    data: rows.map(r => r.industry),    backgroundColor: 'rgba(245,158,11,0.7)',  stack: 'a' },
+        { label: 'Pop culture', data: rows.map(r => r.pop_culture), backgroundColor: 'rgba(236,72,153,0.7)', stack: 'a' },
+      ],
+    },
+    options: {
+      plugins: {
+        legend: { display: true, labels: { color: '#94a3b8', font: { size: 10 }, boxWidth: 10 } },
+      },
+      scales: {
+        x: { ticks: { color: '#475569', maxTicksLimit: 12 }, stacked: true },
+        y: { ticks: { color: '#475569' }, stacked: true },
+      },
+    },
+  });
+  _charts['chart-content-temporal']._raw = d;
+
+  const note = document.getElementById('content-gap-note');
+  if (note) note.textContent = d.gap_years?.length
+    ? `${d.gap_years.length.toLocaleString()} years with no entries`
+    : '';
+}
+
+function setContentView(decadeView) {
+  _contentDecadeView = decadeView;
+  document.getElementById('content-decade-btn').classList.toggle('active', decadeView);
+  document.getElementById('content-year-btn').classList.toggle('active', !decadeView);
+  renderTemporalChart();
+}
+
+// ── Section ⑦: Content Catalog ───────────────────────────────────────────────
+async function loadContentStats() {
+  const totalEl = document.getElementById('content-total-count');
+  if (totalEl) totalEl.textContent = '…';
+
+  try {
+    // Intentionally not using apiFetch/buildUrl — this endpoint is date-range-independent
+    const res = await fetch(API_BASE + '/api/content/stats', {
+      headers: { 'Authorization': `Bearer ${TOKEN}` },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const d = await res.json();
+    _contentStatsRaw = d;
+
+    // Header count
+    if (totalEl) totalEl.textContent = `— ${d.total.toLocaleString()} entries`;
+
+    // ── By group doughnut ─────────────────────────────────────────────────────
+    makeChart('chart-content-by-group', {
+      type: 'doughnut',
+      data: {
+        labels: d.by_group.map(g => g.group),
+        datasets: [{
+          data: d.by_group.map(g => g.count),
+          backgroundColor: ['#6366f1', '#f59e0b', '#ec4899'],
+        }],
+      },
+      options: {
+        cutout: '50%',
+        plugins: {
+          legend: {
+            display: true, position: 'bottom',
+            labels: { color: '#94a3b8', font: { size: 9 }, boxWidth: 10 },
+          },
+          centerText: { totalSessions: d.total, label: 'entries' },
+        },
+      },
+    });
+    _charts['chart-content-by-group']._raw = d;
+
+    // ── By topic bar (top 10) ─────────────────────────────────────────────────
+    const topTopics = d.by_topic.slice(0, 10);
+    makeChart('chart-content-by-topic', {
+      type: 'bar',
+      data: {
+        labels: topTopics.map(t => t.topic),
+        datasets: [{
+          data: topTopics.map(t => t.count),
+          backgroundColor: 'rgba(99,102,241,0.6)',
+          indexAxis: 'y',
+        }],
+      },
+      options: {
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#475569' } },
+          y: { ticks: { color: '#94a3b8' } },
+        },
+      },
+    });
+    _charts['chart-content-by-topic']._raw = d;
+
+    // ── Temporal stacked bar ──────────────────────────────────────────────────
+    renderTemporalChart();
+
+    // ── Topic heatmap (top 8 topics in compact view) ──────────────────────────
+    const heatmapEl = document.getElementById('content-heatmap-grid');
+    if (heatmapEl) heatmapEl.innerHTML = buildTopicHeatmapHtml(d.topic_pairs, 8);
+
+    // ── Missing sources ───────────────────────────────────────────────────────
+    const missingEl = document.getElementById('content-missing-count');
+    if (missingEl) missingEl.textContent = d.research_without_source.count.toLocaleString();
+
+  } catch (e) {
+    _contentStatsRaw = null;
+    const totalEl2 = document.getElementById('content-total-count');
+    if (totalEl2) totalEl2.textContent = '';
+    showError(document.getElementById('s-content'), e.message);
+  }
+}
+
+// ── Entry drilldown modal ─────────────────────────────────────────────────────
+function closeEntryModal() {
+  document.getElementById('entry-modal').classList.remove('open');
+  if (_entryModalChart) { _entryModalChart.destroy(); _entryModalChart = null; }
+}
+
+function handleEntryModalBackdropClick(e) {
+  if (e.target === document.getElementById('entry-modal')) closeEntryModal();
+}
+
+function resolveSlug(input) {
+  const lower = input.trim().toLowerCase();
+  const match = _timelineTopEvents.find(e => e.event_title.toLowerCase() === lower);
+  return match ? match.slug : input.trim();
+}
+
+async function fetchAndRenderEntry(slug) {
+  const statusEl  = document.getElementById('entry-modal-status');
+  const chartWrap = document.getElementById('entry-modal-chart-wrap');
+  const tableWrap = document.getElementById('entry-modal-table-wrap');
+
+  statusEl.textContent = 'Loading…';
+  chartWrap.style.display = 'none';
+  tableWrap.innerHTML = '';
+
+  try {
+    const d = await apiFetch(`/api/analytics/timeline/entries/${encodeURIComponent(slug)}`);
+    const perDay = fillDates(d.entry_views_per_day ?? d.views_per_day ?? []);
+
+    document.getElementById('entry-modal-title').textContent = d.entry_title || slug;
+    statusEl.textContent = '';
+
+    if (_entryModalChart) { _entryModalChart.destroy(); _entryModalChart = null; }
+    chartWrap.innerHTML = '<canvas id="entry-modal-chart"></canvas>';
+    chartWrap.style.display = 'block';
+    _entryModalChart = new Chart(document.getElementById('entry-modal-chart'), {
+      type: 'line',
+      data: {
+        labels: perDay.map(r => r.date),
+        datasets: [{
+          data: perDay.map(r => r.count),
+          borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)',
+          tension: 0.3, fill: true, pointRadius: 3,
+        }],
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: { x: { ticks: { color: '#475569' } }, y: { ticks: { color: '#475569' } } },
+      },
+    });
+
+    const rows = perDay.map(r => `<tr><td>${r.date}</td><td>${r.count}</td></tr>`).join('');
+    tableWrap.innerHTML = `
+      <div style="font-size:0.6rem;color:var(--faint);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem">Raw data</div>
+      <table class="data-table"><thead><tr><th>Date</th><th>Views</th></tr></thead><tbody>${rows}</tbody></table>`;
+
+  } catch (err) {
+    statusEl.textContent = '';
+    tableWrap.innerHTML = `<p class="section-error">⚠ ${escHtml(err.message)}</p>`;
+  }
+}
+
+function handleEntrySearch() {
+  const val = document.getElementById('entry-search-input').value;
+  if (!val.trim()) return;
+  fetchAndRenderEntry(resolveSlug(val));
+}
+
+function openEntryModal(slug, title) {
+  const modal     = document.getElementById('entry-modal');
+  const input     = document.getElementById('entry-search-input');
+  const statusEl  = document.getElementById('entry-modal-status');
+  const chartWrap = document.getElementById('entry-modal-chart-wrap');
+  const tableWrap = document.getElementById('entry-modal-table-wrap');
+
+  chartWrap.style.display = 'none';
+  chartWrap.innerHTML = '';
+  tableWrap.innerHTML = '';
+  statusEl.textContent = '';
+
+  if (slug) {
+    document.getElementById('entry-modal-title').textContent = title || slug;
+    input.value = slug;
+    modal.classList.add('open');
+    fetchAndRenderEntry(slug);
+  } else {
+    document.getElementById('entry-modal-title').textContent = 'Entry views over time';
+    input.value = '';
+    modal.classList.add('open');
+    setTimeout(() => input.focus(), 50);
+  }
+}
 
 const MODAL_DEFS = {
   viewsOverTime: {
@@ -807,6 +1144,22 @@ const MODAL_DEFS = {
       return `<table class="data-table"><thead><tr><th>Topic</th><th>Uses</th></tr></thead><tbody>${rows}</tbody></table>`;
     },
   },
+  entryViewsOverTime: {
+    title: 'Event views over time',
+    subtitle: 'Timeline event views per day in selected period',
+    buildChart: (raw) => ({
+      type: 'line',
+      data: {
+        labels: raw.entry_views_per_day.map(r => r.date),
+        datasets: [{ data: raw.entry_views_per_day.map(r => r.count), borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', tension: 0.3, fill: true, pointRadius: 3 }],
+      },
+      options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#475569' } }, y: { ticks: { color: '#475569' } } } },
+    }),
+    buildTable: (raw) => {
+      const rows = raw.entry_views_per_day.map(r => `<tr><td>${r.date}</td><td>${r.count}</td></tr>`).join('');
+      return `<table class="data-table"><thead><tr><th>Date</th><th>Views</th></tr></thead><tbody>${rows}</tbody></table>`;
+    },
+  },
   funnel: {
     title: 'Conversion funnel',
     subtitle: 'All percentages relative to event views (top of funnel)',
@@ -821,6 +1174,125 @@ const MODAL_DEFS = {
         </tbody>
       </table>`,
   },
+
+  contentByGroup: {
+    title: 'Content by group',
+    subtitle: 'Distribution of all entries across the three content groups',
+    buildChart: (raw) => ({
+      type: 'doughnut',
+      data: {
+        labels: raw.by_group.map(g => g.group),
+        datasets: [{
+          data: raw.by_group.map(g => g.count),
+          backgroundColor: ['#6366f1', '#f59e0b', '#ec4899'],
+        }],
+      },
+      options: {
+        cutout: '50%',
+        plugins: {
+          legend: { display: true, position: 'right', labels: { color: '#94a3b8', font: { size: 11 }, boxWidth: 12 } },
+          centerText: { totalSessions: raw.total, label: 'entries' },
+        },
+      },
+    }),
+    buildTable: (raw) => {
+      const rows = raw.by_group.map(g =>
+        `<tr><td>${escHtml(g.group)}</td><td>${g.count}</td><td>${Math.round(g.count / raw.total * 100)}%</td></tr>`
+      ).join('');
+      return `<table class="data-table"><thead><tr><th>Group</th><th>Count</th><th>%</th></tr></thead><tbody>${rows}</tbody></table>`;
+    },
+  },
+
+  contentByTopic: {
+    title: 'Content by topic',
+    subtitle: 'All topics ranked by entry count',
+    buildChart: (raw) => ({
+      type: 'bar',
+      data: {
+        labels: raw.by_topic.map(t => t.topic),
+        datasets: [{
+          data: raw.by_topic.map(t => t.count),
+          backgroundColor: 'rgba(99,102,241,0.6)',
+          indexAxis: 'y',
+        }],
+      },
+      options: {
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#475569' } },
+          y: { ticks: { color: '#94a3b8', font: { size: 10 } } },
+        },
+      },
+    }),
+    buildTable: (raw) => {
+      const rows = raw.by_topic.map(t =>
+        `<tr><td>${escHtml(t.topic)}</td><td>${t.count}</td></tr>`
+      ).join('');
+      return `<table class="data-table"><thead><tr><th>Topic</th><th>Count</th></tr></thead><tbody>${rows}</tbody></table>`;
+    },
+  },
+
+  contentTemporal: {
+    title: 'Entries over time',
+    subtitle: () => `Stacked by group — ${_contentDecadeView ? 'decade' : 'year'} view`,
+    buildChart: (raw) => {
+      const rows     = _contentDecadeView ? raw.by_group_per_decade : raw.by_group_per_year;
+      const labelKey = _contentDecadeView ? 'decade' : 'year';
+      return {
+        type: 'bar',
+        data: {
+          labels: rows.map(r => r[labelKey]),
+          datasets: [
+            { label: 'Research',    data: rows.map(r => r.research),    backgroundColor: 'rgba(99,102,241,0.7)',  stack: 'a' },
+            { label: 'Industry',    data: rows.map(r => r.industry),    backgroundColor: 'rgba(245,158,11,0.7)',  stack: 'a' },
+            { label: 'Pop culture', data: rows.map(r => r.pop_culture), backgroundColor: 'rgba(236,72,153,0.7)', stack: 'a' },
+          ],
+        },
+        options: {
+          plugins: { legend: { display: true, labels: { color: '#94a3b8', font: { size: 11 }, boxWidth: 12 } } },
+          scales: {
+            x: { ticks: { color: '#475569', maxTicksLimit: 15 }, stacked: true },
+            y: { ticks: { color: '#475569' }, stacked: true },
+          },
+        },
+      };
+    },
+    buildTable: (raw) => {
+      const rows     = _contentDecadeView ? raw.by_group_per_decade : raw.by_group_per_year;
+      const labelKey = _contentDecadeView ? 'decade' : 'year';
+      const tableRows = rows.map(r =>
+        `<tr><td>${escHtml(String(r[labelKey]))}</td><td>${r.research}</td><td>${r.industry}</td><td>${r.pop_culture}</td></tr>`
+      ).join('');
+      return `<table class="data-table"><thead><tr><th>${_contentDecadeView ? 'Decade' : 'Year'}</th><th>Research</th><th>Industry</th><th>Pop culture</th></tr></thead><tbody>${tableRows}</tbody></table>`;
+    },
+  },
+
+  contentTopicHeatmap: {
+    title: 'Topic co-occurrence',
+    subtitle: 'How often two topics appear together on the same entry',
+    buildChart: () => null,
+    buildTable: (raw) => {
+      const grid = buildTopicHeatmapHtml(raw.topic_pairs, null);
+      const tableRows = raw.topic_pairs.map(p =>
+        `<tr><td>${escHtml(p.topic_a)}</td><td>${escHtml(p.topic_b)}</td><td>${p.count}</td></tr>`
+      ).join('');
+      const table = `<table class="data-table"><thead><tr><th>Topic A</th><th>Topic B</th><th>Count</th></tr></thead><tbody>${tableRows}</tbody></table>`;
+      return `<div style="margin-bottom:1.5rem">${grid}</div>${table}`;
+    },
+  },
+
+  contentMissingSource: {
+    title: 'Research entries without source',
+    subtitle: 'Research-group entries that are missing a source URL or citation',
+    buildChart: () => null,
+    buildTable: (raw) => {
+      const rows = raw.research_without_source.entries.map(e =>
+        `<tr><td>${e.id}</td><td>${escHtml(e.headline)}</td></tr>`
+      ).join('');
+      return `<table class="data-table"><thead><tr><th>ID</th><th>Headline</th></tr></thead><tbody>${rows}</tbody></table>`;
+    },
+  },
 };
 
 function openModal(key) {
@@ -834,16 +1306,25 @@ function openModal(key) {
     eventsPerSession: 'chart-events-per-session',
     geoDoughnut:      'chart-geo-doughnut',
     heatmap:          'chart-geo-doughnut',
-    topEvents:        'chart-top-events',
-    topicFilters:     'chart-topic-filters',
-    funnel:           null,
+    topEvents:           'chart-top-events',
+    topicFilters:        'chart-topic-filters',
+    entryViewsOverTime:  'chart-entry-views-over-time',
+    funnel:              null,
+    contentByGroup:         'chart-content-by-group',
+    contentByTopic:         'chart-content-by-topic',
+    contentTemporal:        'chart-content-temporal',
+    contentTopicHeatmap:    '_contentStats',
+    contentMissingSource:   '_contentStats',
   }[key];
 
-  const raw = chartId ? _charts[chartId]?._raw : _funnelRaw;
+  const raw = chartId === '_contentStats' ? _contentStatsRaw
+            : chartId                     ? _charts[chartId]?._raw
+            :                               _funnelRaw;
   if (!raw) return;
 
   document.getElementById('modal-title').textContent    = def.title;
-  document.getElementById('modal-subtitle').textContent = def.subtitle;
+  document.getElementById('modal-subtitle').textContent =
+    typeof def.subtitle === 'function' ? def.subtitle() : def.subtitle;
   document.getElementById('modal-table-wrap').innerHTML = def.buildTable(raw);
 
   const chartWrap = document.getElementById('modal-chart-wrap');
@@ -874,6 +1355,7 @@ async function refreshAll() {
     loadTimeline(),
     loadFunnel(),
     loadRecentSessions(),
+    loadContentStats(),
   ]);
 }
 
