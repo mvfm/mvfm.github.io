@@ -80,10 +80,14 @@ function fmtDuration(s) {
 function relativeTime(isoStr) {
   const d = new Date(isoStr);
   const now = new Date();
-  const diff = now - d;
-  if (diff < 864e5) return 'today ' + d.toUTCString().slice(17, 22);
-  if (diff < 2*864e5) return 'yesterday ' + d.toUTCString().slice(17, 22);
-  return d.toISOString().slice(0, 10);
+  const todayStart     = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterdayStart = new Date(todayStart - 864e5);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  const localTime = `${hh}:${mm}`;
+  if (d >= todayStart)     return 'today ' + localTime;
+  if (d >= yesterdayStart) return 'yesterday ' + localTime;
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
 const EVENT_ABBR = {
