@@ -1,0 +1,13 @@
+[
+  {
+    "slug": "forwardpropagation",
+    "title": "Forwardpropagation",
+    "description": "How the idea behind backpropagation moved forward through time before AI finally perceived it.",
+    "date": "2026-04",
+    "topics": [
+      "neural networks",
+      "deep learning",
+      "foundations"
+    ]
+  }
+]

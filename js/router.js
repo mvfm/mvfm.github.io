@@ -1,7 +1,5 @@
 import { track } from './analytics.js';
 
-let _analyticsReady = false;
-
 export class Router {
     constructor(routes) {
         this.routes = routes;
@@ -33,7 +31,9 @@ export class Router {
             const path = pathSegments.pop();
             
             let initialRoute = 'home';
-            if (path && this.routes[path]) {
+            if (window.__FEATURE_SLUG__ && this.routes['insights-article']) {
+                initialRoute = 'insights-article';
+            } else if (path && this.routes[path]) {
                 initialRoute = path;
             } else if (!path || path === '/') {
                 // If on root, try to restore from localStorage
@@ -63,11 +63,11 @@ export class Router {
         document.title = def.title;
         this.updatePageMeta(def);
         this.updateMenu(route);
-        localStorage.setItem('lastRoute', route);
-        if (_analyticsReady) {
-            track('page_view', { route: route === 'home' ? '/' : `/${route}` });
-        }
-        _analyticsReady = true;
+        if (route !== 'insights-article') localStorage.setItem('lastRoute', route);
+        const trackPath = route === 'insights-article'
+            ? window.location.pathname
+            : (route === 'home' ? '/' : `/${route}`);
+        track('page_view', { route: trackPath });
 
         if (updateHistory) {
             const newPath = route === 'home' ? '/' : `/${route}`;
@@ -107,8 +107,9 @@ export class Router {
     }
 
     updateMenu(activeRoute) {
+        const displayRoute = activeRoute === 'insights-article' ? 'insights' : activeRoute;
         this.menuButtons.forEach(btn => {
-            btn.setAttribute('aria-current', btn.dataset.route === activeRoute ? 'page' : 'false');
+            btn.setAttribute('aria-current', btn.dataset.route === displayRoute ? 'page' : 'false');
         });
     }
 

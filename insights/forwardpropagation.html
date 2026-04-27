@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Forwardpropagation — Insights — mvfm.digital</title>
+    <meta name="description" content="How the idea behind backpropagation moved forward through time for decades before AI finally perceived it." />
+    <meta name="author" content="Marcus Vinicius Freitas Margarites" />
+    <link rel="canonical" href="https://mvfm.digital/insights/forwardpropagation" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://mvfm.digital/insights/forwardpropagation" />
+    <meta property="og:title" content="Forwardpropagation — Insights — mvfm.digital" />
+    <meta property="og:description" content="How the idea behind backpropagation moved forward through time for decades before AI finally perceived it." />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Forwardpropagation — Insights — mvfm.digital" />
+    <meta name="twitter:description" content="How the idea behind backpropagation moved forward through time for decades before AI finally perceived it." />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Forwardpropagation",
+      "description": "How the idea behind backpropagation moved forward through time for decades before AI finally perceived it.",
+      "url": "https://mvfm.digital/insights/forwardpropagation",
+      "datePublished": "2026-04",
+      "author": {
+        "@type": "Person",
+        "name": "Marcus Vinicius Freitas Margarites",
+        "url": "https://mvfm.digital"
+      }
+    }
+    </script>
+
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="stylesheet" href="/style.css">
+    <!-- TimelineJS CSS -->
+    <link title="timeline-styles" rel="stylesheet"
+        href="https://cdn.knightlab.com/libs/timeline3/3.9.1/css/timeline.css">
+
+    <!-- Start Single Page Apps for GitHub Pages -->
+    <script type="text/javascript">
+        (function (l) {
+            if (l.search[1] === 'p' && l.search[2] === '=') {
+                var decoded = l.search.slice(1).split('&').map(function (s) {
+                    return s.replace(/~and~/g, '&')
+                }).filter(function (s) {
+                    return s.slice(0, 2) === 'p='
+                })[0];
+                if (decoded !== undefined) {
+                    window.history.replaceState(null, null,
+                        l.pathname.slice(0, (l.pathname.slice(-1) === '/' ? -1 : undefined)) + decoded.slice(2) +
+                        l.hash
+                    );
+                }
+            }
+        }(window.location))
+    </script>
+    <!-- End Single Page Apps for GitHub Pages -->
+</head>
+
+<body>
+    <div class="app">
+        <div id="topBar">
+            <header>
+                <h1 class="brand"></h1>
+            </header>
+            <nav>
+                <div class="menu"></div>
+            </nav>
+        </div>
+        <main>
+            <canvas id="golCanvas" aria-hidden="true"></canvas>
+            <section id="contentPanel" class="panel" aria-live="polite" aria-atomic="true"></section>
+            <aside id="statsPanel" aria-live="polite" aria-atomic="true">
+                <div class="row"><span class="label">GEN</span>
+                    <div class="digits" id="genDigits"></div>
+                </div>
+                <div class="row"><span class="label">ALIVE</span>
+                    <div class="digits" id="aliveDigits"></div>
+                </div>
+                <div class="row"><span class="label">TOTAL</span>
+                    <div class="digits" id="totalDigits"></div>
+                </div>
+                <div class="row"><span class="label">OCC%</span>
+                    <div class="digits" id="occDigits"></div><span class="percent">%</span>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Article content -->
+    <template id="tpl-feature">
+        <article class="insight-article">
+            <header class="insight-article-header">
+                <h1>Forwardpropagation</h1>
+                <p class="insight-article-meta">April 2026</p>
+            </header>
+
+            <div class="insight-article-body">
+
+                <p class="insight-standfirst">The idea behind backpropagation was not missing. It kept moving forward through time under different names, in different fields, waiting for AI to finally perceive it.</p>
+
+                <figure class="insight-hero-image">
+                    <img src="/img/insights/forwardpropagation-knobs.png" alt="Close-up of an audio mixing console with rows of knobs and faders." loading="eager">
+                    <figcaption>Backpropagation turns learning into adjustment: many small knobs, each nudged by the error at the end.</figcaption>
+                </figure>
+
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">I</span>
+                    The Idea That Kept Passing By
+                </h2>
+
+                <aside class="insight-callout">
+                    The discovery propagated. The perception did not.
+                </aside>
+                <div class="insight-text">
+                    <p>There is a funny kind of tragedy in the history of artificial intelligence: sometimes the missing idea is not missing at all. It is moving forward through time in plain sight, appearing in another field, under another name, written for another audience, waiting for the right people to recognize it.</p>
+                    <p>Backpropagation is one of those ideas. Today, it is the workhorse behind deep learning: the procedure that lets a neural network discover how each of its internal knobs contributed to an error, then nudge them in a better direction. The model makes a guess going forward; backpropagation sends the blame backward.</p>
+                    <p>But the idea did not arrive in one clean thunderclap, and almost nobody who found a piece of it was trying to invent future AI. They were solving their own problems: equations, flight paths, rounding errors, behavioral prediction, brain-like hardware, cognitive representation.</p>
+                    <p>That is what makes the story so strange. Backpropagation was not repeatedly discovered by people trying to build the same thing. It kept appearing as the practical answer to different questions: <em>if a final outcome is wrong, how do earlier choices need to change?</em></p>
+                </div>
+
+                <aside class="insight-callout">
+                    Backpropagation solves the credit assignment problem: which earlier choice deserves blame?
+                </aside>
+                <div class="insight-text">
+                    <h3>The Problem Backprop Solves</h3>
+                    <p>A neural network is a stack of transformations. Numbers go in, layers transform them, and an answer comes out. If the answer is wrong, training means asking a deceptively hard question: which weights caused the mistake, and by how much?</p>
+                    <figure class="insight-diagram" role="img" aria-labelledby="backprop-simple-title backprop-simple-desc">
+                        <svg viewBox="0 0 760 245" xmlns="http://www.w3.org/2000/svg">
+                            <title id="backprop-simple-title">Backpropagation as guessing forward and assigning blame backward</title>
+                            <desc id="backprop-simple-desc">A simple flow showing data moving forward through a model to a guess and an error, then blame moving backward through the model to update earlier weights.</desc>
+                            <defs>
+                                <marker id="arrow-blue-simple" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                                    <path d="M0,0 L0,6 L9,3 z" fill="#1b6b93" />
+                                </marker>
+                                <marker id="arrow-orange-simple" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                                    <path d="M0,0 L0,6 L9,3 z" fill="#cf6f2b" />
+                                </marker>
+                            </defs>
+                            <rect x="24" y="24" width="712" height="202" rx="18" fill="rgba(229,245,255,0.68)" stroke="rgba(27,170,255,0.35)" />
+                            <g fill="#ffffff" stroke="#1b6b93" stroke-width="2">
+                                <rect x="65" y="78" width="110" height="50" rx="14" />
+                                <rect x="245" y="78" width="110" height="50" rx="14" />
+                                <rect x="425" y="78" width="110" height="50" rx="14" />
+                                <rect x="605" y="78" width="90" height="50" rx="14" />
+                            </g>
+                            <rect x="245" y="150" width="110" height="42" rx="12" fill="#fff8f1" stroke="#cf6f2b" stroke-width="2" />
+                            <g fill="#12354d" font-family="Arial, sans-serif" font-size="16" text-anchor="middle">
+                                <text x="120" y="108">data</text>
+                                <text x="300" y="108">model</text>
+                                <text x="480" y="108">guess</text>
+                                <text x="650" y="108">error</text>
+                                <text x="300" y="176">weights</text>
+                            </g>
+                            <g stroke="#1b6b93" stroke-width="3" marker-end="url(#arrow-blue-simple)">
+                                <line x1="176" y1="103" x2="235" y2="103" />
+                                <line x1="356" y1="103" x2="415" y2="103" />
+                                <line x1="536" y1="103" x2="595" y2="103" />
+                            </g>
+                            <g stroke="#cf6f2b" stroke-width="3" marker-end="url(#arrow-orange-simple)">
+                                <path d="M650,150 C590,204 405,204 358,174" fill="none" />
+                                <line x1="300" y1="150" x2="300" y2="136" />
+                            </g>
+                            <text x="380" y="58" fill="#1b6b93" font-family="Arial, sans-serif" font-size="15" text-anchor="middle">forward pass: make a guess</text>
+                            <text x="475" y="210" fill="#cf6f2b" font-family="Arial, sans-serif" font-size="15" text-anchor="middle">backward pass: send blame to the weights</text>
+                        </svg>
+                        <figcaption>A neural network first moves forward from data to guess to error. Backpropagation then moves backward from the error to the model's weights.</figcaption>
+                    </figure>
+                    <p>For a tiny network, you might perturb each weight one at a time. Turn this knob slightly. Did the error improve? Turn the next knob. Try again. But this becomes absurd as networks grow. Backpropagation calculates all those sensitivities in one backward pass.</p>
+                    <figure class="insight-diagram" role="img" aria-labelledby="chain-rule-title chain-rule-desc">
+                        <svg viewBox="0 0 760 250" xmlns="http://www.w3.org/2000/svg">
+                            <title id="chain-rule-title">The chain rule as a simple chain of influence</title>
+                            <desc id="chain-rule-desc">A chain from one weight to a hidden layer, to the guess, to the error. The diagram says that total influence is found by multiplying the small influences along the path.</desc>
+                            <defs>
+                                <marker id="arrow-blue-chain" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                                    <path d="M0,0 L0,6 L9,3 z" fill="#1b6b93" />
+                                </marker>
+                            </defs>
+                            <rect x="24" y="24" width="712" height="202" rx="18" fill="rgba(229,245,255,0.68)" stroke="rgba(27,170,255,0.35)" />
+                            <g fill="#ffffff" stroke="#1b6b93" stroke-width="2">
+                                <rect x="55" y="76" width="120" height="54" rx="16" />
+                                <rect x="235" y="76" width="120" height="54" rx="16" />
+                                <rect x="415" y="76" width="120" height="54" rx="16" />
+                                <rect x="595" y="76" width="110" height="54" rx="16" />
+                            </g>
+                            <g fill="#12354d" font-family="Arial, sans-serif" font-size="15" text-anchor="middle">
+                                <text x="115" y="99">one</text>
+                                <text x="115" y="118">weight</text>
+                                <text x="295" y="99">hidden</text>
+                                <text x="295" y="118">layer</text>
+                                <text x="475" y="108">guess</text>
+                                <text x="650" y="108">error</text>
+                            </g>
+                            <g stroke="#1b6b93" stroke-width="2.7" marker-end="url(#arrow-blue-chain)">
+                                <line x1="176" y1="103" x2="225" y2="103" />
+                                <line x1="356" y1="103" x2="405" y2="103" />
+                                <line x1="536" y1="103" x2="585" y2="103" />
+                            </g>
+                            <g fill="#5d7484" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">
+                                <text x="200" y="76">small effect</text>
+                                <text x="380" y="76">small effect</text>
+                                <text x="560" y="76">small effect</text>
+                            </g>
+                            <text x="380" y="170" fill="#12354d" font-family="Arial, sans-serif" font-size="19" text-anchor="middle">total influence = effect 1 x effect 2 x effect 3</text>
+                            <text x="380" y="198" fill="#5d7484" font-family="Arial, sans-serif" font-size="15" text-anchor="middle">The chain rule says a long influence can be built from local influences.</text>
+                        </svg>
+                        <figcaption>The chain rule is less mysterious than the notation makes it look: multiply the small effects along the path to estimate the total effect.</figcaption>
+                    </figure>
+                    <aside class="insight-explainer">
+                        <h4>The chain rule</h4>
+                        <p>Think of a chain of causes: a small nudge at the start affects the next step, which affects the next, all the way to the end. The chain rule says the total effect is the product of each individual nudge along the way.</p>
+                        <p>In a neural network, this lets you trace how much a weight buried deep inside contributed to a wrong answer at the output, by following the blame backwards through every layer.</p>
+                    </aside>
+                    <p>Backpropagation does that by applying the chain rule in reverse. Instead of asking each parameter separately how guilty it is, the algorithm sends an error signal backward through the system and reuses intermediate calculations along the way.</p>
+                    <p>This is the quiet miracle: one forward pass to make a prediction, one backward pass to assign responsibility.</p>
+                </div>
+
+                <aside class="insight-callout">
+                    Before neural networks, the same backward-sensitivity idea was guiding flight paths.
+                </aside>
+                <div class="insight-text">
+                    <h3>Cauchy, Kelley, and the control-theory route</h3>
+                    <p>In 1847, <a href="/ai/#event-gradient-descent">Augustin-Louis Cauchy</a> was not thinking about machines that learn. He was trying to solve systems of equations. His method of steepest descent asked a beautifully general question: if you want a quantity to get smaller, which direction should you move?</p>
+                    <p><a href="/ai/#event-backpropagation-i">Henry J. Kelley</a> brought the story much closer to backpropagation in 1960 with "Gradient Theory of Optimal Flight Paths". Kelley's problem was concrete and aeronautical: how should an aircraft or missile adjust its path to optimize performance? He was not training neural networks. He was asking how choices made earlier in a trajectory affect the final objective.</p>
+                    <p>That practical flight-control problem forced the same kind of reasoning deep learning would later need. To improve the path, Kelley needed sensitivities flowing backward from the goal to earlier control decisions. In modern language, this looks like a continuous-time ancestor of backpropagation: not because Kelley was secretly doing AI, but because the structure of the problem demanded backward credit assignment.</p>
+                    <p>Arthur Bryson followed with related gradient methods in 1961, and <a href="/ai/#event-backpropagation-ii">Bryson and Yu-Chi Ho</a> later codified the adjoint method in "Applied Optimal Control". Control engineers had a cousin of backpropagation because rockets, aircraft, and dynamic systems also need blame to flow backward from outcome to cause. AI researchers mostly did not notice, because the idea was wearing flight-control clothing.</p>
+                </div>
+
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">II</span>
+                    Wrong Place, Wrong Time
+                </h2>
+
+                <aside class="insight-callout">
+                    Wrong language, wrong winter: Linnainmaa had the core, but not the audience.
+                </aside>
+                <div class="insight-text">
+                    <h3>The thesis about arithmetic bookkeeping</h3>
+                    <p>In 1970, <a href="/ai/#event-backpropagation-iii">Seppo Linnainmaa</a> was not trying to make computers recognize cats, translate languages, or beat humans at Go. He was studying a quieter problem: how rounding errors accumulate when a computer performs a long calculation. Numerical algorithms are chains of operations, and each tiny local error can ripple through the rest of the computation.</p>
+                    <p>To understand that ripple, Linnainmaa described reverse-mode automatic differentiation in a master's thesis at the University of Helsinki. The computational essence of backpropagation was there: represent a calculation as steps, then run derivatives backward through those steps. The future of deep learning was hiding inside arithmetic bookkeeping.</p>
+                    <p>The thesis was written in Finnish. A German translation followed in 1976, but the AI community was not reading Finnish academic theses during the AI Winter. Nobody noticed.</p>
+                    <p>The timing is almost unbearably close: <a href="/ai/#event-limitations-of-the-perceptron">Minsky and Papert</a> published "Perceptrons" in 1969, helping send neural-network research into retreat. Just one year later, Linnainmaa published the algorithmic core that would eventually help prove multilayer learning possible. By then, nobody was listening.</p>
+                    <p>Even the name had an odd prehistory. In 1962, <a href="/ai/#event-the-perceptron">Frank Rosenblatt</a> had used the phrase "back-propagating error correction" while working on perceptrons. But his perceptrons used discrete outputs, so there was no useful gradient to follow. It was like having a road sign for a bridge that had not yet been built.</p>
+                </div>
+
+                <aside class="insight-callout">
+                    Right institution, wrong framing: Werbos was modeling behavior, not selling neural networks.
+                </aside>
+                <div class="insight-text">
+                    <h3>The Harvard thesis nobody heard</h3>
+                    <p><a href="/ai/#event-backpropagation-iv">Paul Werbos</a> was not writing a deep-learning manifesto in 1974. His PhD thesis, "Beyond Regression: New Tools for Prediction and Analysis in the Behavioral Sciences", came out of prediction, economics, dynamic systems, and the social sciences. He wanted better tools for modeling systems whose internal causes were tangled together.</p>
+                    <p>That meant he needed a way to compute how a final prediction error depended on earlier internal quantities. His answer was "ordered derivatives": a general method for computing gradients through multilayer systems via the chain rule. It was backpropagation in everything but the name and the future audience.</p>
+                    <p>The origin story is wonderfully strange. Werbos later described developing the idea while trying, among other things, to mathematize Freud's notion of a "flow of psychic energy". Modern deep learning, in one of its ancestral branches, passes through a Harvard dissertation trying to turn psychoanalytic metaphor into equations. History has a sense of humor, even when peer review does not.</p>
+                    <p>The thesis was filed, catalogued, and largely forgotten. Harvard was the right institution, but economics and behavioral forecasting were the wrong wrapper for a neural-network audience. The idea had prestige nearby, but no direct path to the people who needed it.</p>
+                </div>
+
+                <aside class="insight-callout">
+                    Almost right place, almost right time: Parker got close before the field was ready.
+                </aside>
+                <div class="insight-text">
+                    <h3>The almost-famous report</h3>
+                    <p><a href="/ai/#event-backpropagation-v">David Parker</a> was much closer to the modern neural-network story, but even his framing was not "let us launch the deep-learning era". His project was called "Learning-Logic", and the subtitle of his 1985 MIT technical report was almost science-fictional: "Casting the Cortex of the Human Brain in Silicon". He was thinking about brain-like computation, learning hardware, and architectures that could adapt.</p>
+                    <p>Parker had an invention-report version in 1982, and the 1985 technical report put the method very close to the neural-network formulation. But the signal still did not propagate far enough. Technical reports mattered, but they did not travel like journal papers. The field was thawing, but not yet hungry enough.</p>
+                </div>
+
+                <aside class="insight-callout">
+                    Right place, right time: the packaging was everything.
+                </aside>
+                <div class="insight-text">
+                    <h3>The paper everyone heard</h3>
+                    <p><a href="/ai/#event-backpropagation-vi">Rumelhart, Hinton, and Williams</a> were not optimizing flight paths or tracing rounding errors. They were trying to answer a cognitive and computational question: how can a neural network learn useful internal representations rather than merely memorizing input-output associations?</p>
+                    <p>"Learning representations by back-propagating errors" was published in "Nature" in October 1986. It showed, concretely and convincingly, that multilayer neural networks could learn internal representations: hidden layers were not a liability, but the whole point.</p>
+                    <p>The packaging was everything. "Nature" reached everyone, the AI Spring was beginning, hardware was becoming adequate, and the community was hungry for exactly this result.</p>
+                    <p>The algorithm was not entirely new. What was new was the match between problem, audience, demonstration, and moment. In the earlier stories, the technique had solved local problems in other worlds. In 1986, it finally solved a problem the AI community recognized as its own.</p>
+                </div>
+
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">III</span>
+                    Why It Finally Became Visible
+                </h2>
+
+                <aside class="insight-callout">
+                    Priority is a timestamp. Credit is a network effect.
+                </aside>
+                <div class="insight-text">
+                    <h3>Truth was not enough</h3>
+                    <p>If by backpropagation we mean reverse-mode differentiation through a computational graph, Linnainmaa is central. If we mean adjoint sensitivity methods, Kelley, Bryson, and control theory were already close. If we mean applying the idea to adaptive systems and neural networks, Werbos has a powerful claim. If we mean a neural-network learning algorithm in recognizable modern clothing, Parker gets close. If we mean the paper that made the AI community take notice, Rumelhart, Hinton, and Williams win the cultural history.</p>
+                    <p>Backpropagation became famous because correctness finally met legibility, timing, distribution, and working demonstrations. <a href="/ai/#event-nettalk">NETtalk</a> learned to convert English text into speech-like pronunciation in 1987 and became a minor media celebrity. <a href="/ai/#event-alvinn">ALVINN</a> used backpropagation to help a neural network drive a vehicle in 1989. <a href="/ai/#event-convolutional-neural-networks">LeNet</a> applied it to handwritten zip-code recognition. <a href="/ai/#event-td-gammon">TD-Gammon</a> used it in a reinforcement-learning system that reached top-level backgammon.</p>
+                    <p>Recognition did not land evenly. Werbos later received the 1995 IEEE Neural Network Pioneer Award for his role in the roots of backpropagation, and Hinton later shared the 2024 Nobel Prize in Physics for foundational work in machine learning. Kelley, Linnainmaa, and Parker remain much less visible in the public version of the story, which is part of the point: priority and fame are not the same signal.</p>
+                </div>
+
+                <aside class="insight-callout">
+                    Perhaps "Forwardpropagation" is the better historical name.
+                </aside>
+                <div class="insight-text">
+                    <h3>The joke hidden in the title</h3>
+                    <p>Backpropagation is an algorithm for sending information backward so earlier parts of a system can learn from later errors. But the history of backpropagation itself failed to backpropagate. Credit did not flow cleanly backward through the chain of predecessors.</p>
+                    <p>The idea moved forward instead: from optimization to flight control, from rounding errors to economics, from technical reports to "Nature", until the world finally had the right architecture to receive it.</p>
+                    <p>Not a single lightning strike. A signal trying to find a path.</p>
+                </div>
+
+                <hr class="insight-separator">
+                <p class="insight-cta">Want to learn more about the evolution of backpropagation through time? <a href="/ai?q=backpropagation">Explore the timeline</a>.</p>
+
+            </div>
+        </article>
+    </template>
+
+    <!-- TimelineJS JS -->
+    <script src="https://cdn.knightlab.com/libs/timeline3/3.9.1/js/timeline.js"></script>
+    <script>window.__FEATURE_SLUG__ = 'forwardpropagation';</script>
+    <script type="module" src="/js/main.js"></script>
+
+    <!-- Fallback content for crawlers that don't execute JavaScript -->
+    <noscript>
+        <style>.app { display: none; }</style>
+        <main>
+            <nav>
+                <a href="https://mvfm.digital/">Home</a> |
+                <a href="https://mvfm.digital/resume">Resume</a> |
+                <a href="https://mvfm.digital/contact">Contact</a> |
+                <a href="https://mvfm.digital/ai">AI Timeline</a> |
+                <a href="https://mvfm.digital/insights">Insights</a>
+            </nav>
+            <article>
+                <h1>Forwardpropagation</h1>
+                <p>How the idea behind backpropagation moved forward through time for decades before AI finally perceived it.</p>
+                <p>By Marcus Vinicius Freitas Margarites — April 2026</p>
+                <h2>I — The Idea That Kept Passing By</h2>
+                <p>Backpropagation is the chain rule with good bookkeeping: a forward pass makes a guess, and a backward pass distributes blame.</p>
+                <p>The striking part is that most of its early discoverers were solving other problems. Cauchy was solving equations. Henry J. Kelley was optimizing flight paths. Seppo Linnainmaa was tracking rounding errors. Paul Werbos was modeling prediction and behavior. David Parker was imagining brain-like silicon.</p>
+                <h2>II — Why It Finally Became Visible</h2>
+                <p>The 1986 "Nature" paper made the idea legible to AI by showing that multilayer networks could learn useful internal representations. Perhaps "Forwardpropagation" is the better historical name: the idea moved forward through time until AI finally perceived it.</p>
+            </article>
+        </main>
+    </noscript>
+</body>
+
+</html>

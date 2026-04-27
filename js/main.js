@@ -2,6 +2,7 @@ import { GameOfLife } from './gol.js';
 import { Router } from './router.js';
 import { initUI } from './ui.js';
 import { track } from './analytics.js';
+import { injectShell } from './shell.js';
 
 /**
  * App Configuration & Initialization
@@ -250,11 +251,13 @@ const aiRouteOnLoad = async () => {
     let needsUrlUpdate = false;
     const newUrl = new URL(window.location.href);
 
-    // Restore search/topics if missing from URL
-    if (!query && !topicsParam) {
+    // Restore search/topics if missing from URL — but skip if the URL targets a
+    // specific event via hash: restoring a saved query could exclude that event.
+    const hasEventHash = /^#event-/.test(currentHash);
+    if (!query && !topicsParam && !hasEventHash) {
         const savedQ = localStorage.getItem('timeline_q');
         const savedTopics = localStorage.getItem('timeline_topics');
-        
+
         if (savedQ || savedTopics) {
             query = savedQ;
             topicsParam = savedTopics;
@@ -739,6 +742,47 @@ const initTimelineSearch = () => {
     }
 };
 
+const insightsArticleOnLoad = () => {
+    const slug = window.__FEATURE_SLUG__;
+    if (slug) track('insights_entry_view', { slug });
+};
+
+const insightsRouteOnLoad = async () => {
+    const grid = document.getElementById('insights-grid');
+    if (!grid) return;
+
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        const parts = dateStr.split('-');
+        if (parts.length < 2) return parts[0];
+        const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1);
+        return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+    };
+
+    try {
+        const response = await fetch('/insights/manifest.json');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const articles = await response.json();
+
+        if (!articles.length) {
+            grid.innerHTML = '<p class="loading-text" style="color: var(--clr-text-muted);">No articles yet. Check back soon.</p>';
+            return;
+        }
+
+        grid.innerHTML = articles.map(article => `
+            <a class="insight-card" href="/insights/${escHtml(article.slug)}.html" data-slug="${escHtml(article.slug)}">
+                <span class="insight-card-date">${escHtml(formatDate(article.date))}</span>
+                <h3 class="insight-card-title">${escHtml(article.title)}</h3>
+                <p class="insight-card-desc">${escHtml(article.description)}</p>
+            </a>
+        `).join('');
+
+    } catch (err) {
+        console.error('Failed to load insights manifest:', err);
+        grid.innerHTML = '<p class="loading-text" style="color: #ff6b6b;">Failed to load articles.</p>';
+    }
+};
+
 const resumeRouteOnLoad = async () => {
     const resumeLink = document.querySelector('a[href="/pdf/resume.pdf"]');
     if (resumeLink) {
@@ -797,15 +841,32 @@ const routes = {
         canonicalUrl: 'https://mvfm.digital/ai',
         template: 'tpl-ai',
         onLoad: aiRouteOnLoad
+    },
+    insights: {
+        title: 'Insights — Marcus Vinicius Freitas Margarites',
+        description: 'Deep dives into AI history, algorithms, and ideas — written by Marcus Vinicius Freitas Margarites.',
+        canonicalUrl: 'https://mvfm.digital/insights',
+        template: 'tpl-insights',
+        onLoad: insightsRouteOnLoad
+    },
+    'insights-article': {
+        get title() { return document.title || 'Insights — mvfm.digital'; },
+        get description() { return document.querySelector('meta[name="description"]')?.content || ''; },
+        get canonicalUrl() { return document.querySelector('link[rel="canonical"]')?.getAttribute('href') || 'https://mvfm.digital/insights'; },
+        template: 'tpl-feature',
+        onLoad: insightsArticleOnLoad
     }
 };
 
 // Start application
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Initialize UI global behaviors
+    // 1. Inject shared nav, brand, and templates from the single source of truth
+    injectShell();
+
+    // 2. Initialize UI global behaviors
     initUI();
 
-    // 2. Initialize Game of Life engine
+    // 3. Initialize Game of Life engine
     new GameOfLife('golCanvas', {
         gen: 'genDigits',
         alive: 'aliveDigits',
@@ -813,6 +874,6 @@ document.addEventListener('DOMContentLoaded', () => {
         occ: 'occDigits'
     });
 
-    // 3. Initialize Router
+    // 4. Initialize Router
     new Router(routes);
 });
