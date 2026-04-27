@@ -208,6 +208,3 @@ window.addEventListener('pagehide', () => {
 
 // Auto-start the interval on module load
 startInterval();
-
-// Fire the initial page_view on module load
-track('page_view', { route: window.location.pathname });

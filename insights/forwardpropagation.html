@@ -229,10 +229,10 @@
                 </aside>
                 <div class="insight-text">
                     <h3>Cauchy, Kelley, and the control-theory route</h3>
-                    <p>In 1847, <a href="/ai/#event-gradient-descent">Augustin-Louis Cauchy</a> was not thinking about machines that learn. He was trying to solve systems of equations. His method of steepest descent asked a beautifully general question: if you want a quantity to get smaller, which direction should you move?</p>
-                    <p><a href="/ai/#event-backpropagation-i">Henry J. Kelley</a> brought the story much closer to backpropagation in 1960 with "Gradient Theory of Optimal Flight Paths". Kelley's problem was concrete and aeronautical: how should an aircraft or missile adjust its path to optimize performance? He was not training neural networks. He was asking how choices made earlier in a trajectory affect the final objective.</p>
+                    <p>In 1847, <a href="/ai#event-gradient-descent">Augustin-Louis Cauchy</a> was not thinking about machines that learn. He was trying to solve systems of equations. His method of steepest descent asked a beautifully general question: if you want a quantity to get smaller, which direction should you move?</p>
+                    <p><a href="/ai#event-backpropagation-i">Henry J. Kelley</a> brought the story much closer to backpropagation in 1960 with "Gradient Theory of Optimal Flight Paths". Kelley's problem was concrete and aeronautical: how should an aircraft or missile adjust its path to optimize performance? He was not training neural networks. He was asking how choices made earlier in a trajectory affect the final objective.</p>
                     <p>That practical flight-control problem forced the same kind of reasoning deep learning would later need. To improve the path, Kelley needed sensitivities flowing backward from the goal to earlier control decisions. In modern language, this looks like a continuous-time ancestor of backpropagation: not because Kelley was secretly doing AI, but because the structure of the problem demanded backward credit assignment.</p>
-                    <p>Arthur Bryson followed with related gradient methods in 1961, and <a href="/ai/#event-backpropagation-ii">Bryson and Yu-Chi Ho</a> later codified the adjoint method in "Applied Optimal Control". Control engineers had a cousin of backpropagation because rockets, aircraft, and dynamic systems also need blame to flow backward from outcome to cause. AI researchers mostly did not notice, because the idea was wearing flight-control clothing.</p>
+                    <p>Arthur Bryson followed with related gradient methods in 1961, and <a href="/ai#event-backpropagation-ii">Bryson and Yu-Chi Ho</a> later codified the adjoint method in "Applied Optimal Control". Control engineers had a cousin of backpropagation because rockets, aircraft, and dynamic systems also need blame to flow backward from outcome to cause. AI researchers mostly did not notice, because the idea was wearing flight-control clothing.</p>
                 </div>
 
                 <span class="insight-chapter-spacer"></span>
@@ -246,11 +246,11 @@
                 </aside>
                 <div class="insight-text">
                     <h3>The thesis about arithmetic bookkeeping</h3>
-                    <p>In 1970, <a href="/ai/#event-backpropagation-iii">Seppo Linnainmaa</a> was not trying to make computers recognize cats, translate languages, or beat humans at Go. He was studying a quieter problem: how rounding errors accumulate when a computer performs a long calculation. Numerical algorithms are chains of operations, and each tiny local error can ripple through the rest of the computation.</p>
+                    <p>In 1970, <a href="/ai#event-backpropagation-iii">Seppo Linnainmaa</a> was not trying to make computers recognize cats, translate languages, or beat humans at Go. He was studying a quieter problem: how rounding errors accumulate when a computer performs a long calculation. Numerical algorithms are chains of operations, and each tiny local error can ripple through the rest of the computation.</p>
                     <p>To understand that ripple, Linnainmaa described reverse-mode automatic differentiation in a master's thesis at the University of Helsinki. The computational essence of backpropagation was there: represent a calculation as steps, then run derivatives backward through those steps. The future of deep learning was hiding inside arithmetic bookkeeping.</p>
                     <p>The thesis was written in Finnish. A German translation followed in 1976, but the AI community was not reading Finnish academic theses during the AI Winter. Nobody noticed.</p>
-                    <p>The timing is almost unbearably close: <a href="/ai/#event-limitations-of-the-perceptron">Minsky and Papert</a> published "Perceptrons" in 1969, helping send neural-network research into retreat. Just one year later, Linnainmaa published the algorithmic core that would eventually help prove multilayer learning possible. By then, nobody was listening.</p>
-                    <p>Even the name had an odd prehistory. In 1962, <a href="/ai/#event-the-perceptron">Frank Rosenblatt</a> had used the phrase "back-propagating error correction" while working on perceptrons. But his perceptrons used discrete outputs, so there was no useful gradient to follow. It was like having a road sign for a bridge that had not yet been built.</p>
+                    <p>The timing is almost unbearably close: <a href="/ai#event-limitations-of-the-perceptron">Minsky and Papert</a> published "Perceptrons" in 1969, helping send neural-network research into retreat. Just one year later, Linnainmaa published the algorithmic core that would eventually help prove multilayer learning possible. By then, nobody was listening.</p>
+                    <p>Even the name had an odd prehistory. In 1962, <a href="/ai#event-the-perceptron">Frank Rosenblatt</a> had used the phrase "back-propagating error correction" while working on perceptrons. But his perceptrons used discrete outputs, so there was no useful gradient to follow. It was like having a road sign for a bridge that had not yet been built.</p>
                 </div>
 
                 <aside class="insight-callout">
@@ -258,7 +258,7 @@
                 </aside>
                 <div class="insight-text">
                     <h3>The Harvard thesis nobody heard</h3>
-                    <p><a href="/ai/#event-backpropagation-iv">Paul Werbos</a> was not writing a deep-learning manifesto in 1974. His PhD thesis, "Beyond Regression: New Tools for Prediction and Analysis in the Behavioral Sciences", came out of prediction, economics, dynamic systems, and the social sciences. He wanted better tools for modeling systems whose internal causes were tangled together.</p>
+                    <p><a href="/ai#event-backpropagation-iv">Paul Werbos</a> was not writing a deep-learning manifesto in 1974. His PhD thesis, "Beyond Regression: New Tools for Prediction and Analysis in the Behavioral Sciences", came out of prediction, economics, dynamic systems, and the social sciences. He wanted better tools for modeling systems whose internal causes were tangled together.</p>
                     <p>That meant he needed a way to compute how a final prediction error depended on earlier internal quantities. His answer was "ordered derivatives": a general method for computing gradients through multilayer systems via the chain rule. It was backpropagation in everything but the name and the future audience.</p>
                     <p>The origin story is wonderfully strange. Werbos later described developing the idea while trying, among other things, to mathematize Freud's notion of a "flow of psychic energy". Modern deep learning, in one of its ancestral branches, passes through a Harvard dissertation trying to turn psychoanalytic metaphor into equations. History has a sense of humor, even when peer review does not.</p>
                     <p>The thesis was filed, catalogued, and largely forgotten. Harvard was the right institution, but economics and behavioral forecasting were the wrong wrapper for a neural-network audience. The idea had prestige nearby, but no direct path to the people who needed it.</p>
@@ -269,7 +269,7 @@
                 </aside>
                 <div class="insight-text">
                     <h3>The almost-famous report</h3>
-                    <p><a href="/ai/#event-backpropagation-v">David Parker</a> was much closer to the modern neural-network story, but even his framing was not "let us launch the deep-learning era". His project was called "Learning-Logic", and the subtitle of his 1985 MIT technical report was almost science-fictional: "Casting the Cortex of the Human Brain in Silicon". He was thinking about brain-like computation, learning hardware, and architectures that could adapt.</p>
+                    <p><a href="/ai#event-backpropagation-v">David Parker</a> was much closer to the modern neural-network story, but even his framing was not "let us launch the deep-learning era". His project was called "Learning-Logic", and the subtitle of his 1985 MIT technical report was almost science-fictional: "Casting the Cortex of the Human Brain in Silicon". He was thinking about brain-like computation, learning hardware, and architectures that could adapt.</p>
                     <p>Parker had an invention-report version in 1982, and the 1985 technical report put the method very close to the neural-network formulation. But the signal still did not propagate far enough. Technical reports mattered, but they did not travel like journal papers. The field was thawing, but not yet hungry enough.</p>
                 </div>
 
@@ -278,7 +278,7 @@
                 </aside>
                 <div class="insight-text">
                     <h3>The paper everyone heard</h3>
-                    <p><a href="/ai/#event-backpropagation-vi">Rumelhart, Hinton, and Williams</a> were not optimizing flight paths or tracing rounding errors. They were trying to answer a cognitive and computational question: how can a neural network learn useful internal representations rather than merely memorizing input-output associations?</p>
+                    <p><a href="/ai#event-backpropagation-vi">Rumelhart, Hinton, and Williams</a> were not optimizing flight paths or tracing rounding errors. They were trying to answer a cognitive and computational question: how can a neural network learn useful internal representations rather than merely memorizing input-output associations?</p>
                     <p>"Learning representations by back-propagating errors" was published in "Nature" in October 1986. It showed, concretely and convincingly, that multilayer neural networks could learn internal representations: hidden layers were not a liability, but the whole point.</p>
                     <p>The packaging was everything. "Nature" reached everyone, the AI Spring was beginning, hardware was becoming adequate, and the community was hungry for exactly this result.</p>
                     <p>The algorithm was not entirely new. What was new was the match between problem, audience, demonstration, and moment. In the earlier stories, the technique had solved local problems in other worlds. In 1986, it finally solved a problem the AI community recognized as its own.</p>
@@ -296,7 +296,7 @@
                 <div class="insight-text">
                     <h3>Truth was not enough</h3>
                     <p>If by backpropagation we mean reverse-mode differentiation through a computational graph, Linnainmaa is central. If we mean adjoint sensitivity methods, Kelley, Bryson, and control theory were already close. If we mean applying the idea to adaptive systems and neural networks, Werbos has a powerful claim. If we mean a neural-network learning algorithm in recognizable modern clothing, Parker gets close. If we mean the paper that made the AI community take notice, Rumelhart, Hinton, and Williams win the cultural history.</p>
-                    <p>Backpropagation became famous because correctness finally met legibility, timing, distribution, and working demonstrations. <a href="/ai/#event-nettalk">NETtalk</a> learned to convert English text into speech-like pronunciation in 1987 and became a minor media celebrity. <a href="/ai/#event-alvinn">ALVINN</a> used backpropagation to help a neural network drive a vehicle in 1989. <a href="/ai/#event-convolutional-neural-networks">LeNet</a> applied it to handwritten zip-code recognition. <a href="/ai/#event-td-gammon">TD-Gammon</a> used it in a reinforcement-learning system that reached top-level backgammon.</p>
+                    <p>Backpropagation became famous because correctness finally met legibility, timing, distribution, and working demonstrations. <a href="/ai#event-nettalk">NETtalk</a> learned to convert English text into speech-like pronunciation in 1987 and became a minor media celebrity. <a href="/ai#event-alvinn">ALVINN</a> used backpropagation to help a neural network drive a vehicle in 1989. <a href="/ai#event-convolutional-neural-networks">LeNet</a> applied it to handwritten zip-code recognition. <a href="/ai#event-td-gammon">TD-Gammon</a> used it in a reinforcement-learning system that reached top-level backgammon.</p>
                     <p>Recognition did not land evenly. Werbos later received the 1995 IEEE Neural Network Pioneer Award for his role in the roots of backpropagation, and Hinton later shared the 2024 Nobel Prize in Physics for foundational work in machine learning. Kelley, Linnainmaa, and Parker remain much less visible in the public version of the story, which is part of the point: priority and fame are not the same signal.</p>
                 </div>
 
@@ -348,3 +348,4 @@
 </body>
 
 </html>
+
