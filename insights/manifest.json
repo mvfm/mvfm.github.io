@@ -8,6 +8,21 @@
       "neural networks",
       "deep learning",
       "foundations"
+    ],
+    "referenced_events": [
+      "gradient-descent",
+      "backpropagation-i",
+      "backpropagation-ii",
+      "backpropagation-iii",
+      "limitations-of-the-perceptron",
+      "the-perceptron",
+      "backpropagation-iv",
+      "backpropagation-v",
+      "backpropagation-vi",
+      "nettalk",
+      "alvinn",
+      "convolutional-neural-networks",
+      "td-gammon"
     ]
   }
 ]

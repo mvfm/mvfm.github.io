@@ -218,6 +218,35 @@ main {
     color: var(--clr-primary) !important;
 }
 
+/* Needed for absolutely-positioned insight stripe */
+.tl-slide {
+    position: relative;
+}
+
+/* Insight article stripe — injected into event text, relocated to .tl-slide root by JS */
+.insight-ref-stripe-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.tl-slide > .insight-ref-stripe-container {
+    opacity: 1;
+}
+
+.insight-ref-stripe {
+    width: 5px;
+    height: 100%;
+    background: linear-gradient(to bottom, #7c3aed, #a21caf);
+    border-radius: 6px 0 0 6px;
+}
+
 .tl-headline-date {
     color: var(--clr-primary) !important;
 }
@@ -259,6 +288,16 @@ main {
 
 .panel.show {
     opacity: 1;
+}
+
+/* Site-wide link colour for all content panels */
+#contentPanel a:link,
+#contentPanel a:visited {
+    color: var(--clr-accent, #1baaff);
+}
+#contentPanel a:hover,
+#contentPanel a:focus {
+    color: var(--clr-primary, #0c2d6b);
 }
 
 /* Resume quip pull-quote */
@@ -406,6 +445,14 @@ main {
     margin-right: auto !important;
 }
 
+/* Override TimelineJS link colour with site accent blue */
+.tl-text .tl-text-content a {
+    color: var(--clr-accent, #1baaff) !important;
+}
+.tl-text .tl-text-content a:hover {
+    color: var(--clr-primary, #0c2d6b) !important;
+}
+
 /* Fix caption overflow and ensure it wraps within media area */
 .tl-media .tl-caption {
     max-width: 450px !important;
@@ -441,8 +488,29 @@ main {
     height: 0; /* Don't take up vertical space */
     overflow: visible; /* Allow pills to be seen */
     margin: 0;
-    padding-right: 1rem; /* Moved closer to the right edge */
+    padding-right: 1rem;
     pointer-events: none; /* Allow interaction with text behind */
+}
+
+/* Insight chip container — anchored to bottom-right of slide */
+.insight-chips-container {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.3rem;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.tl-slide > .insight-chips-container {
+    bottom: 1.5rem;
+    right: 1.25rem;
+    opacity: 1;
 }
 
 .event-topic-label {
@@ -459,6 +527,33 @@ main {
     color: white;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Insight article chip — stacked below topic pills inside .topic-labels-container */
+.insight-ref-chip,
+.insight-ref-chip:link,
+.insight-ref-chip:visited {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: #f3e8ff;
+    border: 1.5px solid #a855f7;
+    border-radius: 20px;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.72rem;
+    line-height: 1.2;
+    font-weight: 700;
+    color: #7e22ce !important;
+    white-space: nowrap;
+    cursor: pointer;
+    text-decoration: none !important;
+    pointer-events: auto;
+    transition: background 0.15s ease;
+}
+
+.insight-ref-chip:hover {
+    background: #ede9fe;
+    color: #6b21a8 !important;
 }
 
 /* Purchase links cart icon */
@@ -1120,6 +1215,7 @@ ol li {
     row-gap: 2rem;
     align-items: start;
 }
+
 
 .insight-chapter-spacer {
     grid-column: 1;

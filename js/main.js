@@ -297,6 +297,23 @@ const aiRouteOnLoad = async () => {
         }
     };
 
+    // Build article→event cross-reference map from insights manifest
+    let articlesByEvent = new Map();
+    try {
+        const manifestRes = await fetch('/insights/manifest.json');
+        if (manifestRes.ok) {
+            const manifest = await manifestRes.json();
+            manifest.forEach(article => {
+                (article.referenced_events || []).forEach(eventId => {
+                    if (!articlesByEvent.has(eventId)) articlesByEvent.set(eventId, []);
+                    articlesByEvent.get(eventId).push({ slug: article.slug, title: article.title });
+                });
+            });
+        }
+    } catch (e) {
+        console.warn('Could not load insights manifest:', e);
+    }
+
     for (let attempt = 1; attempt <= CONFIG.MAX_RETRIES; attempt++) {
         try {
             const baseMessage = query ? `Searching for "${query}"...` : `Loading timeline data...`;
@@ -367,18 +384,35 @@ const aiRouteOnLoad = async () => {
                 generateMnemonics(allTopics);
             }
 
-            // Inject topic labels and purchase link cart icon into event data
+            // Inject topic labels, purchase links, and insight article chips into event data
             if (data.events) {
                 data.events.forEach(event => {
                     if (!event.text) event.text = { text: "" };
 
+                    // Derive slug the same way TimelineJS does when unique_id is absent
+                    const eventSlug = event.unique_id || (event.text?.headline || '')
+                        .toLowerCase()
+                        .replace(/\s+/g, '-')
+                        .replace(/[^\w-]+/g, '')
+                        .replace(/--+/g, '-')
+                        .replace(/^-+|-+$/g, '');
+
+                    const referencingArticles = articlesByEvent.get(eventSlug) || [];
+
+                    // Insight stripe (relocated to .tl-slide left edge by relocateLabels)
+                    if (referencingArticles.length > 0) {
+                        const stripeHtml = `<div class="insight-ref-stripe-container"><div class="insight-ref-stripe"></div></div>`;
+                        event.text.text = stripeHtml + (event.text.text || "");
+                    }
+
+                    // Purchase links cart icon (unchanged)
                     if (event.purchase_links && event.purchase_links.length > 0) {
                         const linksHtml = event.purchase_links.map(l =>
                             `<a class="purchase-link" href="${l.url}" target="_new">${l.label}</a>`
                         ).join('');
                         const cartHtml = `
                             <div class="purchase-links-container">
-                                <button class="cart-btn" aria-label="Purchase links" title="Purchase links" data-event-id="${event.unique_id}" data-event-title="${event.text?.headline || ''}">
+                                <button class="cart-btn" aria-label="Purchase links" title="Purchase links" data-event-id="${eventSlug}" data-event-title="${event.text?.headline || ''}">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                                          fill="none" stroke="currentColor" stroke-width="2"
                                          stroke-linecap="round" stroke-linejoin="round">
@@ -391,18 +425,31 @@ const aiRouteOnLoad = async () => {
                         event.text.text = cartHtml + (event.text.text || "");
                     }
 
-                    if (event.topics && event.topics.length > 0) {
-                        const labelsHtml = `
-                            <div class="topic-labels-container">
-                                ${[...event.topics].sort().map(t => `
+                    // Topic labels (top-right pill row, unchanged)
+                    const hasTopics = event.topics && event.topics.length > 0;
+                    if (hasTopics) {
+                        const topicPillsHtml = [...event.topics].sort().map(t => `
                                     <div class="event-topic-label"
                                          style="background-color: ${getTopicColor(t)}"
                                          title="${t}">
                                         ${getTopicInitials(t)}
-                                    </div>
-                                `).join('')}
-                            </div>`;
+                                    </div>`).join('');
+                        const labelsHtml = `<div class="topic-labels-container">${topicPillsHtml}</div>`;
                         event.text.text = labelsHtml + (event.text.text || "");
+                    }
+
+                    // Insight article chips (bottom-right, separate container)
+                    if (referencingArticles.length > 0) {
+                        const chipsHtml = referencingArticles.map(a => `
+                                <a class="insight-ref-chip"
+                                   href="/insights/${a.slug}.html"
+                                   data-event-id="${eventSlug}"
+                                   data-event-title="${event.text?.headline || ''}"
+                                   data-article-slug="${a.slug}"
+                                   data-article-title="${a.title}">
+                                    ✦ ${a.title}
+                                </a>`).join('');
+                        event.text.text = `<div class="insight-chips-container">${chipsHtml}</div>` + (event.text.text || "");
                     }
                 });
             }
@@ -433,6 +480,10 @@ const aiRouteOnLoad = async () => {
                             document.querySelectorAll('.tl-slide').forEach(slide => {
                                 relocateContainer(slide, '.topic-labels-container');
                                 relocateContainer(slide, '.purchase-links-container');
+                                relocateContainer(slide, '.insight-ref-stripe-container');
+                                relocateContainer(slide, '.insight-chips-container');
+                                // TimelineJS adds target="_blank" to all links it renders; undo for chips
+                                slide.querySelectorAll('.insight-ref-chip[target]').forEach(c => c.removeAttribute('target'));
                             });
                         };
 
@@ -482,6 +533,19 @@ const aiRouteOnLoad = async () => {
 
                             // Close open dropdowns
                             document.querySelectorAll('.purchase-dropdown.open').forEach(d => d.classList.remove('open'));
+                        });
+
+                        // Insight chip click handler — track navigation to article
+                        document.getElementById('timeline-embed').addEventListener('click', (e) => {
+                            const chip = e.target.closest('.insight-ref-chip');
+                            if (!chip) return;
+                            track('timeline_insight_click', {
+                                event_id:      chip.getAttribute('data-event-id'),
+                                event_title:   chip.getAttribute('data-event-title'),
+                                article_slug:  chip.getAttribute('data-article-slug'),
+                                article_title: chip.getAttribute('data-article-title')
+                            });
+                            // <a> tag navigates naturally — no preventDefault needed
                         });
                         } // end cartClickHandlerAdded guard
 
