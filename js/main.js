@@ -547,6 +547,21 @@ const aiRouteOnLoad = async () => {
                             });
                             // <a> tag navigates naturally — no preventDefault needed
                         });
+
+                        // Body text link click handler — tracks source/paper links inside entry text
+                        document.getElementById('timeline-embed').addEventListener('click', (e) => {
+                            const link = e.target.closest('a');
+                            if (!link || !link.closest('.tl-text-content')) return;
+                            const slide = link.closest('.tl-slide');
+                            const eventId = String(slide?.data?.unique_id || '');
+                            const eventTitle = slide?.data?.text?.headline || '';
+                            track('timeline_text_link_click', {
+                                event_id:   eventId,
+                                event_title: eventTitle,
+                                link_label: link.textContent.trim(),
+                                link_url:   link.href
+                            });
+                        });
                         } // end cartClickHandlerAdded guard
 
                         // Initial relocation attempts
