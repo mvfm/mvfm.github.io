@@ -866,7 +866,7 @@ ol li {
 .modal-overlay {
     position: absolute;
     inset: 0;
-    z-index: 10;
+    z-index: 100;
     background: rgba(12, 45, 107, 0.55);
     display: flex;
     align-items: center;
@@ -884,6 +884,7 @@ ol li {
 
 .modal-card {
     position: relative;
+    z-index: 101;
     background: var(--clr-panel-bg);
     backdrop-filter: blur(6px);
     border: 1px solid var(--clr-panel-border);
