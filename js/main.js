@@ -228,6 +228,7 @@ const showTimelineModal = (data, { force = false } = {}) => {
             // Allow modal CSS transition to start before navigating
             setTimeout(() => {
                 window.timeline?.goToId?.(slug);
+                history.replaceState(null, '', `#event-${slug}`);
             }, 50);
         });
     });
