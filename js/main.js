@@ -600,6 +600,7 @@ const aiRouteOnLoad = async () => {
                                 if (newId) {
                                     const newHash = `#event-${newId}`;
                                     localStorage.setItem('timeline_hash', newHash);
+                                    history.replaceState(null, '', newHash);
                                 }
                             }
                         });
