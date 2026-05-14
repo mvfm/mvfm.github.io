@@ -279,11 +279,9 @@
           beaconPayloads.push(url);
           return true;
         };
-        // Trigger beaconAll via visibilitychange → hidden
-        Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
-        document.dispatchEvent(new Event('visibilitychange'));
+        // Trigger beaconAll via pagehide (no visibilityState dependency)
+        window.dispatchEvent(new Event('pagehide'));
         navigator.sendBeacon = origBeacon;
-        Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
         // Give the handler time to run
         await new Promise(r => setTimeout(r, 10));
         expect(beaconPayloads.length >= 1).toBeTruthy();

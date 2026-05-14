@@ -566,8 +566,18 @@ const aiRouteOnLoad = async () => {
                         } // end cartClickHandlerAdded guard
 
                         // Initial relocation attempts
+                        let allRelocated = false;
                         setTimeout(relocateLabels, 100);
-                        setTimeout(relocateLabels, 1000);
+                        setTimeout(() => {
+                            relocateLabels();
+                            const remaining = document.querySelectorAll(
+                                '.topic-labels-container:not([data-relocated="true"]), ' +
+                                '.purchase-links-container:not([data-relocated="true"]), ' +
+                                '.insight-ref-stripe-container:not([data-relocated="true"]), ' +
+                                '.insight-chips-container:not([data-relocated="true"])'
+                            );
+                            if (remaining.length === 0) allRelocated = true;
+                        }, 1000);
 
                         lastTimelineData = data;
                         updateBellState(data);
@@ -579,8 +589,18 @@ const aiRouteOnLoad = async () => {
                         // Dwell timer for timeline event view tracking
                         let dwellTimer = null;
 
+                        let _writeHashTimer = null;
+                        const writeHash = (newId) => {
+                            clearTimeout(_writeHashTimer);
+                            _writeHashTimer = setTimeout(() => {
+                                const newHash = `#event-${newId}`;
+                                localStorage.setItem('timeline_hash', newHash);
+                                history.replaceState(null, '', newHash);
+                            }, 150);
+                        };
+
                         window.timeline.on('change', (e) => {
-                            setTimeout(relocateLabels, 50);
+                            if (!allRelocated) setTimeout(relocateLabels, 50);
 
                             // Cancel any existing dwell timer
                             clearTimeout(dwellTimer);
@@ -594,14 +614,8 @@ const aiRouteOnLoad = async () => {
                             }, 500);
 
                             if (isTimelineInitialized) {
-                                // Persist current unique_id as hash position
-                                // We use the event's unique_id if available, otherwise fallback to hash
                                 const newId = e.unique_id || (window.timeline.getCurrentSlide()?.data?.unique_id);
-                                if (newId) {
-                                    const newHash = `#event-${newId}`;
-                                    localStorage.setItem('timeline_hash', newHash);
-                                    history.replaceState(null, '', newHash);
-                                }
+                                if (newId) writeHash(newId);
                             }
                         });
 
