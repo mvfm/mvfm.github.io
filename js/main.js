@@ -27,6 +27,7 @@ let selectedTopics = new Set();
 let topicMnemonics = new Map();
 let cartClickHandlerElement = null;
 let lastTimelineData = null;
+let _modalCreating = false;
 
 /**
  * Topic Utility Functions
@@ -118,7 +119,7 @@ const escHtml = (str) => String(str)
     .replace(/'/g, '&#39;');
 
 const showTimelineModal = (data, { force = false } = {}) => {
-    if (document.getElementById('timeline-modal')) return;
+    if (document.getElementById('timeline-modal') || _modalCreating) return;
     const today = new Date().toISOString().slice(0, 10);
     if (!force) {
         if (localStorage.getItem('timeline_modal_dismissed') === 'true') return;
@@ -130,6 +131,8 @@ const showTimelineModal = (data, { force = false } = {}) => {
     const hasOnThisDay = data.on_this_day?.length > 0;
     const hasWhatsNew = data.new_events?.length > 0;
     if (!hasOnThisDay && !hasWhatsNew) return;
+
+    _modalCreating = true;
 
     const defaultTab = hasOnThisDay ? 'on-this-day' : 'whats-new';
 
@@ -173,8 +176,9 @@ const showTimelineModal = (data, { force = false } = {}) => {
         </div>`;
 
     const panel = document.getElementById('contentPanel');
-    if (!panel) return;
+    if (!panel) { _modalCreating = false; return; }
     panel.appendChild(modal);
+    _modalCreating = false;
 
     // Mark current slugs as seen and refresh bell badge
     const seenSlugs = [
@@ -194,7 +198,7 @@ const showTimelineModal = (data, { force = false } = {}) => {
         localStorage.setItem('timeline_modal_date', today);
         if (permanent) localStorage.setItem('timeline_modal_dismissed', 'true');
         modal.classList.remove('modal-visible');
-        setTimeout(() => modal.remove(), 300);
+        setTimeout(() => { modal.remove(); _modalCreating = false; }, 300);
     };
 
     document.addEventListener('keydown', onKeydown);
@@ -553,9 +557,9 @@ const aiRouteOnLoad = async () => {
                         document.getElementById('timeline-embed').addEventListener('click', (e) => {
                             const link = e.target.closest('a');
                             if (!link || !link.closest('.tl-text-content')) return;
-                            const slide = link.closest('.tl-slide');
-                            const eventId = String(slide?.data?.unique_id || '');
-                            const eventTitle = slide?.data?.text?.headline || '';
+                            const currentSlide = window.timeline.getCurrentSlide?.();
+                            const eventId = String(currentSlide?.data?.unique_id || '');
+                            const eventTitle = currentSlide?.data?.text?.headline || '';
                             track('timeline_text_link_click', {
                                 event_id:   eventId,
                                 event_title: eventTitle,
@@ -609,7 +613,7 @@ const aiRouteOnLoad = async () => {
                             dwellTimer = setTimeout(() => {
                                 const slide = window.timeline.getCurrentSlide?.();
                                 const eventId = String(e.unique_id || slide?.data?.unique_id || '');
-                                const eventTitle = slide?.data?.text?.headline || '';
+                                const eventTitle = e.text?.headline || slide?.data?.text?.headline || '';
                                 if (eventId) track('timeline_event_view', { event_id: eventId, event_title: eventTitle });
                             }, 500);
 
@@ -828,7 +832,8 @@ const initTimelineSearch = () => {
     });
 
     const bellBtn = document.getElementById('modal-bell-btn');
-    if (bellBtn) {
+    if (bellBtn && !bellBtn.dataset.listenerAttached) {
+        bellBtn.dataset.listenerAttached = 'true';
         bellBtn.addEventListener('click', () => {
             if (!lastTimelineData) return;
             track('timeline_modal_reopen');
@@ -841,6 +846,7 @@ const insightsArticleOnLoad = () => {
     const slug = window.__FEATURE_SLUG__;
     if (slug) track('insights_entry_view', { slug });
 };
+
 
 const insightsRouteOnLoad = async () => {
     const grid = document.getElementById('insights-grid');
