@@ -216,12 +216,13 @@ async function loadTraffic() {
       kpiCard('Page Views',        d.page_views.toLocaleString(),            deltaBadge(d.page_views_delta_pct)) +
       kpiCard('Avg Pages/Session', d.avg_pages_per_session.toFixed(1),       deltaBadge(d.avg_pages_delta_pct));
 
+    const viewsPerDay = fillDates(d.views_per_day ?? []);
     makeChart('chart-views-over-time', {
       type: 'line',
       data: {
-        labels: d.views_per_day.map(r => r.date),
+        labels: viewsPerDay.map(r => r.date),
         datasets: [{
-          data: d.views_per_day.map(r => r.count),
+          data: viewsPerDay.map(r => r.count),
           borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)',
           tension: 0.3, fill: true, pointRadius: 2,
         }],
@@ -1015,16 +1016,20 @@ const MODAL_DEFS = {
   viewsOverTime: {
     title: 'Page views over time',
     subtitle: 'Full date range',
-    buildChart: (raw) => ({
-      type: 'line',
-      data: {
-        labels: raw.views_per_day.map(r => r.date),
-        datasets: [{ data: raw.views_per_day.map(r => r.count), borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)', tension: 0.3, fill: true, pointRadius: 3 }],
-      },
-      options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#475569' } }, y: { ticks: { color: '#475569' } } } },
-    }),
+    buildChart: (raw) => {
+      const perDay = fillDates(raw.views_per_day ?? []);
+      return {
+        type: 'line',
+        data: {
+          labels: perDay.map(r => r.date),
+          datasets: [{ data: perDay.map(r => r.count), borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)', tension: 0.3, fill: true, pointRadius: 3 }],
+        },
+        options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#475569' } }, y: { ticks: { color: '#475569' } } } },
+      };
+    },
     buildTable: (raw) => {
-      const rows = raw.views_per_day.map(r => `<tr><td>${r.date}</td><td>${r.count}</td></tr>`).join('');
+      const perDay = fillDates(raw.views_per_day ?? []);
+      const rows = perDay.map(r => `<tr><td>${r.date}</td><td>${r.count}</td></tr>`).join('');
       return `<table class="data-table"><thead><tr><th>Date</th><th>Views</th></tr></thead><tbody>${rows}</tbody></table>`;
     },
   },
@@ -1159,16 +1164,20 @@ const MODAL_DEFS = {
   entryViewsOverTime: {
     title: 'Event views over time',
     subtitle: 'Timeline event views per day in selected period',
-    buildChart: (raw) => ({
-      type: 'line',
-      data: {
-        labels: raw.entry_views_per_day.map(r => r.date),
-        datasets: [{ data: raw.entry_views_per_day.map(r => r.count), borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', tension: 0.3, fill: true, pointRadius: 3 }],
-      },
-      options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#475569' } }, y: { ticks: { color: '#475569' } } } },
-    }),
+    buildChart: (raw) => {
+      const perDay = fillDates(raw.entry_views_per_day ?? []);
+      return {
+        type: 'line',
+        data: {
+          labels: perDay.map(r => r.date),
+          datasets: [{ data: perDay.map(r => r.count), borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', tension: 0.3, fill: true, pointRadius: 3 }],
+        },
+        options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#475569' } }, y: { ticks: { color: '#475569' } } } },
+      };
+    },
     buildTable: (raw) => {
-      const rows = raw.entry_views_per_day.map(r => `<tr><td>${r.date}</td><td>${r.count}</td></tr>`).join('');
+      const perDay = fillDates(raw.entry_views_per_day ?? []);
+      const rows = perDay.map(r => `<tr><td>${r.date}</td><td>${r.count}</td></tr>`).join('');
       return `<table class="data-table"><thead><tr><th>Date</th><th>Views</th></tr></thead><tbody>${rows}</tbody></table>`;
     },
   },
