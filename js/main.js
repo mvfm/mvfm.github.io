@@ -456,6 +456,12 @@ const aiRouteOnLoad = async () => {
                                 </a>`).join('');
                         event.text.text = `<div class="insight-chips-container">${chipsHtml}</div>` + (event.text.text || "");
                     }
+
+                    // Archived ribbon (relocated to .tl-slide top-right by relocateLabels)
+                    if (event.is_archived) {
+                        const ribbonHtml = `<div class="archived-ribbon-container" aria-hidden="true"><div class="archived-ribbon">ARCHIVED</div></div>`;
+                        event.text.text = ribbonHtml + (event.text.text || "");
+                    }
                 });
             }
 
@@ -487,6 +493,10 @@ const aiRouteOnLoad = async () => {
                                 relocateContainer(slide, '.purchase-links-container');
                                 relocateContainer(slide, '.insight-ref-stripe-container');
                                 relocateContainer(slide, '.insight-chips-container');
+                                relocateContainer(slide, '.archived-ribbon-container');
+                                if (slide.querySelector('.archived-ribbon-container[data-relocated="true"]')) {
+                                    slide.classList.add('archived');
+                                }
                                 // TimelineJS adds target="_blank" to all links it renders; undo for chips
                                 slide.querySelectorAll('.insight-ref-chip[target]').forEach(c => c.removeAttribute('target'));
                             });
@@ -578,7 +588,8 @@ const aiRouteOnLoad = async () => {
                                 '.topic-labels-container:not([data-relocated="true"]), ' +
                                 '.purchase-links-container:not([data-relocated="true"]), ' +
                                 '.insight-ref-stripe-container:not([data-relocated="true"]), ' +
-                                '.insight-chips-container:not([data-relocated="true"])'
+                                '.insight-chips-container:not([data-relocated="true"]), ' +
+                                '.archived-ribbon-container:not([data-relocated="true"])'
                             );
                             if (remaining.length === 0) allRelocated = true;
                         }, 1000);
