@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ilya — Insights — mvfm.digital</title>
+    <meta name="description" content="The story of Ilya Sutskever — the scientist who helped build modern AI, tried to stop it from the inside, and then raised $32 billion to try again." />
+    <meta name="author" content="Marcus Vinicius Freitas Margarites" />
+    <link rel="canonical" href="https://mvfm.digital/insights/ilya" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://mvfm.digital/insights/ilya" />
+    <meta property="og:title" content="Ilya — Insights — mvfm.digital" />
+    <meta property="og:description" content="The story of Ilya Sutskever — the scientist who helped build modern AI, tried to stop it from the inside, and then raised $32 billion to try again." />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Ilya — Insights — mvfm.digital" />
+    <meta name="twitter:description" content="The story of Ilya Sutskever — the scientist who helped build modern AI, tried to stop it from the inside, and then raised $32 billion to try again." />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Ilya",
+      "description": "The story of Ilya Sutskever — the scientist who helped build modern AI, tried to stop it from the inside, and then raised $32 billion to try again.",
+      "url": "https://mvfm.digital/insights/ilya",
+      "datePublished": "2026-05",
+      "author": {
+        "@type": "Person",
+        "name": "Marcus Vinicius Freitas Margarites",
+        "url": "https://mvfm.digital"
+      }
+    }
+    </script>
+
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="stylesheet" href="/style.css">
+    <!-- TimelineJS CSS -->
+    <link title="timeline-styles" rel="stylesheet"
+        href="https://cdn.knightlab.com/libs/timeline3/3.9.1/css/timeline.css">
+
+    <!-- Start Single Page Apps for GitHub Pages -->
+    <script type="text/javascript">
+        (function (l) {
+            if (l.search[1] === 'p' && l.search[2] === '=') {
+                var decoded = l.search.slice(1).split('&').map(function (s) {
+                    return s.replace(/~and~/g, '&')
+                }).filter(function (s) {
+                    return s.slice(0, 2) === 'p='
+                })[0];
+                if (decoded !== undefined) {
+                    window.history.replaceState(null, null,
+                        l.pathname.slice(0, (l.pathname.slice(-1) === '/' ? -1 : undefined)) + decoded.slice(2) +
+                        l.hash
+                    );
+                }
+            }
+        }(window.location))
+    </script>
+    <!-- End Single Page Apps for GitHub Pages -->
+</head>
+
+<body>
+    <div class="app">
+        <div id="topBar">
+            <header>
+                <h1 class="brand"></h1>
+            </header>
+            <nav>
+                <div class="menu"></div>
+            </nav>
+        </div>
+        <main>
+            <canvas id="golCanvas" aria-hidden="true"></canvas>
+            <section id="contentPanel" class="panel" aria-live="polite" aria-atomic="true"></section>
+            <aside id="statsPanel" aria-live="polite" aria-atomic="true">
+                <div class="row"><span class="label">GEN</span>
+                    <div class="digits" id="genDigits"></div>
+                </div>
+                <div class="row"><span class="label">ALIVE</span>
+                    <div class="digits" id="aliveDigits"></div>
+                </div>
+                <div class="row"><span class="label">TOTAL</span>
+                    <div class="digits" id="totalDigits"></div>
+                </div>
+                <div class="row"><span class="label">OCC%</span>
+                    <div class="digits" id="occDigits"></div><span class="percent">%</span>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Article content -->
+    <template id="tpl-feature">
+        <article class="insight-article">
+            <header class="insight-article-header">
+                <h1>Ilya</h1>
+                <p class="insight-article-meta">May 2026</p>
+            </header>
+
+            <div class="insight-article-body">
+
+                <p class="insight-standfirst">Ilya Sutskever is not a cautionary tale. He is something stranger: a true believer in both the danger and the necessity of what he is building.</p>
+
+                <figure class="insight-hero-image">
+                    <img src="/img/insights/ilya-blueprint-bunker.png" alt="Blueprints for an underground bunker spread across a dark drafting table." loading="eager">
+                    <figcaption>Not metaphorical blueprints. Not architecture diagrams. The other kind: reinforced concrete, underground rooms, and the kind of career anxiety most people do not need a contractor for.</figcaption>
+                </figure>
+
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">I</span>
+                    The Blueprints
+                </h2>
+
+                <aside class="insight-callout">
+                    The teacher and the student had arrived at the same conclusion, by different routes, within months of each other.
+                </aside>
+                <div class="insight-text">
+                    <p>Summer 2023. <strong>Ilya Sutskever</strong>, OpenAI's co-founder and chief scientist, is at his desk going over blueprints. Not architecture diagrams. Not infrastructure plans. Actual blueprints, for an actual underground shelter, for the day the technology they were building became too valuable for the world to leave in their hands.</p>
+                    <p>He is not sleeping well.</p>
+                    <p>ChatGPT has just become the fastest-growing product anyone had ever seen. OpenAI is valued at $29 billion. Sutskever, who never wanted to be famous, is on magazine covers. His response to all of this is to consult a contractor about reinforced concrete.</p>
+                    <p>He wasn't alone. Two months earlier, his old mentor <a href="/ai#event-hinton-sounds-the-alarm">Geoffrey Hinton had quietly left Google</a> — not for a better offer, but to speak freely about what he thought was coming. The man who taught Ilya how to build neural networks now partly regretted his life's work. The teacher and the student had arrived at the same conclusion, by different routes, within months of each other.</p>
+                </div>
+
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">II</span>
+                    From Toronto to Silicon Valley
+                </h2>
+
+                <aside class="insight-callout">
+                    He has been in the field for approximately one weekend.
+                </aside>
+                <div class="insight-text">
+                    <p>It begins, as so many things do, with a knock nobody expected.</p>
+                    <p>It's 2003 in Toronto. Geoffrey Hinton is in his lab on a Saturday — not unusual, because Hinton is constitutionally incapable of leaving. He's 55, his back gives out so badly some mornings he can't get out of bed, and he has spent three decades championing neural networks, a field the rest of the AI community regarded with roughly the same esteem as astrology.</p>
+                    <p>A Soviet-born teenager walks in and announces, with the kind of confidence that is either genius or delusion (and sometimes both), that he wants to study neural networks. Hinton, willing to entertain anyone who shares his unfashionable obsessions, hands him a paper and essentially says: come back if you can do something with this.</p>
+                    <p>He comes back. He has done something with it. Specifically, he has identified a fundamental question about the training process that Hinton and his colleagues won't fully resolve for years. The kid is seventeen. He has been in the field for approximately one weekend.</p>
+                    <p>Hinton will later describe Ilya's intuitions as always being very good — which, from a British academic, is roughly equivalent to a standing ovation.</p>
+                </div>
+
+                <aside class="insight-callout">
+                    The room of five hundred researchers did not respond with applause. It responded with accusations.
+                </aside>
+                <div class="insight-text">
+                    <p>Nine years later, Ilya and Hinton have a problem: they want to prove that neural networks can do something that genuinely matters, and their budget is essentially nothing. Their third collaborator, <strong>Alex Krizhevsky</strong>, is another Soviet-born kid who solved this the most straightforward way imaginable — he bought a gaming PC, put it in his bedroom, and started training models on it. The graphics card inside had been designed by Nvidia for rendering games — and, since 2006, officially repurposed for oil company seismic simulations and physics research. Nvidia had no particular plans involving neural networks. Krizhevsky did. Nobody else in academic AI was doing this, partly because GPU programming was considered a dark art, and partly because it meant acknowledging that the breakthrough might come from a $500 graphics card rather than a decade of elegant theory.</p>
+                    <p>They enter <a href="/ai#event-imagenet">ImageNet</a>: the image recognition competition so difficult that most serious labs don't bother. Seven teams show up. The previous year's winner correctly identifies objects in photographs about 74% of the time — impressive until you consider that a reasonably attentive five-year-old scores close to 100%.</p>
+                    <p>Of the seven teams, only one is using neural networks — astrology, as the rest of the field preferred to call it.</p>
+                    <p>It scores 84.7%.</p>
+                    <p>The gap between first and second place is so large it briefly makes people wonder if something has gone wrong with the competition. The room of five hundred computer vision researchers does not respond with applause. It responds with accusations: the dataset is flawed, the results won't replicate, the approach won't scale. The leading sceptic remains unconvinced even after seeing the number on the slide.</p>
+                </div>
+
+                <aside class="insight-callout">
+                    The modern AI industry begins here, in someone's bedroom, on consumer hardware, with a result so good that nobody believed it.
+                </aside>
+                <div class="insight-text">
+                    <p>The researchers were still arguing when the news reached Silicon Valley. It did not take long. Within hours, every major VC knew the names Sutskever, Krizhevsky, and Hinton. Within two months, <a href="/ai#event-google-buys-hintons-lab">Google had written a cheque</a>. Forty-four million dollars for three guys and a graphics card. Brin, himself Soviet-born, apparently had a sense of who to bet on.</p>
+                    <p>The leading sceptic, for his part, was co-authoring neural network papers within the year.</p>
+                    <p>The modern AI industry begins here, in someone's bedroom, on consumer hardware, with a result so good that nobody believed it.</p>
+                    <p>The question nobody thought to ask — not Ilya, not Hinton, not any of the five hundred researchers in the room — was <em>how</em> the system knew. It just did. No rule had been written down: <em>ears, whiskers, suspicious indifference — cat</em>. The model had ingested a million images, silently rearranged millions of internal numbers until something clicked, and become a black box that not even its creators could open up and explain. Something real had been learned. Whether it was the <em>right</em> thing, and whether it would hold under pressure, were entirely separate questions.</p>
+                    <p>Those questions would come later. They would not be comfortable.</p>
+                </div>
+
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">III</span>
+                    The Chocolate Factory
+                </h2>
+
+                <aside class="insight-callout">
+                    If you believe something extraordinary and possibly dangerous is coming, you don't wait for a better offer. You take the chocolate factory.
+                </aside>
+                <div class="insight-text">
+                    <p>By 2015, Ilya has a corner office at Google, access to one of the largest compute clusters on earth, and a growing suspicion that this might all be a terrible idea. Not the career — the technology.</p>
+                    <p>He is not alone in this suspicion. At a private dinner in Silicon Valley, Elon Musk makes him an offer: walk away from the salary, the compute, and the prestige, and come build an AI safety nonprofit out of an old chocolate factory in San Francisco. His co-leaders would be <strong>Sam Altman</strong>, a gifted investor with zero AI experience, and <strong>Greg Brockman</strong>, a brilliant engineer with zero AI experience.</p>
+                    <p>Ilya says yes.</p>
+                    <p>In fairness, the pitch had one thing going for it: Elon was the only person making it. If you believe, as Ilya does, that something extraordinary and possibly dangerous is coming, you don't wait for a better offer. You take the chocolate factory.</p>
+                </div>
+
+                <aside class="insight-callout">
+                    Ilya — who planned the whole thing, who made the calls, who sat on the board that pulled the trigger — signs the letter too.
+                </aside>
+                <div class="insight-text">
+                    <p>What follows is, at this point, well-documented history. <a href="/ai#event-openai">OpenAI</a> ships GPT, then <a href="/ai#event-gpt-2-too-dangerous">GPT-2</a> — which the team decides is <em>too dangerous to release</em>, a sentence that will age in interesting ways — then <a href="/ai#event-gpt-3">GPT-3</a>, then <a href="/ai#event-chatgpt-goes-mainstream">ChatGPT</a>, then the fastest-growing product ever built. Along the way, the nonprofit acquires a <a href="/ai#event-microsoft-backs-openai">Microsoft partnership</a>, a revenue share, and a commercial structure that would have been unrecognisable to the idealists who signed up to save humanity.</p>
+                    <p>Every compromise Ilya had resisted with Elon, Sam eventually handed to Microsoft. The logic was always the same: we need the compute to compete, and this is the only way to get it. The logic was probably correct. That didn't make it comfortable.</p>
+                    <p>By summer 2023, Ilya has had enough. He begins tallying: a safety compute pledge that never materialised, false claims about internal approvals, a personal venture fund quietly operating under Sam's name, a manufactured lie to shift the board's composition. He opens his phone and starts making calls.</p>
+                    <p>On November 17th, Sam Altman joins a video call and learns that the <a href="/ai#event-openai-crisis">board — including Ilya — has decided to let him go</a>. The official reason is that Sam has not been <em>consistently candid</em>, which is the most elaborately diplomatic way the English language has yet devised to call someone a liar.</p>
+                    <p>Silicon Valley rallies around Sam within hours. Microsoft offers him an entirely new lab and extends the invitation to every single OpenAI employee. Within five days, nearly the entire company signs a letter demanding Sam's return. Ilya — who planned the whole thing, who made the calls, who sat on the board that pulled the trigger — signs the letter too.</p>
+                    <p>Sam returns. More powerful than ever. The board members who backed the removal are gone. Ilya is quietly eased out some months later, and <a href="/ai#event-openais-safety-exodus">quietly starts over</a>.</p>
+                </div>
+
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">IV</span>
+                    Starting Over
+                </h2>
+
+                <aside class="insight-callout">
+                    The best-funded silence in the history of technology.
+                </aside>
+                <div class="insight-text">
+                    <p><strong>Safe Superintelligence Inc.</strong> The name leaves little room for ambiguity. Neither does the structure: one goal, no product cycles, no commercial pressure — build safe superintelligence or build nothing. <strong>Sequoia</strong>, <strong>Andreessen Horowitz</strong>, <strong>Google</strong> (yes, that Google), and <strong>Nvidia</strong> find this compelling enough to commit $3 billion. The company is valued at $32 billion. It has published no research and released no products. It is, in the most literal sense, the best-funded silence in the history of technology.</p>
+                    <p>There is something almost poetic about this. The man who helped invent the thing that frightened him, tried to stop it from the inside, got outmanoeuvred, signed the letter reinstating the person he had just fired, and was then shown the door — turned around and raised thirty-two billion dollars to try again.</p>
+                    <p>Ilya Sutskever is not a cautionary tale. He is something stranger: a true believer in both the danger and the necessity of what he's doing.</p>
+                    <p>He still doesn't sleep much.</p>
+                </div>
+
+                <hr class="insight-separator">
+                <p class="insight-cta">Want to trace the key moments in this story? <a href="/ai?q=ilya+sutskever">Explore the timeline</a>.</p>
+
+            </div>
+        </article>
+    </template>
+
+    <!-- TimelineJS JS -->
+    <script src="https://cdn.knightlab.com/libs/timeline3/3.9.1/js/timeline.js"></script>
+    <script>window.__FEATURE_SLUG__ = 'ilya';</script>
+    <script type="module" src="/js/main.js"></script>
+
+    <!-- Fallback content for crawlers that don't execute JavaScript -->
+    <noscript>
+        <style>.app { display: none; }</style>
+        <main>
+            <nav>
+                <a href="https://mvfm.digital/">Home</a> |
+                <a href="https://mvfm.digital/resume">Resume</a> |
+                <a href="https://mvfm.digital/contact">Contact</a> |
+                <a href="https://mvfm.digital/ai">AI Timeline</a> |
+                <a href="https://mvfm.digital/insights">Insights</a>
+            </nav>
+            <article>
+                <h1>Ilya</h1>
+                <p>The story of Ilya Sutskever — the scientist who helped build modern AI, tried to stop it from the inside, and then raised $32 billion to try again.</p>
+                <p>By Marcus Vinicius Freitas Margarites — May 2026</p>
+                <p>From the ImageNet breakthrough in a Toronto bedroom to the founding of Safe Superintelligence, the story of Ilya Sutskever is one of the strangest arcs in modern technology: a man who built what he feared, tried to stop it from the inside, and then raised thirty-two billion dollars to try again.</p>
+            </article>
+        </main>
+    </noscript>
+</body>
+
+</html>

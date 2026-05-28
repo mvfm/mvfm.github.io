@@ -1,5 +1,39 @@
 [
   {
+    "slug": "ilya",
+    "title": "Ilya",
+    "description": "The story of Ilya Sutskever — the scientist who helped build modern AI, tried to stop it from the inside, and then raised $32 billion to try again.",
+    "date": "2026-05",
+    "topics": [
+      "foundations",
+      "neural networks",
+      "deep learning",
+      "nlp",
+      "generative ai",
+      "reinforcement learning",
+      "computer vision",
+      "ai safety",
+      "industry"
+    ],
+    "referenced_events": [
+      "imagenet",
+      "alexnet",
+      "google-buys-hintons-lab",
+      "openai",
+      "gpt-2-too-dangerous",
+      "gpt-3",
+      "chatgpt-goes-mainstream",
+      "microsoft-backs-openai",
+      "hinton-sounds-the-alarm",
+      "openai-superalignment",
+      "openai-crisis",
+      "openais-safety-exodus",
+      "cuda-gpus-go-general-purpose",
+      "gpu-deep-learning",
+      "nvidia-and-the-gpu-economy"
+    ]
+  },
+  {
     "slug": "forwardpropagation",
     "title": "Forwardpropagation",
     "description": "How the idea behind backpropagation moved forward through time before AI finally perceived it.",
