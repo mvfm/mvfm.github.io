@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Maybe — Insights — mvfm.digital</title>
+    <meta name="description" content="For two centuries, scientists assumed intelligence meant certainty. Then the probabilists showed up — and in the best possible way, ruined everything." />
+    <meta name="author" content="Marcus Vinicius Freitas Margarites" />
+    <link rel="canonical" href="https://mvfm.digital/insights/maybe" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://mvfm.digital/insights/maybe" />
+    <meta property="og:title" content="Maybe — Insights — mvfm.digital" />
+    <meta property="og:description" content="For two centuries, scientists assumed intelligence meant certainty. Then the probabilists showed up — and in the best possible way, ruined everything." />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Maybe — Insights — mvfm.digital" />
+    <meta name="twitter:description" content="For two centuries, scientists assumed intelligence meant certainty. Then the probabilists showed up — and in the best possible way, ruined everything." />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Maybe",
+      "description": "For two centuries, scientists assumed intelligence meant certainty. Then the probabilists showed up — and in the best possible way, ruined everything.",
+      "url": "https://mvfm.digital/insights/maybe",
+      "datePublished": "2026-06",
+      "author": {
+        "@type": "Person",
+        "name": "Marcus Vinicius Freitas Margarites",
+        "url": "https://mvfm.digital"
+      }
+    }
+    </script>
+
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="stylesheet" href="/style.css">
+    <!-- TimelineJS CSS -->
+    <link title="timeline-styles" rel="stylesheet"
+        href="https://cdn.knightlab.com/libs/timeline3/3.9.1/css/timeline.css">
+
+    <!-- Start Single Page Apps for GitHub Pages -->
+    <script type="text/javascript">
+        (function (l) {
+            if (l.search[1] === 'p' && l.search[2] === '=') {
+                var decoded = l.search.slice(1).split('&').map(function (s) {
+                    return s.replace(/~and~/g, '&')
+                }).filter(function (s) {
+                    return s.slice(0, 2) === 'p='
+                })[0];
+                if (decoded !== undefined) {
+                    window.history.replaceState(null, null,
+                        l.pathname.slice(0, (l.pathname.slice(-1) === '/' ? -1 : undefined)) + decoded.slice(2) +
+                        l.hash
+                    );
+                }
+            }
+        }(window.location))
+    </script>
+    <!-- End Single Page Apps for GitHub Pages -->
+</head>
+
+<body>
+    <div class="app">
+        <div id="topBar">
+            <header>
+                <h1 class="brand"></h1>
+            </header>
+            <nav>
+                <div class="menu"></div>
+            </nav>
+        </div>
+        <main>
+            <canvas id="golCanvas" aria-hidden="true"></canvas>
+            <section id="contentPanel" class="panel" aria-live="polite" aria-atomic="true"></section>
+            <aside id="statsPanel" aria-live="polite" aria-atomic="true">
+                <div class="row"><span class="label">GEN</span>
+                    <div class="digits" id="genDigits"></div>
+                </div>
+                <div class="row"><span class="label">ALIVE</span>
+                    <div class="digits" id="aliveDigits"></div>
+                </div>
+                <div class="row"><span class="label">TOTAL</span>
+                    <div class="digits" id="totalDigits"></div>
+                </div>
+                <div class="row"><span class="label">OCC%</span>
+                    <div class="digits" id="occDigits"></div><span class="percent">%</span>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Article content -->
+    <template id="tpl-feature">
+        <article class="insight-article">
+            <header class="insight-article-header">
+                <h1>Maybe</h1>
+                <p class="insight-article-meta">June 2026</p>
+            </header>
+
+            <div class="insight-article-body">
+
+                <p class="insight-standfirst">The dream was simple: encode the rules, and the machine thinks. The probabilists arrived with something messier, harder to explain, and far more powerful.</p>
+
+                <figure class="insight-hero-image">
+                    <img src="/img/insights/maybe-scale.png" alt="An antique balance scale in a fog-filled room, one side tipped slightly, suggesting approximate rather than exact measurement." loading="eager">
+                    <figcaption>The old dream: find the right weights, and the scale tips to truth. The new reality: the scale is always in motion.</figcaption>
+                </figure>
+
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">I</span>
+                    The God Complex
+                </h2>
+
+                <aside class="insight-callout">
+                    The dream was simple: encode the rules, and intelligence follows.
+                </aside>
+                <div class="insight-text">
+                    <p>Early AI researchers were, by temperament, logicians. The founding assumption of an entire generation: figure out the rules of thought, write them down, and the machine will think. If you know enough rules, you can answer anything. Uncertainty is just ignorance, and ignorance is just a problem you haven't solved yet.</p>
+                    <p>This was not a fringe view. It was the mainstream. <a href="/ai#event-boolean-logic">Boolean Logic</a>, <a href="/ai#event-freges-begriffsschrift">Frege's notation</a>, the <a href="/ai#event-the-turing-machine">Turing Machine</a>, the <a href="/ai#event-logic-theorist">Logic Theorist</a> — the tools of AI's first era were all about finding truth. It is not that approximations were not good enough — they weren't even considered.</p>
+                    <p>The expert systems of the 1970s and 1980s were the apex. <a href="/ai#event-mycin">MYCIN</a> diagnosed bacterial infections from 600 rules. <a href="/ai#event-xcon">XCON</a> configured computer systems based on 10,000 conditions. They worked beautifully inside those conditions, and broke spectacularly outside them. When they broke, the proposed solution was more rules. The logic was impeccable: the system failed because reality wasn't fully encoded yet. You just needed to finish encoding it.</p>
+                    <p><em>Certainty was the whole point</em>. A medical expert system was supposed to deliver the diagnosis, not a shrug with decimals attached. The idea that uncertainty could be represented, calibrated, and useful — that <em>probably</em> might be a form of intelligence rather than a failure of it — took a very long time to arrive.</p>
+                </div>
+
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">II</span>
+                    The Dead Minister's Footnote
+                </h2>
+
+                <aside class="insight-callout">
+                    He was a minister. He wrote one mathematical paper. He died before anyone could ask him what he meant.
+                </aside>
+                <div class="insight-text">
+                    <p>In 1763, a paper was published in the Philosophical Transactions of the Royal Society. The author, Thomas Bayes, was already dead. His friend Richard Price found the manuscript, cleaned it up, and submitted it to the journal. The paper's title was "An Essay towards Solving a Problem in the Doctrine of Chances".</p>
+                    <p>It was, quietly, one of the most subversive documents in the history of science.</p>
+                    <p><a href="/ai#event-bayes-theorem">Bayes' theorem</a> does not tell you what is true. It tells you how to update what you already believe when new evidence arrives. It formalizes the idea that belief comes in degrees, that evidence shifts those degrees, and that certainty is just one extreme of a long continuum. You start with a guess — a <em>prior</em> — and revise it.</p>
+                    <p>The concrete problem Bayes had in mind is worth a moment. Imagine you are placed in a dark room in front of a billiard table you cannot see. Someone rolls a ball across it, and the ball stops somewhere. You have no idea where. They then roll a second ball, and tell you only whether it stopped to the left or the right of the first. Then they do it again. And again. Each report shifts your estimate of where the first ball is — you never see it directly, you only accumulate indirect evidence, and each piece of evidence updates your belief. You never reach certainty. You just get closer, probabilistically, with each trial.</p>
+                    <p>This was, philosophically, a problem. The frequentists, who dominated statistics for most of the 19th and 20th centuries, refused to accept it. Probability, in their view, was a property of physical processes — not a state of mind. You could not just assign a probability to a question about <em>where</em> something is and start calculating. That was subjective. That was opinion dressed up as math.</p>
+                    <p>The debate raged for nearly two centuries. It is possible that Bayes was partly motivated by David Hume's argument that miracles are never rationally believable — because, Hume had claimed, it is always more probable that the testimony is mistaken than that the impossible occurred. Bayes never answered this directly. He just quietly built the mathematical framework that would let you think about it properly. Price, who published the essay posthumously, understood the theological stakes. Bayes, apparently, just found the problem interesting — and then died, leaving everyone else to argue about it.</p>
+                </div>
+
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">III</span>
+                    The Tools That Did Not Wait
+                </h2>
+
+                <aside class="insight-callout">
+                    While the philosophers argued, the mathematicians got on with it.
+                </aside>
+                <div class="insight-text">
+                    <p>The philosophical dispute over Bayes did not stop the practical mathematicians from building probabilistic tools. They just did not call them Bayesian, and mostly did not care about the dispute. The story from here is not that Bayesianism won cleanly. It is that uncertainty, estimation, sampling, and approximation kept turning out to be more useful than exact answers.</p>
+                    <p>In 1809, Carl Friedrich Gauss needed to find a lost asteroid. Ceres had been spotted, then swallowed by the sun's glare, and the question was where it would reappear. His solution: fit a model to noisy measurements by minimizing the sum of squared errors. Not an exact calculation — an acknowledgment that measurements are imperfect and you work with what you have. The <a href="/ai#event-method-of-least-squares">Method of Least Squares</a> became the foundation of linear regression, and linear regression became the foundation of almost everything that followed in machine learning. Gauss found the asteroid. The method outlasted the solar system discovery by a few centuries.</p>
+                    <p>In 1906, Andrey Markov was analyzing a poem — specifically, the sequence of vowels and consonants in Pushkin's <em>Eugene Onegin</em>. He showed that each letter depended probabilistically on the one before it, and on nothing further back. Not a deterministic rule. A probability. <a href="/ai#event-markov-chains">Markov Chains</a> became the backbone of Hidden Markov Models, which dominated speech recognition for twenty years, which turned into the sequence models that eventually became modern language processing. Pushkin would probably have had thoughts about this. We can only estimate what they were.</p>
+                    <p>In 1946, Stanisław Ulam was recovering from illness and playing cards. He wondered what the probability of winning a patience game was — and realized that enumerating every possible game was impossible, but playing it randomly many times and counting wins was perfectly tractable. From an afternoon of solitaire, <a href="/ai#event-monte-carlo-methods">Monte Carlo methods</a>: use randomness to approximate answers too hard to compute exactly. His colleague Nicholas Metropolis suggested naming the method after the casino. The name was somewhat ironic for a technique built on principled mathematics rather than casino luck, but it stuck.</p>
+                    <p>None of these people framed their work as a philosophical challenge to the certainty ideal. They were solving real-life problems. Probabilistic methods solved them. The philosophers found out later.</p>
+                </div>
+
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">IV</span>
+                    The Probabilist Who Got Crushed
+                </h2>
+
+                <aside class="insight-callout">
+                    Rosenblatt called it "a probabilistic model of the brain". Minsky called it limited. One of them was right about the next thirty years of AI.
+                </aside>
+                <div class="insight-text">
+                    <p>In 1958, Frank Rosenblatt published "<a href="/ai#event-a-probabilistic-model-of-the-brain">The Perceptron: A Probabilistic Model for Information Storage and Organization in the Brain</a>". The title is not a throwaway. Rosenblatt was building something explicitly probabilistic — a model where noise and randomness were features, not bugs. The brain, he argued, did not compute exactly. It estimated. It guessed, and then adjusted.</p>
+                    <p>This was the right framing. It was also the wrong decade.</p>
+                    <p>In 1969, Minsky and Papert published "<a href="/ai#event-perceptron-limitations">Perceptrons</a>" — a precise mathematical demonstration of what single-layer networks could not do. The result was technically accurate and strategically devastating: funding dried up, researchers pivoted, and neural networks entered the first <em>AI Winter</em>. The certainty-seekers got their decade back. Expert systems bloomed. Logic programming returned. Probability, in neural network form, retreated.</p>
+                    <p>What Rosenblatt had started would lie dormant for twenty years, waiting for hardware and data to catch up with the idea. The solution, incidentally, was already sitting in a Finnish master's thesis from 1970. Nobody read it. <a href="/ai#event-backpropagation-iii">It was in Finnish</a>.</p>
+                </div>
+
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">V</span>
+                    The Quiet Return
+                </h2>
+
+                <aside class="insight-callout">
+                    Pearl did not argue for probability. He showed what it could do that certainty could not.
+                </aside>
+                <div class="insight-text">
+                    <p>The turnaround did not come with a manifesto. It came with a graph.</p>
+                    <p>In 1985, Judea Pearl introduced <a href="/ai#event-bayesian-networks">Bayesian Networks</a>: directed graphs where nodes are variables and edges represent probabilistic dependencies. You feed in evidence — a symptom, a sensor reading, a test result — and the network propagates updated beliefs through to everything connected. The key shift: instead of requiring the system to know the exact state of the world, you let it maintain a <em>probability distribution</em> over possible states. The machine is not certain. It is calibrated — and when new evidence arrives, the confidence updates automatically.</p>
+                    <p>Pearl had done what the philosophers could not: turned the Bayesian intuition into a practical engineering tool. Medical diagnosis, robotics, language parsing — all became tractable under uncertainty in ways they could not be under exact inference. He would win the Turing Award in 2011. This is generally how philosophy ends: someone turns it into a diagram, and the diagram into code.</p>
+                    <p>The <a href="/ai#event-the-em-algorithm">EM Algorithm</a>, formalized in 1977 by Dempster, Laird, and Rubin, followed the same logic. You don't know all the parameters, so you guess, improve, and guess again — iterating until the result stabilizes. Each step is guaranteed not to make things worse — which sounds like a description of adolescence, but is in fact a guaranteed-convergent optimization algorithm. <a href="/ai#event-hidden-markov-models">Hidden Markov Models</a> ran on EM. So did Gaussian Mixture Models, and a dozen other workhorses of applied statistics.</p>
+                    <p>Certainty was not the goal anymore. Calibrated confidence was.</p>
+                </div>
+
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">VI</span>
+                    Two Cultures, One Winner
+                </h2>
+
+                <aside class="insight-callout">
+                    Statistics had spent fifty years building precise models of how the world worked. Machine learning had spent ten years just trying to predict it. Guess which one turned out to be more useful.
+                </aside>
+                <div class="insight-text">
+                    <p>In 2001, Leo Breiman — a statistician, publishing in a statistics journal, addressing an audience of statisticians — argued that statisticians had spent fifty years doing statistics wrong. The journal published it. The statisticians were not impressed.</p>
+                    <p>Breiman called it <a href="/ai#event-the-two-cultures">The Two Cultures</a>. The first culture built explicit parametric models of the data-generating process, because understanding <em>why</em> felt more scientific than just predicting <em>what</em>. The second culture treated the world as a black box and optimized purely for prediction — accepting uncertainty about the mechanism, as long as the model was right about the outcome. Breiman argued the first culture had dominated academia at enormous cost, smothering approaches that actually worked on real problems.</p>
+                    <p>The algorithmic culture, as he called it, is not Bayesian in any narrow sense. It is the culture of acknowledged uncertainty. You don't assume you know what the process is. You let the data tell you. You accept that your model is an approximation, optimize for prediction, and use held-out test data to check whether it works. This is not a philosophical surrender. It is a pragmatic upgrade.</p>
+                    <p>Breiman's contemporary contribution, <a href="/ai#event-random-forests">Random Forests</a>, was the cleanest expression of this philosophy: train hundreds of decision trees, each on a slightly different random sample of data and features, then average their votes. No single tree is trustworthy. Together, they are remarkably robust — following a logic first sketched by <a href="/ai#event-condorcets-jury-theorem">Condorcet in 1785</a>, who proved mathematically that many imperfect independent classifiers, aggregated, converge toward truth. Condorcet had been trying to formalize democracy. Breiman had discovered it was also a machine learning theorem. Condorcet himself was arrested during the French Revolution and died in prison in 1794, which suggests that while majority aggregation converges on truth in theory, the confidence interval on <em>whose</em> votes count remained wide.</p>
+                    <p><a href="/ai#event-adaboost">AdaBoost</a>, introduced in 1997 by Freund and Schapire, amplified the same insight: build a strong classifier by combining a sequence of weak ones, each focused on the examples the previous one got wrong. The weakness is not the enemy. It is the raw material.</p>
+                    <p>The "Two Cultures" essay was written when neural networks were still unfashionable. Breiman thought he was writing a corrective. What he was actually writing was a prophecy.</p>
+                </div>
+
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">VII</span>
+                    The Machine That Guesses
+                </h2>
+
+                <aside class="insight-callout">
+                    The most confident-sounding machine in the history of technology is, underneath, a probability distribution over the next token.
+                </aside>
+                <div class="insight-text">
+                    <p>Today's large language models do not retrieve answers. They sample them.</p>
+                    <p>At the bottom of every <a href="/ai#event-chatgpt-goes-mainstream">ChatGPT</a> is a probability distribution: given everything so far, how likely is each possible next token? The model picks from that distribution — not the most likely token every time, because greedy deterministic decoding produces flat, repetitive text — but a <em>sample</em>, weighted by probability. Temperature, top-p, top-k: all of these are controls on how to sample from uncertainty. When a language model says "Certainly!" it is, technically, doing the opposite.</p>
+                    <p>The neural networks that produce these distributions are trained by stochastic gradient descent — an algorithm whose theoretical foundations trace to <a href="/ai#event-stochastic-approximation">Robbins and Monro in 1951</a>. Stochastic gradient descent does not compute the exact gradient of the loss. It estimates it from a random sample, takes a step, and tries again. Approximate, noisy, probabilistic — and, at scale, extremely effective.</p>
+                    <p><a href="/ai#event-dropout">Dropout</a>, the training trick that randomly zeros out neurons during each pass, is deliberate noise injection: the model learns to work without any particular feature because it never knows which features will be present. At test time, you average over the distribution of networks encountered during training. This is not a workaround. It is a design choice rooted in the same probabilistic philosophy Pearl brought to AI and Rosenblatt had in the perceptron.</p>
+                    <p>The certainty machine became, step by step, a probabilistic one. Not because anyone voted to abandon the dream — but because every tool that worked was, under the hood, built on uncertainty.</p>
+                </div>
+
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">VIII</span>
+                    The Bill That's Still Open
+                </h2>
+
+                <aside class="insight-callout">
+                    Judea Pearl is not satisfied. He has a point.
+                </aside>
+                <div class="insight-text">
+                    <p>In 2018, Judea Pearl — the same Judea Pearl who introduced Bayesian Networks — published <a href="/ai#event-the-book-of-why">The Book of Why</a>, and made an uncomfortable argument: modern machine learning is extremely good at finding correlations, and extremely poor at finding causes.</p>
+                    <p>The machines have learned to be uncertain about predictions. They have not learned to be uncertain about the world in the right way. A model trained on health data will learn that people who carry lighters get lung cancer more often than people who don't. It has found a correlation. It has not learned that smoking causes cancer. It has no idea what would happen if you took the lighter away. The policy implication this suggests — confiscate the lighters — is exactly the kind of thing you get when a pattern-matcher is mistaken for a reasoner.</p>
+                    <p>The distinction matters whenever the system is deployed somewhere it was not trained — whenever an intervention changes the distribution, whenever a counterfactual matters. These are exactly the conditions under which AI is expected to be most useful.</p>
+                    <p>The Ladder of Causation goes: observation (seeing correlations), intervention (changing the world), counterfactual (imagining alternatives). Modern deep learning, for all its probabilistic sophistication, sits almost entirely on the first rung.</p>
+                    <p>Probabilistic thinking got AI past the brittleness of rule-based systems. It gave machines a way to handle noise, update beliefs, and produce calibrated predictions. It did not give them understanding. The uncertain machine has learned to hedge its outputs beautifully. Whether it knows what it's talking about is <a href="/ai#event-the-black-box-problem">still open</a>. Probably.</p>
+                </div>
+
+                <hr class="insight-separator">
+                <p class="insight-cta">Want to trace the key moments in this story? <a href="/ai?q=Bayesian">Explore the timeline</a>.</p>
+
+            </div>
+        </article>
+    </template>
+
+    <!-- TimelineJS JS -->
+    <script src="https://cdn.knightlab.com/libs/timeline3/3.9.1/js/timeline.js"></script>
+    <script>window.__FEATURE_SLUG__ = 'maybe';</script>
+    <script type="module" src="/js/main.js"></script>
+
+    <!-- Fallback content for crawlers that don't execute JavaScript -->
+    <noscript>
+        <style>.app { display: none; }</style>
+        <main>
+            <nav>
+                <a href="https://mvfm.digital/">Home</a> |
+                <a href="https://mvfm.digital/resume">Resume</a> |
+                <a href="https://mvfm.digital/contact">Contact</a> |
+                <a href="https://mvfm.digital/ai">AI Timeline</a> |
+                <a href="https://mvfm.digital/insights">Insights</a>
+            </nav>
+            <article>
+                <h1>Maybe</h1>
+                <p>For two centuries, scientists assumed intelligence meant certainty. Then the probabilists showed up — and in the best possible way, ruined everything.</p>
+                <p>By Marcus Vinicius Freitas Margarites — June 2026</p>
+                <h2>I — The God Complex</h2>
+                <p>Early AI was built on a founding assumption: figure out the rules of thought, write them down, and the machine will think. Expert systems like MYCIN and XCON encoded the world in hundreds of rules — and broke spectacularly whenever reality stepped outside them.</p>
+                <h2>II — The Dead Minister's Footnote</h2>
+                <p>In 1763, Thomas Bayes died before his most subversive paper could be published. His theorem — that belief comes in degrees, updated with each new piece of evidence — made frequentist statisticians uncomfortable for two centuries.</p>
+                <h2>III — The Tools That Did Not Wait</h2>
+                <p>Gauss used probability to find a lost asteroid. Markov used it to analyze Pushkin. Ulam used it to win at cards. None of them called it a philosophical challenge. They were solving problems.</p>
+                <h2>IV — The Probabilist Who Got Crushed</h2>
+                <p>Rosenblatt's 1958 perceptron was explicitly "a probabilistic model of the brain." Minsky proved it had limits. Neural networks retreated for twenty years — while the solution sat in an unread Finnish thesis.</p>
+                <h2>V — The Quiet Return</h2>
+                <p>Judea Pearl's Bayesian Networks (1985) turned probabilistic inference into engineering. The EM Algorithm did the same for parameter estimation. Certainty was no longer the goal. Calibrated confidence was.</p>
+                <h2>VI — Two Cultures, One Winner</h2>
+                <p>Leo Breiman's 2001 essay named the split in statistics: modelers who wanted to understand the world, versus predictors who wanted to predict it. Random Forests and AdaBoost showed which approach worked on real problems.</p>
+                <h2>VII — The Machine That Guesses</h2>
+                <p>Modern LLMs sample from probability distributions. Stochastic gradient descent estimates gradients from random samples. Dropout injects deliberate noise. Every tool that worked was probabilistic underneath.</p>
+                <h2>VIII — The Bill That's Still Open</h2>
+                <p>Judea Pearl's 2018 "Book of Why" points out the remaining gap: machines find correlations, not causes. The uncertain machine has learned to hedge its outputs beautifully. Whether it knows what it's talking about is still open. Probably.</p>
+            </article>
+        </main>
+    </noscript>
+</body>
+
+</html>
