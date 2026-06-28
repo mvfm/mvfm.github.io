@@ -4,6 +4,20 @@ import { initUI } from './ui.js';
 import { track } from './analytics.js';
 import { injectShell } from './shell.js';
 
+// Mirrors TimelineJS slugify() exactly — keep in sync with app/util.py
+function slugify(str) {
+    if (!str) return '';
+    const from = "ãàáäâẽèéëêìíïîõòóöôùúüûñç·/_,:;";
+    const to   = "aaaaaeeeeeiiiiooooouuuunc------";
+    str = str.trim().toLowerCase();
+    for (let i = 0; i < from.length; i++) {
+        str = str.replaceAll(from[i], to[i]);
+    }
+    str = str.replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+    if (/^[0-9]/.test(str)) str = '_' + str;
+    return str;
+}
+
 /**
  * App Configuration & Initialization
  */
@@ -394,13 +408,7 @@ const aiRouteOnLoad = async () => {
                 data.events.forEach(event => {
                     if (!event.text) event.text = { text: "" };
 
-                    // Derive slug the same way TimelineJS does when unique_id is absent
-                    const eventSlug = event.unique_id || (event.text?.headline || '')
-                        .toLowerCase()
-                        .replace(/\s+/g, '-')
-                        .replace(/[^\w-]+/g, '')
-                        .replace(/--+/g, '-')
-                        .replace(/^-+|-+$/g, '');
+                    const eventSlug = event.unique_id || slugify(event.text?.headline || '');
 
                     const referencingArticles = articlesByEvent.get(eventSlug) || [];
 
