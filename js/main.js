@@ -268,6 +268,28 @@ const aiRouteOnLoad = async () => {
     let slugsParam = urlParams.get('slugs');
     let currentHash = window.location.hash;
 
+    // Resolve insights=<term> in query param (e.g. from article CTA links)
+    const insightsMatch = query && query.match(/(?:^|\s)insights=(\S+)/i);
+    if (insightsMatch) {
+        try {
+            const manifestRes = await fetch('/insights/manifest.json');
+            if (manifestRes.ok) {
+                const manifest = await manifestRes.json();
+                const term = insightsMatch[1].toLowerCase();
+                const article = manifest.find(a =>
+                    a.slug.toLowerCase().includes(term) ||
+                    a.title.toLowerCase().includes(term)
+                );
+                if (article?.referenced_events?.length) {
+                    slugsParam = article.referenced_events.join(',');
+                    query = query.replace(insightsMatch[0], '').trim() || null;
+                }
+            }
+        } catch (e) {
+            console.warn('Could not resolve insights= term in URL:', e);
+        }
+    }
+
     let needsUrlUpdate = false;
     const newUrl = new URL(window.location.href);
 
