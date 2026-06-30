@@ -139,7 +139,7 @@ const showTimelineModal = (data, { force = false } = {}) => {
         if (localStorage.getItem('timeline_modal_dismissed') === 'true') return;
         if (localStorage.getItem('timeline_modal_date') === today) return;
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('q') || urlParams.get('topics')) return;
+        if (urlParams.get('q') || urlParams.get('topics') || urlParams.get('slugs')) return;
     }
 
     const hasOnThisDay = data.on_this_day?.length > 0;
@@ -265,6 +265,7 @@ const aiRouteOnLoad = async () => {
     // 1. Initial State Restoration (URL takes precedence, then localStorage)
     let query = urlParams.get('q');
     let topicsParam = urlParams.get('topics');
+    let slugsParam = urlParams.get('slugs');
     let currentHash = window.location.hash;
 
     let needsUrlUpdate = false;
@@ -273,15 +274,18 @@ const aiRouteOnLoad = async () => {
     // Restore search/topics if missing from URL — but skip if the URL targets a
     // specific event via hash: restoring a saved query could exclude that event.
     const hasEventHash = /^#event-/.test(currentHash);
-    if (!query && !topicsParam && !hasEventHash) {
+    if (!query && !topicsParam && !slugsParam && !hasEventHash) {
         const savedQ = localStorage.getItem('timeline_q');
         const savedTopics = localStorage.getItem('timeline_topics');
+        const savedSlugs = localStorage.getItem('timeline_slugs');
 
-        if (savedQ || savedTopics) {
+        if (savedQ || savedTopics || savedSlugs) {
             query = savedQ;
             topicsParam = savedTopics;
+            slugsParam = savedSlugs;
             if (query) newUrl.searchParams.set('q', query);
             if (topicsParam) newUrl.searchParams.set('topics', topicsParam);
+            if (slugsParam) newUrl.searchParams.set('slugs', slugsParam);
             needsUrlUpdate = true;
         }
     }
@@ -335,7 +339,7 @@ const aiRouteOnLoad = async () => {
 
     for (let attempt = 1; attempt <= CONFIG.MAX_RETRIES; attempt++) {
         try {
-            const baseMessage = query ? `Searching for "${query}"...` : `Loading timeline data...`;
+            const baseMessage = query ? `Searching for "${query}"...` : slugsParam ? `Loading related events...` : `Loading timeline data...`;
             const message = attempt > 1
                 ? `Retrying (${attempt} of ${CONFIG.MAX_RETRIES})...`
                 : baseMessage;
@@ -352,6 +356,9 @@ const aiRouteOnLoad = async () => {
             }
             if (topicsParam) {
                 queryUrl.searchParams.append('topics', topicsParam);
+            }
+            if (slugsParam) {
+                queryUrl.searchParams.append('slugs', slugsParam);
             }
 
             console.log(`Attempt ${attempt}: Fetching timeline data from ${queryUrl}...`);
@@ -668,6 +675,9 @@ const aiRouteOnLoad = async () => {
                                 input.value = '';
                                 const url = new URL(window.location.href);
                                 url.searchParams.delete('q');
+                                url.searchParams.delete('slugs');
+                                localStorage.removeItem('timeline_q');
+                                localStorage.removeItem('timeline_slugs');
                                 window.history.pushState({}, '', url);
                                 aiRouteOnLoad();
                             }
@@ -785,14 +795,49 @@ const initTimelineSearch = () => {
         if (isShowing) input.focus();
     };
 
-    const performSearch = () => {
-        const query = input.value.trim();
+    const performSearch = async () => {
+        const rawQuery = input.value.trim();
         const topics = Array.from(selectedTopics).join(',');
         const url = new URL(window.location.href);
-        
+
         // Always clear hash when performing a NEW search
         url.hash = '';
         localStorage.removeItem('timeline_hash');
+
+        // Detect insights=<term> token and resolve to slugs
+        const insightsMatch = rawQuery.match(/(?:^|\s)insights=(\S+)/i);
+        let resolvedSlugs = null;
+        let remainingQuery = rawQuery;
+
+        if (insightsMatch) {
+            const term = insightsMatch[1].toLowerCase();
+            remainingQuery = rawQuery.replace(insightsMatch[0], '').trim();
+            try {
+                const manifestRes = await fetch('/insights/manifest.json');
+                if (manifestRes.ok) {
+                    const manifest = await manifestRes.json();
+                    const article = manifest.find(a =>
+                        a.slug.toLowerCase().includes(term) ||
+                        a.title.toLowerCase().includes(term)
+                    );
+                    if (article?.referenced_events?.length) {
+                        resolvedSlugs = article.referenced_events.join(',');
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not resolve insights= term:', e);
+            }
+        }
+
+        if (resolvedSlugs) {
+            url.searchParams.set('slugs', resolvedSlugs);
+            localStorage.setItem('timeline_slugs', resolvedSlugs);
+        } else {
+            url.searchParams.delete('slugs');
+            localStorage.removeItem('timeline_slugs');
+        }
+
+        const query = resolvedSlugs ? remainingQuery : rawQuery;
 
         if (query) {
             url.searchParams.set('q', query);
@@ -821,10 +866,12 @@ const initTimelineSearch = () => {
 
         localStorage.removeItem('timeline_q');
         localStorage.removeItem('timeline_topics');
+        localStorage.removeItem('timeline_slugs');
 
         const url = new URL(window.location.href);
         url.searchParams.delete('q');
         url.searchParams.delete('topics');
+        url.searchParams.delete('slugs');
         // Preserve hash so the user stays on the current slide
 
         window.history.pushState({}, '', url);
