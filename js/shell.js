@@ -73,7 +73,10 @@ const TEMPLATES = {
                     <p class="loading-text">Loading timeline data...</p>
                 </div>
             </div>
-            <p class="timeline-copyright">&copy; 2026 Marcus Vinicius Freitas Margarites. The curation, text, and compilation of this timeline are my intellectual property and may not be reproduced without attribution.</p>
+            <p class="timeline-copyright">
+                <a href="https://x.com/aihtimeline" target="_new">@aihtimeline</a>
+                &copy; 2026 Marcus Vinicius Freitas Margarites. The curation, text, and compilation of this timeline are my intellectual property and may not be reproduced without attribution.
+            </p>
         </div>`,
 
     insights: `
