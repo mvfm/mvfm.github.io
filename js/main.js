@@ -928,6 +928,14 @@ const initTimelineSearch = () => {
             showTimelineModal(lastTimelineData, { force: true });
         });
     }
+
+    const twitterLink = document.querySelector('a[href*="x.com/aihtimeline"]');
+    if (twitterLink && !twitterLink.dataset.listenerAttached) {
+        twitterLink.dataset.listenerAttached = 'true';
+        twitterLink.addEventListener('click', () => {
+            track('contact_twitter_click');
+        });
+    }
 };
 
 const insightsArticleOnLoad = () => {
