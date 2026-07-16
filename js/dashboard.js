@@ -13,6 +13,8 @@ let _entryModalChart = null;
 let _timelineTopEvents = [];
 let _contentStatsRaw  = null;
 let _contentDecadeView = true;
+let _referrersRaw = null;
+let _userAgentsData = null;
 
 // ── URL helpers ───────────────────────────────────────────────────────────────
 function buildUrl(path, extraParams = {}) {
@@ -312,6 +314,16 @@ async function loadBehavior() {
 // ── Section ③: Geo ────────────────────────────────────────────────────────────
 const GEO_COLORS = ['#ec4899','#6366f1','#f59e0b','#10b981','#3b82f6','#ef4444','#8b5cf6'];
 const GEO_COLORS_LIGHT = ['rgba(236,72,153,0.45)','rgba(99,102,241,0.45)','rgba(245,158,11,0.45)','rgba(16,185,129,0.45)','rgba(59,130,246,0.45)','rgba(239,68,68,0.45)','rgba(139,92,246,0.45)'];
+const REFERRER_COLORS = ['#6366f1','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#8b5cf6','#94a3b8'];
+
+function parseUserAgent(ua) {
+  if (!ua) return null;
+  if (/bot|crawler|spider|slurp|python-requests|python\//i.test(ua)) return 'Bot / Crawler';
+  if (/HeadlessChrome|PhantomJS|Googlebot|bingbot|Baiduspider|YandexBot|curl|wget|scrapy/i.test(ua)) return 'Bot / Crawler';
+  if (/iPad|Tablet/i.test(ua) && !/Mobile/i.test(ua)) return 'Tablet';
+  if (/Mobi|Mobile|Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini|Windows Phone/i.test(ua)) return 'Mobile';
+  return 'Desktop';
+}
 
 async function loadGeo() {
   try {
@@ -378,6 +390,92 @@ async function loadGeo() {
 
   } catch (e) {
     showError(document.getElementById('geo-error'), e.message);
+  }
+}
+
+// ── Section ③b: Referrers ─────────────────────────────────────────────────────
+async function loadReferrers() {
+  const errEl = document.getElementById('referrers-error');
+  try {
+    const d = await apiFetch('/api/analytics/referrers');
+    _referrersRaw = d;
+
+    const labels = d.referrers.map(r => r.referrer);
+    const data   = d.referrers.map(r => r.sessions);
+    const colors = d.referrers.map((_, i) => REFERRER_COLORS[i % REFERRER_COLORS.length]);
+
+    makeChart('chart-referrers', {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data, backgroundColor: colors }] },
+      options: {
+        cutout: '50%',
+        plugins: {
+          legend: { display: false },
+          centerText: { totalSessions: d.total_sessions },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ${ctx.label}: ${ctx.parsed} (${d.referrers[ctx.dataIndex].pct}%)`,
+            },
+          },
+        },
+      },
+    });
+    _charts['chart-referrers']._raw = d;
+    if (errEl) errEl.innerHTML = '';
+  } catch (e) {
+    if (errEl) showError(errEl, e.message);
+  }
+}
+
+// ── Section ③c: User Agents ───────────────────────────────────────────────────
+async function loadUserAgents() {
+  const errEl = document.getElementById('user-agents-error');
+  try {
+    const d = await apiFetch('/api/analytics/sessions/recent', { limit: 50 });
+    const counts = {};
+    let hasUA = false;
+
+    d.sessions.forEach(s => {
+      const category = parseUserAgent(s.user_agent);
+      if (category) {
+        hasUA = true;
+        counts[category] = (counts[category] || 0) + 1;
+      }
+    });
+
+    if (!hasUA) {
+      if (errEl) errEl.innerHTML = '<p style="font-size:0.65rem;color:var(--faint);padding:0.5rem 0">No user agent data in session summary.</p>';
+      return;
+    }
+
+    const UA_COLOR_MAP = { 'Desktop': '#10b981', 'Mobile': '#6366f1', 'Tablet': '#f59e0b', 'Bot / Crawler': '#ef4444' };
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const labels = sorted.map(([k]) => k);
+    const data   = sorted.map(([, v]) => v);
+    const total  = data.reduce((s, v) => s + v, 0);
+    const colors = labels.map((lbl, i) => UA_COLOR_MAP[lbl] || REFERRER_COLORS[i % REFERRER_COLORS.length]);
+
+    _userAgentsData = { labels, data, total, colors };
+    makeChart('chart-user-agents', {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data, backgroundColor: colors }] },
+      options: {
+        cutout: '50%',
+        plugins: {
+          legend: { display: false },
+          centerText: { totalSessions: total, label: 'sessions' },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ${ctx.label}: ${ctx.parsed} (${Math.round(ctx.parsed / total * 100)}%)`,
+            },
+          },
+        },
+      },
+    });
+    _charts['chart-user-agents']._raw = _userAgentsData;
+    if (errEl) errEl.innerHTML = '';
+  } catch (e) {
+    if (errEl) showError(errEl, e.message);
   }
 }
 
@@ -516,7 +614,7 @@ async function loadFunnel() {
 // ── Section ⑥: Recent Sessions ───────────────────────────────────────────────
 async function loadRecentSessions(limit = 10) {
   const tbody = document.getElementById('sessions-tbody');
-  tbody.innerHTML = '<tr><td colspan="7" class="skeleton" style="height:60px"></td></tr>';
+  tbody.innerHTML = '<tr><td colspan="8" class="skeleton" style="height:60px"></td></tr>';
   try {
     const d = await apiFetch('/api/analytics/sessions/recent', { limit });
 
@@ -525,11 +623,13 @@ async function loadRecentSessions(limit = 10) {
       const rowClass = isBounce ? 'bounce-row' : '';
       const dur = fmtDuration(s.duration_s) + (isBounce ? ' <span style="color:var(--red);font-size:0.6rem">(bounce)</span>' : '');
       const flag = s.country_code ? countryFlag(s.country_code) : '';
+      const ref = s.referrer ? escHtml(s.referrer) : '<span style="color:var(--faint)">(direct)</span>';
       return `<tr class="${rowClass} session-row" data-session-id="${escHtml(s.session_id)}">
         <td>${s.ip || '—'}</td>
         <td>${flag} ${s.country_code || '—'}</td>
         <td style="color:var(--muted);font-size:0.75rem">${s.city || '—'}</td>
         <td style="color:var(--muted);font-size:0.65rem">${s.org || '—'}</td>
+        <td style="color:var(--muted);font-size:0.65rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ref}</td>
         <td>${relativeTime(s.started_at)}</td>
         <td>${dur}</td>
         <td style="color:var(--muted)">${fmtEventSummary(s.event_summary)}</td>
@@ -579,6 +679,8 @@ function startAutoRefresh() {
   _timers.push(setInterval(() => loadBehavior(),        REFRESH_A));
   _timers.push(setInterval(() => loadRecentSessions(),  REFRESH_A));
   _timers.push(setInterval(() => loadGeo(),             REFRESH_B));
+  _timers.push(setInterval(() => loadReferrers(),       REFRESH_B));
+  _timers.push(setInterval(() => loadUserAgents(),      REFRESH_B));
   _timers.push(setInterval(() => loadTimeline(),        REFRESH_B));
   _timers.push(setInterval(() => loadFunnel(),          REFRESH_B));
   _timers.push(setInterval(() => loadContentStats(),    REFRESH_C));
@@ -655,13 +757,19 @@ async function openSessionModal(sessionId) {
     const bounceBadge = d.is_bounce
       ? '<span class="session-bounce-badge">BOUNCE</span>'
       : '';
+    const referrerLine = d.referrer
+      ? `<br>Referrer: <span style="font-family:monospace;color:var(--text)">${escHtml(d.referrer)}</span>`
+      : '';
+    const uaLine = d.user_agent
+      ? `<br>UA: <span style="font-size:0.62rem;font-family:monospace;color:var(--text)">${escHtml(d.user_agent)}</span>`
+      : '';
     meta.innerHTML = `
       ${escHtml(d.ip) || '—'} &nbsp;·&nbsp;
       ${flag} ${geoLabel || '—'} &nbsp;·&nbsp;
       ${escHtml(d.org) || '—'} &nbsp;·&nbsp;
       Started: ${relativeTime(d.started_at)} &nbsp;·&nbsp;
       Duration: ${fmtDuration(d.duration_s)}
-      ${bounceBadge}`;
+      ${bounceBadge}${referrerLine}${uaLine}`;
 
     // ── Summary KPI row ───────────────────────────────────────────────────────
     const s = d.summary ?? {};
@@ -1322,6 +1430,65 @@ const MODAL_DEFS = {
       return `<table class="data-table"><thead><tr><th>ID</th><th>Headline</th></tr></thead><tbody>${rows}</tbody></table>`;
     },
   },
+
+  referrers: {
+    title: 'Traffic sources',
+    subtitle: 'Sessions by referrer — hostname of the first request in each session',
+    buildChart: (raw) => {
+      const labels = raw.referrers.map(r => r.referrer);
+      const data   = raw.referrers.map(r => r.sessions);
+      const colors = raw.referrers.map((_, i) => REFERRER_COLORS[i % REFERRER_COLORS.length]);
+      return {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data, backgroundColor: colors }] },
+        options: {
+          cutout: '50%',
+          plugins: {
+            legend: { display: true, position: 'right', labels: { color: '#94a3b8', font: { size: 11 }, boxWidth: 12 } },
+            centerText: { totalSessions: raw.total_sessions },
+            tooltip: {
+              callbacks: {
+                label: ctx => ` ${ctx.label}: ${ctx.parsed} (${raw.referrers[ctx.dataIndex].pct}%)`,
+              },
+            },
+          },
+        },
+      };
+    },
+    buildTable: (raw) => {
+      const rows = raw.referrers.map(r =>
+        `<tr><td>${escHtml(r.referrer)}</td><td>${r.sessions}</td><td>${r.pct}%</td></tr>`
+      ).join('');
+      return `<table class="data-table"><thead><tr><th>Source</th><th>Sessions</th><th>%</th></tr></thead><tbody>${rows}</tbody></table>`;
+    },
+  },
+
+  userAgents: {
+    title: 'Device types',
+    subtitle: 'Parsed from recent 50 sessions — indicative sample',
+    buildChart: (raw) => ({
+      type: 'doughnut',
+      data: { labels: raw.labels, datasets: [{ data: raw.data, backgroundColor: raw.colors }] },
+      options: {
+        cutout: '50%',
+        plugins: {
+          legend: { display: true, position: 'right', labels: { color: '#94a3b8', font: { size: 11 }, boxWidth: 12 } },
+          centerText: { totalSessions: raw.total, label: 'sessions' },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ${ctx.label}: ${ctx.parsed} (${Math.round(ctx.parsed / raw.total * 100)}%)`,
+            },
+          },
+        },
+      },
+    }),
+    buildTable: (raw) => {
+      const rows = raw.labels.map((lbl, i) =>
+        `<tr><td>${escHtml(lbl)}</td><td>${raw.data[i]}</td><td>${Math.round(raw.data[i] / raw.total * 100)}%</td></tr>`
+      ).join('');
+      return `<table class="data-table"><thead><tr><th>Device type</th><th>Sessions</th><th>%</th></tr></thead><tbody>${rows}</tbody></table>`;
+    },
+  },
 };
 
 function openModal(key) {
@@ -1344,6 +1511,8 @@ function openModal(key) {
     contentTemporal:        'chart-content-temporal',
     contentTopicHeatmap:    '_contentStats',
     contentMissingSource:   '_contentStats',
+    referrers:              'chart-referrers',
+    userAgents:             'chart-user-agents',
   }[key];
 
   const raw = chartId === '_contentStats' ? _contentStatsRaw
@@ -1381,6 +1550,8 @@ async function refreshAll() {
     loadTraffic(),
     loadBehavior(),
     loadGeo(),
+    loadReferrers(),
+    loadUserAgents(),
     loadTimeline(),
     loadFunnel(),
     loadRecentSessions(),

@@ -326,6 +326,24 @@
         <div style="font-size:0.55rem;color:var(--faint);margin-top:6px;text-align:center">All times UTC</div>
       </div>
     </div>
+    <div class="chart-grid-2-eq" style="margin-top:0.6rem">
+      <div class="chart-card" id="card-referrers" onclick="openModal('referrers')">
+        <span class="expand-icon">⤢</span>
+        <div class="chart-card-title">Traffic sources</div>
+        <div id="referrers-error"></div>
+        <div style="max-width:220px;margin:0 auto">
+          <canvas id="chart-referrers"></canvas>
+        </div>
+      </div>
+      <div class="chart-card" id="card-user-agents" onclick="openModal('userAgents')">
+        <span class="expand-icon">⤢</span>
+        <div class="chart-card-title">Device types</div>
+        <div id="user-agents-error"></div>
+        <div style="max-width:220px;margin:0 auto">
+          <canvas id="chart-user-agents"></canvas>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- ④ AI Timeline Engagement -->
@@ -387,7 +405,7 @@
     <table class="data-table" id="sessions-table">
       <thead>
         <tr>
-          <th>IP</th><th>Country</th><th>City</th><th>Org</th><th>Started</th><th>Duration</th><th>Events</th>
+          <th>IP</th><th>Country</th><th>City</th><th>Org</th><th>Referrer</th><th>Started</th><th>Duration</th><th>Events</th>
         </tr>
       </thead>
       <tbody id="sessions-tbody"></tbody>
