@@ -28,6 +28,16 @@ function getOrCreateSessionId() {
 }
 const _sessionId = getOrCreateSessionId();
 
+function getOrCreateReferrer() {
+  let ref = sessionStorage.getItem('analytics_referrer');
+  if (ref === null) {
+    ref = document.referrer || '';
+    sessionStorage.setItem('analytics_referrer', ref);
+  }
+  return ref || null;
+}
+const _referrer = getOrCreateReferrer();
+
 // ── State ─────────────────────────────────────────────────────────────────────
 let _pendingQueue = [];
 let _retryQueue   = [];
@@ -40,6 +50,7 @@ export function track(eventName, properties = {}) {
     event:      eventName,
     properties,
     ts:         Date.now(),
+    referrer:   _referrer,
   });
   if (_pendingQueue.length >= MAX_PENDING) {
     flushAll();

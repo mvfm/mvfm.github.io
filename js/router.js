@@ -67,7 +67,7 @@ export class Router {
         const trackPath = route === 'insights-article'
             ? window.location.pathname
             : (route === 'home' ? '/' : `/${route}`);
-        track('page_view', { route: trackPath, referrer: document.referrer || null });
+        track('page_view', { route: trackPath });
 
         if (updateHistory) {
             const newPath = route === 'home' ? '/' : `/${route}`;
