@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Again &#8212; Insights &#8212; mvfm.digital</title>
+    <meta name="description" content="AI history keeps changing its costumes, but the plot has a familiar rhythm: a dazzling spring, a theory of inevitability, and then the bill." />
+    <meta name="author" content="Marcus Vinicius Freitas Margarites" />
+    <link rel="canonical" href="https://mvfm.digital/insights/again" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://mvfm.digital/insights/again" />
+    <meta property="og:title" content="Again &#8212; Insights &#8212; mvfm.digital" />
+    <meta property="og:description" content="AI history keeps changing its costumes, but the plot has a familiar rhythm: a dazzling spring, a theory of inevitability, and then the bill." />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Again &#8212; Insights &#8212; mvfm.digital" />
+    <meta name="twitter:description" content="AI history keeps changing its costumes, but the plot has a familiar rhythm: a dazzling spring, a theory of inevitability, and then the bill." />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Again",
+      "description": "AI history keeps changing its costumes, but the plot has a familiar rhythm: a dazzling spring, a theory of inevitability, and then the bill.",
+      "url": "https://mvfm.digital/insights/again",
+      "datePublished": "2026-07",
+      "author": {
+        "@type": "Person",
+        "name": "Marcus Vinicius Freitas Margarites",
+        "url": "https://mvfm.digital"
+      }
+    }
+    </script>
+
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="stylesheet" href="/style.css">
+    <!-- TimelineJS CSS -->
+    <link title="timeline-styles" rel="stylesheet"
+        href="https://cdn.knightlab.com/libs/timeline3/3.9.1/css/timeline.css">
+
+    <!-- Start Single Page Apps for GitHub Pages -->
+    <script type="text/javascript">
+        (function (l) {
+            if (l.search[1] === 'p' && l.search[2] === '=') {
+                var decoded = l.search.slice(1).split('&').map(function (s) {
+                    return s.replace(/~and~/g, '&')
+                }).filter(function (s) {
+                    return s.slice(0, 2) === 'p='
+                })[0];
+                if (decoded !== undefined) {
+                    window.history.replaceState(null, null,
+                        l.pathname.slice(0, (l.pathname.slice(-1) === '/' ? -1 : undefined)) + decoded.slice(2) +
+                        l.hash
+                    );
+                }
+            }
+        }(window.location))
+    </script>
+    <!-- End Single Page Apps for GitHub Pages -->
+</head>
+
+<body>
+    <div class="app">
+        <div id="topBar">
+            <header>
+                <h1 class="brand"></h1>
+            </header>
+            <nav>
+                <div class="menu"></div>
+            </nav>
+        </div>
+        <main>
+            <canvas id="golCanvas" aria-hidden="true"></canvas>
+            <section id="contentPanel" class="panel" aria-live="polite" aria-atomic="true"></section>
+            <aside id="statsPanel" aria-live="polite" aria-atomic="true">
+                <div class="row"><span class="label">GEN</span>
+                    <div class="digits" id="genDigits"></div>
+                </div>
+                <div class="row"><span class="label">ALIVE</span>
+                    <div class="digits" id="aliveDigits"></div>
+                </div>
+                <div class="row"><span class="label">TOTAL</span>
+                    <div class="digits" id="totalDigits"></div>
+                </div>
+                <div class="row"><span class="label">OCC%</span>
+                    <div class="digits" id="occDigits"></div><span class="percent">%</span>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Article content -->
+    <template id="tpl-feature">
+        <article class="insight-article">
+            <header class="insight-article-header">
+                <h1>Again</h1>
+                <p class="insight-article-meta">July 2026</p>
+            </header>
+
+            <div class="insight-article-body">
+
+                <p class="insight-standfirst">Artificial intelligence has a seasonal disorder. Every few decades, the field discovers something real and decides the rest is mostly scheduling&mdash;until the world arrives, wearing muddy shoes.</p>
+
+                <figure class="insight-hero-image">
+                    <img src="/img/insights/again-thermometer-v2.png" alt="A thermometer planted in snow, with a bright sun visible just above the horizon." loading="eager">
+                    <figcaption>Not the first winter. Probably not the last spring.</figcaption>
+                </figure>
+
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">I</span>
+                    The Summer That Named Itself
+                </h2>
+
+                <aside class="insight-callout">
+                    Two months. They budgeted two months.
+                </aside>
+                <div class="insight-text">
+                    <p>In the summer of 1956, ten researchers gathered at Dartmouth College for what John McCarthy had described, in a funding proposal, as a <a href="/ai#event-the-dartmouth-conference">two-month investigation into artificial intelligence</a>. It was McCarthy's second attempt at a name &#8212; four years earlier, a collection he'd edited with Claude Shannon, <em>Automata Studies</em>, drew essays on formal automata theory, not the thinking machines he was after. The phrase was new. The confidence was not. The proposal stated that "every aspect of learning or any other feature of intelligence can in principle be so precisely described that a machine can be made to simulate it."</p>
+                    <p>There are cautious grant proposals. This was not one of them.</p>
+                    <p>The summer ended. Intelligence, rudely, continued to require more than a summer.</p>
+                    <p>But the Dartmouth meeting did something enormous. It gave the field a name, a club, a set of ambitions, and a proof of concept with excellent timing. <a href="/ai#event-logic-theorist">Logic Theorist</a>, built by Newell, Simon, and Shaw, proved theorems from <em>Principia Mathematica</em> through symbolic search. It was not a toy in the dismissive sense. It solved real <em>formal</em> problems. It made the old philosophical question feel suddenly mechanical: <em>if a machine can prove theorems, what exactly is missing?</em></p>
+                    <p>Herbert Simon, never a man to bring a candle when a floodlight was available, told the Operations Research Society in 1957 that "there are now in the world machines that think, that learn, and that create."</p>
+                    <p>The room, broadly speaking, was willing to be convinced.</p>
+                    <p>That same year, <a href="/ai#event-general-problem-solver">General Problem Solver</a> made the ambition explicit. The name sounds almost comic now, but it was not meant as marketing fluff. It was a research hypothesis: if a problem could be described precisely, a machine could search its way through the space of possible solutions.</p>
+                    <p>The trouble was hidden in the word <em>precisely</em>.</p>
+                </div>
+
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">II</span>
+                    The Prophets Were Not Fools
+                </h2>
+
+                <aside class="insight-callout">
+                    Herbert Simon was wrong in the way brilliant people are wrong: from very strong evidence, aimed slightly too far.
+                </aside>
+                <div class="insight-text">
+                    <p>Flush with Logic Theorist's success, Simon made two specific predictions in 1956. Within ten years, a computer would be world chess champion. Within ten years, a computer would discover and prove an important new mathematical theorem.</p>
+                    <p>The theorem prediction was basically correct before the ink dried. Logic Theorist had already produced the result. The chess prediction missed by four decades, and <a href="/ai#event-deep-blue">the machine that finally defeated Garry Kasparov</a> in 1997 looked nothing like the general reasoning systems Simon had imagined. Deep Blue was specialized hardware, brute-force search, and an astonishing amount of chess-specific engineering. It did not so much "think like a human" as calculate through a blizzard faster than any human could breathe.</p>
+                    <p>That distinction matters. Simon was not a crank. He was one of the sharpest minds of the twentieth century &#8212; a man who would, two decades later, win the Nobel Prize in Economics for arguing that real decision-makers don't optimize, they <em>satisfice</em>, settling for good enough instead of computing their way to perfect. He understood bounded rationality better than almost anyone alive. He just couldn't see it in his own forecast.</p>
+                </div>
+
+                <aside class="insight-callout">
+                    AI history is full of this specific error. Not fraud. Not stupidity. Extrapolation while standing inside the explosion.
+                </aside>
+                <div class="insight-text">
+                    <p>McCarthy made the same bet on the same board, twelve years on &#8212; literally. In 1968 he wagered that a computer would beat <a href="/ai#event-levys-chess-bet">the chess master David Levy</a> within ten years. He lost, narrowly, just before the clock ran out.</p>
+                    <p>From the inside, a breakthrough rarely looks like a local maximum. It looks like a door.</p>
+                </div>
+
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">III</span>
+                    The First Winter
+                </h2>
+
+                <aside class="insight-callout">
+                    The demo worked. The world declined to become the demo.
+                </aside>
+                <div class="insight-text">
+                    <p>The early programs were impressive because they did things computers were not supposed to do. They proved theorems, solved puzzles, played games, and manipulated symbols in ways that seemed, if you looked at them in the right way, like reasoning.</p>
+                    <p>The angle was important.</p>
+                    <p>These systems lived in clean rooms of the mind. The rules were known. The inputs were tidy. The goal was explicit. The environment sat politely still while the program reasoned about it. Real life, as usual, had not read the proposal.</p>
+                    <p>Machine translation became the public face of the problem. In 1954, <a href="/ai#event-georgetown-ibm-experiment">Georgetown and IBM</a> demonstrated a system that translated sixty Russian sentences into English automatically and correctly. The press loved it. Researchers estimated that fully automatic translation was three to five years away.</p>
+                    <p>Ten years later, the official verdict was brutal: too expensive, too little progress, not nearly useful enough. Russian, inconveniently, contained more than sixty sentences.</p>
+                    <p>Terry Winograd's <a href="/ai#event-shrdlu">SHRDLU</a>, arriving in 1971, made the same point more elegantly. Inside a simulated tabletop of blocks and pyramids, it held something like a conversation &#8212; following multi-step instructions, tracking pronouns across turns, explaining its own reasoning when asked why. For a moment, it looked like a machine that understood English. What made the demonstration work was also what sealed it shut: add one new kind of object to the tabletop, and the illusion needed as much hand-built machinery all over again. Winograd built the demonstration, then years later argued that the understanding on that screen had never really been there.</p>
+                    <p>The pattern repeated. A robot could navigate a maze and then lose its dignity in an ordinary room. A medical program could reason from clean inputs and then meet a patient, which is to say a source of contradictory symptoms, missing information, and human imprecision. A theorem prover could operate beautifully in a formal system and then discover that most of the world is not written in formal notation.</p>
+                    <p>Claude Shannon had already put a date on it. Closing out <a href="/ai#event-the-thinking-machine">The Thinking Machine</a>, a CBS documentary made with MIT, he told the country in 1960 that something close to the robot of science fiction fame would emerge from the laboratories within ten or fifteen years. Nobody had scheduled the winter in between.</p>
+                    <p>By the early 1970s, the people with chequebooks had noticed. In Britain, the government asked mathematician James Lighthill to review the field. <a href="/ai#event-the-lighthill-report">The Lighthill Report</a> did not arrive carrying flowers. Lighthill's case rested on a single technical villain he called the <em>combinatorial explosion</em>: widen the "universe of discourse" a machine had to reason about, even modestly, and the computation required did not grow with it. It detonated. The BBC turned the verdict into theatre: Lighthill, elevated on a lectern above the stage, faced down three AI researchers &#8212; John McCarthy among them &#8212; in a televised 1973 debate that played out less like a panel discussion and more like a public sentencing. Funding was cut. In the United States, DARPA also pulled back.</p>
+                    <p>Neural networks did not even get to wait for Lighthill. Marvin Minsky and Seymour Papert had already gone after <a href="/ai#event-the-perceptron">Frank Rosenblatt's perceptron</a> in <a href="/ai#event-perceptron-limitations">a 1969 critique</a>, proving with unforgiving rigor that a single layer of the things could not learn XOR &#8212; exclusive or, a distinction a child grasps without ever being told it has a name. Funding for neural networks dried up years before Lighthill made the freeze official &#8212; and the answer to Minsky and Papert <a href="/insights/forwardpropagation.html">kept arriving and going unheard</a> for another seventeen years.</p>
+                    <p>The first AI Winter did not arrive with a bell tolling. It arrived as fewer approvals, smaller grants, delayed renewals, and conversations in which "promising" began to mean "not this year."</p>
+                    <p>Winters in AI are rarely announced. They are administered.</p>
+                </div>
+
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">IV</span>
+                    The Second Spring
+                </h2>
+
+                <aside class="insight-callout">
+                    Then the rule machines started making money, which is the most persuasive benchmark.
+                </aside>
+                <div class="insight-text">
+                    <p>The next boom did not begin with a philosophical breakthrough. It began with useful software.</p>
+                    <p>Expert systems in the late 1970s and 1980s worked well enough to embarrass sceptics. <a href="/ai#event-mycin">MYCIN</a> diagnosed bacterial infections at the level of senior physicians. <a href="/ai#event-xcon">XCON</a> configured computer systems for Digital Equipment Corporation and saved the company tens of millions of dollars a year. These were not paper promises. They were deployed systems doing valuable work.</p>
+                    <p>That success made the next mistake almost irresistible.</p>
+                    <p>If some rules could help diagnose infections, and some more rules could configure computers, then perhaps intelligence was finally ready to be industrialized. More rules, more experts, more knowledge engineers, more specialized hardware. The problem was not conceptual anymore. It was logistical. Hire enough people to extract enough knowledge from enough experts, and the machines would become steadily more capable.</p>
+                    <p>For a while, this was a perfectly reasonable thing to believe. This is the uncomfortable part of AI history: the optimistic story is often locally correct. The systems really do work. The money really does arrive. The charts really do go up.</p>
+                    <p>Then, in 1982, Japan poured accelerant on the whole thing.</p>
+                    <p>The Ministry of International Trade and Industry announced <a href="/ai#event-fifth-generation">the Fifth Generation Computer Systems project</a>, a ten-year national effort to build a new class of computers based on logic programming and parallel inference. The machines would reason. They would understand natural language. They would support a knowledge-based society.</p>
+                    <p>The West reacted with the calm confidence for which geopolitical technology races are famous. Which is to say: not at all.</p>
+                    <p>Edward Feigenbaum and Pamela McCorduck published <a href="/ai#event-the-fifth-generation"><em>The Fifth Generation</em></a>, part technical argument, part siren. DARPA launched the Strategic Computing Initiative. Europe launched ESPRIT. Britain launched Alvey. A Japanese government program had turned AI into <a href="/ai#event-the-ai-arms-race">an international contest with budgets</a>, committees, acronyms, and the faint smell of panic.</p>
+                    <p>Edsger Dijkstra, watching from the sidelines, suggested that asking whether machines can think was about as relevant as asking whether <a href="/ai#event-submarines-can-swim">submarines can swim</a>. This was a beautiful line, and therefore had little effect on funding decisions.</p>
+                    <p>The spring was on.</p>
+                </div>
+
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">V</span>
+                    The Second Winter
+                </h2>
+
+                <aside class="insight-callout">
+                    The rules did not fail all at once. They accumulated until maintenance became the product.
+                </aside>
+                <div class="insight-text">
+                    <p>Expert systems had a problem that looked small until it filled the room: experts know things they cannot easily say.</p>
+                    <p>A senior physician does not diagnose by walking down a complete decision tree. An engineer configuring a system does not consciously enumerate every condition that shaped their judgment. Expertise is full of shortcuts, exceptions, muscle memory, domain folklore, and tiny acts of recognition that vanish when someone asks, "Could you write that as an if-then rule?"</p>
+                    <p>XCON eventually grew to about 10,000 rules and needed a dedicated team to keep it current as DEC's product line changed. This was still useful. It also revealed the trap. The system did not understand computer configuration. It was a very large, very valuable, very fragile instruction manual that had to be rewritten whenever somebody shipped a new product.</p>
+                    <p>Every edge case demanded a new rule. Every new rule could conflict with another rule. Every update required experts, engineers, meetings, tests, and the quiet fear that fixing one corner had broken another. The systems grew more capable and less graceful at the same time.</p>
+                    <p>Then the hardware story collapsed.</p>
+                    <p>Much of the AI boom had been tied to specialized <a href="/ai#event-lisp-machines">Lisp machines</a>. They were elegant, expensive, and suddenly competing with cheap desktop computers that improved at a terrifying pace. When general-purpose hardware became good enough, the specialized machines lost their reason to exist. Companies stopped buying. Vendors folded. Procurement departments developed selective amnesia about last year's revolution.</p>
+                    <p>Japan's Fifth Generation project <a href="/ai#event-fgcs-closes">ended after a decade and 54 billion yen</a>. The internet was emerging, commodity microprocessors were winning, and the underlying bet had been overtaken by a different future.</p>
+                    <p>The second AI Winter did not refute all of expert systems. MYCIN was still impressive. XCON still saved money. The problem was harsher than failure: success had been real, useful, and insufficient.</p>
+                    <p>That is the line AI keeps tripping over.</p>
+                </div>
+
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">VI</span>
+                    The Third Spring, For Now
+                </h2>
+
+                <aside class="insight-callout">
+                    AlexNet did not improve the benchmark. It made the benchmark look underprepared.
+                </aside>
+                <div class="insight-text">
+                    <p>The quiet lasted the better part of two decades. Neural networks stayed unfashionable and the funding stayed thin, and <a href="/insights/ilya.html">the handful of people who kept training them anyway</a> mostly did so without an audience.</p>
+                    <p>In 2012, Alex Krizhevsky, Ilya Sutskever, and Geoffrey Hinton entered <a href="/ai#event-alexnet">AlexNet</a> into the <a href="/ai#event-imagenet">ImageNet</a> competition. It cut the previous best error rate so dramatically that some researchers initially wondered whether the scoring system had broken.</p>
+                    <p>The scoring system was fine. The assumptions were broken.</p>
+                    <p>Deep learning, <a href="/ai#event-gpu-deep-learning">trained on GPUs</a>, fed enough labeled data, and allowed to learn its own internal features, worked at a scale the field had not quite believed in. The result did not look like symbolic reasoning. It did not look like expert rules. It did not ask people to write down <a href="/ai#event-the-cat-paper">what a cat was</a>. It absorbed examples until something inside the network became useful.</p>
+                    <p>This spring has a feature the earlier ones mostly lacked: scaling keeps paying rent. More data, more compute, larger models, better training runs. Not every improvement is smooth, not every benchmark matters, and the economics are ferocious, but the basic pattern has held long enough to change the world. <a href="/ai#event-chatgpt-goes-mainstream">ChatGPT</a> made AI a consumer habit almost overnight. Models that once felt like demos now <a href="/ai#event-github-copilot">write code</a>, <a href="/ai#event-gpt-4">pass exams</a>, <a href="/ai#event-denoising-diffusion-models">generate images</a>, <a href="/ai#event-rag">search documents</a>, <a href="/ai#event-khanmigo-launches">tutor students</a>, and <a href="/ai#event-harvey-at-allen-overy">draft contracts</a>.</p>
+                    <p>They also <a href="/ai#event-ai-hallucination">confidently invent sources that do not exist</a>.</p>
+                    <p>That is not a footnote. It is the old gap wearing new clothes.</p>
+                    <p>The current systems are not brittle in the way expert systems were brittle. They are flexible, fluent, and weirdly broad. They fail differently: hallucinations, hidden reasoning errors, shallow robustness, benchmark contamination, <a href="/ai#event-goodharts-law">reward hacking</a>, security vulnerabilities, sycophancy, and a talent for making wrong answers sound like they have tenure.</p>
+                    <p>The field knows this better than it used to. Modern AI researchers hedge. They say "probably" and "may" and "we do not yet understand" with the careful tone of people who have read the archives. Safety teams measure failure modes before product teams finish naming the feature. Labs publish model cards, risk evaluations, preparedness frameworks, red-team reports.</p>
+                    <p>Mostly.</p>
+                    <p>There is still a familiar pressure in the room: the product demo works, the investor call is tomorrow, and the future has once again been pencilled in as inevitable.</p>
+                </div>
+
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">VII</span>
+                    The Pattern
+                </h2>
+
+                <aside class="insight-callout">
+                    The lesson is not that AI hype is fake. The lesson is worse: the hype usually begins with something true.
+                </aside>
+                <div class="insight-text">
+                    <p>Look across the winters and the shape becomes hard to miss.</p>
+                    <p>Logic Theorist really proved theorems. The Georgetown-IBM system really translated its sixty sentences. MYCIN really diagnosed infections. XCON really saved DEC a fortune. AlexNet really changed computer vision. ChatGPT really changed what millions of people expect computers to do.</p>
+                    <p>The demonstrations were real.</p>
+                    <p>The mistake came next, when reality was asked to resemble the demonstration. It rarely agreed. The lab problem had clean inputs; the world had ambiguity. The benchmark had fixed rules; deployment had shifting incentives. The expert had explained the rule; the actual expertise lived partly outside language. The model scored well on the test; the user needed it to be right in a situation nobody had thought to test.</p>
+                    <p>AI springs are powered by genuine breakthroughs. AI winters are powered by the discovery that a breakthrough is not the same thing as an ending.</p>
+                    <p>So is this spring different?</p>
+                    <p>Yes, in important ways. The systems are broader. The scaling behavior is more durable. The commercial demand is not imaginary. The tools are already useful across writing, coding, design, research, customer support, education, biology, and a hundred places where "narrow demo" no longer quite fits.</p>
+                    <p>And no, in the one way that matters most. The gap between demonstration and deployment is still here. It has not vanished. It has become more fluent.</p>
+                    <p>The question is not whether today's AI is real. It is obviously real. The question is whether the field can resist its oldest reflex: mistaking a working demo for a finished world.</p>
+                    <p>History does not say winter is inevitable. It says spring is intoxicating. It says the hard part usually begins after the demo works, when the machine leaves the clean room and meets institutions, incentives, liability, boredom, edge cases, bad data, clever users, tired operators, and the full messy weather of the world.</p>
+                    <p>AI keeps learning this lesson.</p>
+                    <p>Then, somehow, it has to learn it again.</p>
+                </div>
+
+                <hr class="insight-separator">
+                <p class="insight-cta">Want to see the moments that shaped each cycle? <a href="/ai?q=insights=again">Explore the timeline</a>.</p>
+
+            </div>
+        </article>
+    </template>
+
+    <!-- TimelineJS JS -->
+    <script src="https://cdn.knightlab.com/libs/timeline3/3.9.1/js/timeline.js"></script>
+    <script>window.__FEATURE_SLUG__ = 'again';</script>
+    <script type="module" src="/js/main.js"></script>
+
+    <!-- Fallback content for crawlers that don't execute JavaScript -->
+    <noscript>
+        <style>.app { display: none; }</style>
+        <main>
+            <nav>
+                <a href="https://mvfm.digital/">Home</a> |
+                <a href="https://mvfm.digital/resume">Resume</a> |
+                <a href="https://mvfm.digital/contact">Contact</a> |
+                <a href="https://mvfm.digital/ai">AI Timeline</a> |
+                <a href="https://mvfm.digital/insights">Insights</a>
+            </nav>
+            <article>
+                <h1>Again</h1>
+                <p>AI history keeps changing its costumes, but the plot has a familiar rhythm: a dazzling spring, a theory of inevitability, and then the bill.</p>
+                <p>By Marcus Vinicius Freitas Margarites &#8212; July 2026</p>
+                <h2>I &#8212; The Summer That Named Itself</h2>
+                <p>At Dartmouth in 1956, ten researchers gave artificial intelligence its name and treated general machine intelligence as a tractable summer project. Logic Theorist and General Problem Solver made the confidence understandable&#8212;and hid how much difficulty lived inside the word &#8220;precisely.&#8221;</p>
+                <h2>II &#8212; The Prophets Were Not Fools</h2>
+                <p>Herbert Simon and John McCarthy made forecasts that overshot not because the evidence was fake, but because genuine breakthroughs looked like open doors. AI history repeatedly turns strong local evidence into sweeping inevitability.</p>
+                <h2>III &#8212; The First Winter</h2>
+                <p>Early systems worked inside tidy formal worlds and failed when real life widened the problem. Machine translation, SHRDLU, perceptrons, and the Lighthill Report revealed the combinatorial and practical limits that funding decisions turned into the first AI Winter.</p>
+                <h2>IV &#8212; The Second Spring</h2>
+                <p>Expert systems such as MYCIN and XCON delivered real value, making the next boom rational as well as exuberant. Japan&#8217;s Fifth Generation project then transformed technical optimism into an international race of budgets, committees, and fear.</p>
+                <h2>V &#8212; The Second Winter</h2>
+                <p>Rule systems became expensive to maintain, specialized Lisp machines lost to commodity hardware, and the Fifth Generation project closed. The second winter showed that a technology can be successful, useful, and still insufficient.</p>
+                <h2>VI &#8212; The Third Spring, For Now</h2>
+                <p>AlexNet, GPUs, data, and durable scaling launched a broader spring whose systems now write, code, search, tutor, and design. Their failures are broader too: hallucination, reward hacking, brittleness, and fluent confidence without reliability.</p>
+                <h2>VII &#8212; The Pattern</h2>
+                <p>AI hype usually starts with something true. The recurring error comes afterward, when a working demonstration is mistaken for a finished world and meets the ambiguity, incentives, edge cases, and weather of deployment.</p>
+            </article>
+        </main>
+    </noscript>
+</body>
+
+</html>
