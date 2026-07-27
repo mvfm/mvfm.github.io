@@ -316,15 +316,6 @@ const GEO_COLORS = ['#ec4899','#6366f1','#f59e0b','#10b981','#3b82f6','#ef4444',
 const GEO_COLORS_LIGHT = ['rgba(236,72,153,0.45)','rgba(99,102,241,0.45)','rgba(245,158,11,0.45)','rgba(16,185,129,0.45)','rgba(59,130,246,0.45)','rgba(239,68,68,0.45)','rgba(139,92,246,0.45)'];
 const REFERRER_COLORS = ['#6366f1','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#8b5cf6','#94a3b8'];
 
-function parseUserAgent(ua) {
-  if (!ua) return null;
-  if (/bot|crawler|spider|slurp|python-requests|python\//i.test(ua)) return 'Bot / Crawler';
-  if (/HeadlessChrome|PhantomJS|Googlebot|bingbot|Baiduspider|YandexBot|curl|wget|scrapy/i.test(ua)) return 'Bot / Crawler';
-  if (/iPad|Tablet/i.test(ua) && !/Mobile/i.test(ua)) return 'Tablet';
-  if (/Mobi|Mobile|Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini|Windows Phone/i.test(ua)) return 'Mobile';
-  return 'Desktop';
-}
-
 async function loadGeo() {
   try {
     const d = await apiFetch('/api/analytics/geo');
@@ -431,31 +422,26 @@ async function loadReferrers() {
 async function loadUserAgents() {
   const errEl = document.getElementById('user-agents-error');
   try {
-    const d = await apiFetch('/api/analytics/sessions/recent', { limit: 50 });
-    const counts = {};
-    let hasUA = false;
+    const d = await apiFetch('/api/analytics/device-types');
 
-    d.sessions.forEach(s => {
-      const category = parseUserAgent(s.user_agent);
-      if (category) {
-        hasUA = true;
-        counts[category] = (counts[category] || 0) + 1;
+    if (!d.total_sessions) {
+      if (_charts['chart-user-agents']) {
+        _charts['chart-user-agents'].destroy();
+        delete _charts['chart-user-agents'];
       }
-    });
-
-    if (!hasUA) {
-      if (errEl) errEl.innerHTML = '<p style="font-size:0.65rem;color:var(--faint);padding:0.5rem 0">No user agent data in session summary.</p>';
+      _userAgentsData = null;
+      if (errEl) errEl.innerHTML = '<p style="font-size:0.65rem;color:var(--faint);padding:0.5rem 0">No user agent data for this date range.</p>';
       return;
     }
 
     const UA_COLOR_MAP = { 'Desktop': '#10b981', 'Mobile': '#6366f1', 'Tablet': '#f59e0b', 'Bot / Crawler': '#ef4444' };
-    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-    const labels = sorted.map(([k]) => k);
-    const data   = sorted.map(([, v]) => v);
-    const total  = data.reduce((s, v) => s + v, 0);
+    const labels = d.device_types.map(row => row.device_type);
+    const data   = d.device_types.map(row => row.sessions);
+    const pcts   = d.device_types.map(row => row.pct);
+    const total  = d.total_sessions;
     const colors = labels.map((lbl, i) => UA_COLOR_MAP[lbl] || REFERRER_COLORS[i % REFERRER_COLORS.length]);
 
-    _userAgentsData = { labels, data, total, colors };
+    _userAgentsData = { labels, data, pcts, total, colors };
     makeChart('chart-user-agents', {
       type: 'doughnut',
       data: { labels, datasets: [{ data, backgroundColor: colors }] },
@@ -466,7 +452,7 @@ async function loadUserAgents() {
           centerText: { totalSessions: total, label: 'sessions' },
           tooltip: {
             callbacks: {
-              label: ctx => ` ${ctx.label}: ${ctx.parsed} (${Math.round(ctx.parsed / total * 100)}%)`,
+              label: ctx => ` ${ctx.label}: ${ctx.parsed} (${pcts[ctx.dataIndex]}%)`,
             },
           },
         },
@@ -1465,7 +1451,7 @@ const MODAL_DEFS = {
 
   userAgents: {
     title: 'Device types',
-    subtitle: 'Parsed from recent 50 sessions — indicative sample',
+    subtitle: 'Sessions in selected date range — empty user agents excluded',
     buildChart: (raw) => ({
       type: 'doughnut',
       data: { labels: raw.labels, datasets: [{ data: raw.data, backgroundColor: raw.colors }] },
@@ -1476,7 +1462,7 @@ const MODAL_DEFS = {
           centerText: { totalSessions: raw.total, label: 'sessions' },
           tooltip: {
             callbacks: {
-              label: ctx => ` ${ctx.label}: ${ctx.parsed} (${Math.round(ctx.parsed / raw.total * 100)}%)`,
+              label: ctx => ` ${ctx.label}: ${ctx.parsed} (${raw.pcts[ctx.dataIndex]}%)`,
             },
           },
         },
@@ -1484,7 +1470,7 @@ const MODAL_DEFS = {
     }),
     buildTable: (raw) => {
       const rows = raw.labels.map((lbl, i) =>
-        `<tr><td>${escHtml(lbl)}</td><td>${raw.data[i]}</td><td>${Math.round(raw.data[i] / raw.total * 100)}%</td></tr>`
+        `<tr><td>${escHtml(lbl)}</td><td>${raw.data[i]}</td><td>${raw.pcts[i]}%</td></tr>`
       ).join('');
       return `<table class="data-table"><thead><tr><th>Device type</th><th>Sessions</th><th>%</th></tr></thead><tbody>${rows}</tbody></table>`;
     },
