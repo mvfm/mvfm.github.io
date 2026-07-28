@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI History Timeline — Marcus Vinicius Freitas Margarites</title>
+    <meta name="description" content="From early mechanical reasoning to modern generative AI: explore the pivotal events, people, research, industry, and culture that shaped artificial intelligence." />
+    <meta name="author" content="Marcus Vinicius Freitas Margarites" />
+    <link rel="canonical" href="https://mvfm.digital/ai" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://mvfm.digital/ai" />
+    <meta property="og:title" content="AI History Timeline — Marcus Vinicius Freitas Margarites" />
+    <meta property="og:description" content="From early mechanical reasoning to modern generative AI: explore the pivotal events, people, research, industry, and culture that shaped artificial intelligence." />
+    <meta property="og:image" content="https://mvfm.digital/img/modal-hero.jpg" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="AI History Timeline — Marcus Vinicius Freitas Margarites" />
+    <meta name="twitter:description" content="From early mechanical reasoning to modern generative AI: explore the pivotal events, people, research, industry, and culture that shaped artificial intelligence." />
+    <meta name="twitter:image" content="https://mvfm.digital/img/modal-hero.jpg" />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      "name": "AI History Timeline",
+      "description": "An interactive, curated timeline of the pivotal events, people, research, industry, and culture that shaped artificial intelligence.",
+      "url": "https://mvfm.digital/ai",
+      "about": {
+        "@type": "Thing",
+        "name": "History of artificial intelligence"
+      },
+      "author": {
+        "@type": "Person",
+        "name": "Marcus Vinicius Freitas Margarites",
+        "url": "https://mvfm.digital"
+      },
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "mvfm.digital",
+        "url": "https://mvfm.digital"
+      }
+    }
+    </script>
+
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="stylesheet" href="/style.css">
+    <!-- TimelineJS CSS -->
+    <link title="timeline-styles" rel="stylesheet"
+        href="https://cdn.knightlab.com/libs/timeline3/3.9.1/css/timeline.css">
+
+    <!-- Keep the explicit .html URL on the canonical SPA route. -->
+    <script>
+        if (window.location.pathname.endsWith('/ai.html')) {
+            window.history.replaceState(
+                null,
+                '',
+                '/ai' + window.location.search + window.location.hash
+            );
+        }
+    </script>
+</head>
+
+<body>
+    <div class="app">
+        <div id="topBar">
+            <header>
+                <h1 class="brand"></h1>
+            </header>
+            <nav>
+                <div class="menu"></div>
+            </nav>
+        </div>
+        <main>
+            <canvas id="golCanvas" aria-hidden="true"></canvas>
+            <section id="contentPanel" class="panel" aria-live="polite" aria-atomic="true"></section>
+            <aside id="statsPanel" aria-live="polite" aria-atomic="true">
+                <div class="row"><span class="label">GEN</span>
+                    <div class="digits" id="genDigits"></div>
+                </div>
+                <div class="row"><span class="label">ALIVE</span>
+                    <div class="digits" id="aliveDigits"></div>
+                </div>
+                <div class="row"><span class="label">TOTAL</span>
+                    <div class="digits" id="totalDigits"></div>
+                </div>
+                <div class="row"><span class="label">OCC%</span>
+                    <div class="digits" id="occDigits"></div><span class="percent">%</span>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- TimelineJS JS -->
+    <script src="https://cdn.knightlab.com/libs/timeline3/3.9.1/js/timeline.js"></script>
+    <script type="module" src="/js/main.js"></script>
+
+    <!-- Useful indexable content for clients that do not execute JavaScript. -->
+    <noscript>
+        <style>.app { display: none; }</style>
+        <main>
+            <article>
+                <h1>AI History Timeline</h1>
+                <p>
+                    Explore a curated, interactive history of artificial intelligence, from early mechanical
+                    reasoning and formal logic to neural networks, deep learning, generative AI, robotics,
+                    AI safety, industry, and popular culture.
+                </p>
+                <p>
+                    Each timeline entry connects an event to its historical context and, where available,
+                    its original paper, announcement, or a reliable secondary source.
+                </p>
+                <p>
+                    JavaScript is required to explore the interactive timeline, search its entries, and
+                    filter it by topic.
+                </p>
+            </article>
+            <nav>
+                <a href="https://mvfm.digital/">Home</a> |
+                <a href="https://mvfm.digital/resume">Resume</a> |
+                <a href="https://mvfm.digital/contact">Contact</a> |
+                <a href="https://mvfm.digital/ai">AI Timeline</a> |
+                <a href="https://mvfm.digital/insights">Insights</a>
+            </nav>
+        </main>
+    </noscript>
+</body>
+
+</html>
