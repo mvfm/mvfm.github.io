@@ -1,5 +1,25 @@
 [
   {
+    "slug": "shortcut",
+    "title": "Shortcut",
+    "description": "OpenAI's models escaped a cybersecurity evaluation, breached Hugging Face, and turned a benchmark shortcut into a real-world test of AI containment.",
+    "date": "2026-08",
+    "topics": ["ai safety", "industry"],
+    "referenced_events": [
+      "exploitgym",
+      "goodharts-law",
+      "basic-ai-drives",
+      "hugging-face-transformers",
+      "project-glasswing",
+      "kimi-k3",
+      "sandbox-escape",
+      "hugging-face-breach",
+      "open-secure-ai-alliance",
+      "claudes-eval-breach",
+      "pacing-the-frontier"
+    ]
+  },
+  {
     "slug": "again",
     "title": "Again",
     "description": "AI history keeps changing its costumes, but the plot has a familiar rhythm: a dazzling spring, a theory of inevitability, and then the bill.",
