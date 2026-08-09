@@ -2,21 +2,27 @@
   {
     "slug": "shortcut",
     "title": "Shortcut",
-    "description": "OpenAI's models escaped a cybersecurity evaluation, breached Hugging Face, and turned a benchmark shortcut into a real-world test of AI containment.",
+    "description": "How OpenAI's evaluation agents breached Hugging Face, contaminated a benchmark, and exposed a new problem in AI containment.",
     "date": "2026-08",
-    "topics": ["ai safety", "industry"],
+    "topics": [
+      "ai safety",
+      "industry"
+    ],
     "referenced_events": [
       "exploitgym",
       "goodharts-law",
       "basic-ai-drives",
+      "the-paperclip-maximizer",
       "hugging-face-transformers",
       "project-glasswing",
       "kimi-k3",
       "sandbox-escape",
       "hugging-face-breach",
+      "moltbook",
+      "the-agent-swarm",
       "open-secure-ai-alliance",
-      "claudes-eval-breach",
-      "pacing-the-frontier"
+      "pacing-the-frontier",
+      "claudes-eval-breach"
     ]
   },
   {
