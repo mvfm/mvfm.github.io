@@ -10,8 +10,34 @@ export const NAV_ITEMS = [
 
 const TEMPLATES = {
     home: `
-        <h2>Welcome</h2>
-        <p>Use the menu above to switch sections.</p>`,
+        <h2>AI did not arrive all at once. It accumulated.</h2>
+        <p>
+            A theorem here, a machine there; a promising idea abandoned, rediscovered, and renamed decades later.
+            Today’s AI boom is only the latest chapter in a much longer (and much stranger) story.
+        </p>
+        <p>
+            The <strong>AI History Timeline</strong> follows that story from the earliest work in logic and
+            computation through neural networks, landmark research, AI winters, industry bets, and the products that
+            brought AI into everyday life. Hundreds of dated entries connect papers, inventions, company milestones,
+            and pop-culture moments in one continuous, searchable chronology.
+        </p>
+        <p><strong><a href="/ai">Explore the AI History Timeline</a></strong></p>
+
+        <h2>Beyond the dates</h2>
+        <p>
+            A timeline can tell you what happened. <strong>Insights</strong> asks what it meant, and what we may have
+            misunderstood along the way. These essays follow the people, ideas, breakthroughs, failures, and recurring
+            patterns that deserve more room than a single timeline entry can give them.
+        </p>
+        <p><strong><a href="/insights">Read the latest Insights</a></strong></p>
+
+        <h2>About me</h2>
+        <p>
+            I’m Marcus Vinicius Freitas Margarites, a systems engineer and software designer with almost 40 years
+            of experience. This site brings together my professional work and an independent, ongoing attempt to make
+            sense of AI’s history without flattening it into a parade of product launches.
+        </p>
+        <p><strong><a href="/resume">View my résumé</a></strong> · <strong><a href="/contact">Get in touch</a></strong></p>`,
 
     contact: `
         <h2>Contact</h2>
