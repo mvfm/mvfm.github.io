@@ -164,6 +164,15 @@ export class GameOfLife {
         const w = this.canvas.clientWidth;
         const h = this.canvas.clientHeight;
 
+        // A temporarily hidden or not-yet-laid-out canvas has no drawable
+        // source pixels. Wait for ResizeObserver to provide real dimensions.
+        if (w <= 0 || h <= 0 ||
+            this.off.width <= 0 || this.off.height <= 0 ||
+            this.fromCanvas.width <= 0 || this.fromCanvas.height <= 0 ||
+            this.toCanvas.width <= 0 || this.toCanvas.height <= 0) {
+            return;
+        }
+
         this.offCtx.clearRect(0, 0, w, h);
 
         // Blend 'from' and 'to' high-res states
