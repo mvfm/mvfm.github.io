@@ -2,7 +2,7 @@
   {
     "slug": "shortcut",
     "title": "Shortcut",
-    "description": "How OpenAI's evaluation agents breached Hugging Face, contaminated a benchmark, and exposed a new problem in AI containment.",
+    "description": "How OpenAI's evaluation agents breached Hugging Face, learned to game the grader, and exposed a new problem in AI containment.",
     "date": "2026-08",
     "topics": [
       "ai safety",
