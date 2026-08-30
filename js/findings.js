@@ -1,5 +1,6 @@
 import { track } from './analytics.js';
 import { getTopicColor } from './topics.js';
+import { API_BASE_URL } from './config.js';
 import { buildGraphModel, filterFindings, deriveEventLabel } from './findings-model.js';
 
 const NEUTRAL_TOPIC = 'var(--clr-text-muted)';
@@ -58,7 +59,26 @@ export async function findingsRouteOnLoad() {
     wireFilterUI();
     wireDetailDismiss();
 
-    // Task 12 kicks off the non-blocking /timeline topic-colour fetch here.
+    // Task 12: non-blocking /timeline fetch purely for topic colours.
+    // Runs AFTER the list + graph render; never awaited, never gates the UI.
+    // On failure everything stays neutral and the tab remains fully usable.
+    {
+        const ctrl = new AbortController();
+        const timeoutId = setTimeout(() => ctrl.abort(), 15000);
+        fetch(`${API_BASE_URL}/timeline`, { signal: ctrl.signal })
+            .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
+            .then(data => {
+                if (!Array.isArray(data.topics) || !data.topics.length) return;
+                state.allTopics = data.topics;          // verbatim; getTopicColor sorts internally
+                renderTopicPills();                     // recolour topic pills
+                applyFilter();                          // re-render rows → recoloured topic dots
+                state.graph?.requestDraw();             // late-bound topicColor repaints topic nodes
+            })
+            .catch(err => {
+                console.warn('[findings] topic colours unavailable:', err.message);
+            })
+            .finally(() => clearTimeout(timeoutId));
+    }
 
     state.graph?.destroy?.();
     state.graph = null;
@@ -161,7 +181,7 @@ function renderLegend() {
 
 function rowHtml(f) {
     const dots = (f.topics || []).map(t => {
-        const c = state.allTopics.length ? getTopicColor(t, state.allTopics) : NEUTRAL_TOPIC;
+        const c = state.allTopics.length ? getTopicColor(t, state.allTopics, true) : NEUTRAL_TOPIC;
         return `<span class="finding-dot" style="background:${c}" title="${esc(t)}"></span>`;
     }).join('');
     const refs = [];
