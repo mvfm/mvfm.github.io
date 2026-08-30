@@ -1451,7 +1451,7 @@ ol li {
 /* ===== Findings ===== */
 .findings-split { display: flex; gap: 1.5rem; align-items: flex-start; }
 .findings-list { flex: 0 0 22rem; max-width: 22rem; }
-.findings-graph { position: relative; flex: 1 1 auto; min-height: 32rem;
+.findings-graph { position: relative; flex: 1 1 auto; height: 32rem;
     border: 1px solid var(--clr-panel-border); border-radius: var(--radius-md); overflow: hidden; }
 #findings-canvas { display: block; width: 100%; height: 100%; }
 #findings-map-toggle { display: none; }
@@ -1497,7 +1497,7 @@ ol li {
 @media (max-width: 760px) {
     .findings-split { flex-direction: column; }
     .findings-list { flex-basis: auto; max-width: none; width: 100%; }
-    .findings-graph { width: 100%; min-height: 24rem; }
+    .findings-graph { width: 100%; height: 24rem; }
     .findings-split.show-map .findings-list { display: none; }
     .findings-split:not(.show-map) .findings-graph { display: none; }
     #findings-map-toggle { display: inline-block; }
