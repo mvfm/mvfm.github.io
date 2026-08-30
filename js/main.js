@@ -3,6 +3,8 @@ import { Router } from './router.js';
 import { initUI } from './ui.js';
 import { track } from './analytics.js';
 import { injectShell } from './shell.js';
+import { API_BASE_URL } from './config.js';
+import { getTopicColor } from './topics.js';
 
 // Mirrors TimelineJS slugify() exactly — keep in sync with app/util.py
 function slugify(str) {
@@ -21,19 +23,11 @@ function slugify(str) {
 /**
  * App Configuration & Initialization
  */
-const CONFIG = (() => {
-    const params = new URLSearchParams(window.location.search);
-    const forceRemote = params.get('api') === 'remote';
-    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-
-    return {
-        API_BASE_URL: (isLocal && !forceRemote)
-            ? 'http://localhost:8080'
-            : 'https://mvfm.pythonanywhere.com',
-        MAX_RETRIES: 3,
-        RETRY_DELAY_MS: 2000
-    };
-})();
+const CONFIG = {
+    API_BASE_URL,
+    MAX_RETRIES: 3,
+    RETRY_DELAY_MS: 2000
+};
 
 // Global state for topics
 let allTopics = [];
@@ -81,20 +75,6 @@ const generateMnemonics = (topics) => {
         used.add(mnemonic);
         topicMnemonics.set(topic, mnemonic);
     });
-};
-
-const getTopicColor = (topicName, isEnabled = true) => {
-    // Determine index based on alphabetical order of allTopics
-    const index = allTopics.sort().indexOf(topicName);
-    if (index === -1) return isEnabled ? 'var(--clr-primary)' : '#cbd5e1';
-
-    // Distribute 20 colors around the wheel (360 / 20 = 18 degrees per step)
-    const hue = (index * 18) % 360;
-    const saturation = isEnabled ? 70 : 15;
-    const lightness = isEnabled ? 45 : 85;
-    const alpha = isEnabled ? 1 : 0.6;
-
-    return `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
 };
 
 const getTopicInitials = (topicName) => {
@@ -153,7 +133,7 @@ const showTimelineModal = (data, { force = false } = {}) => {
     const buildEntries = (events) => events.map(e => {
         const year = e.date || '';
         const pillsHtml = [...(e.topics || [])].sort().map(t =>
-            `<span class="modal-topic-pill" style="background-color:${getTopicColor(t)}" title="${escHtml(t)}">${escHtml(getTopicInitials(t))}</span>`
+            `<span class="modal-topic-pill" style="background-color:${getTopicColor(t, allTopics)}" title="${escHtml(t)}">${escHtml(getTopicInitials(t))}</span>`
         ).join('');
         return `<li><button class="modal-entry" data-slug="${escHtml(e.slug)}" data-headline="${escHtml(e.headline)}">` +
             `<span class="modal-entry-date">${escHtml(year)}</span>` +
@@ -472,7 +452,7 @@ const aiRouteOnLoad = async () => {
                     if (hasTopics) {
                         const topicPillsHtml = [...event.topics].sort().map(t => `
                                     <div class="event-topic-label"
-                                         style="background-color: ${getTopicColor(t)}"
+                                         style="background-color: ${getTopicColor(t, allTopics)}"
                                          title="${t}">
                                         ${getTopicInitials(t)}
                                     </div>`).join('');
@@ -790,9 +770,9 @@ const initTimelineSearch = () => {
             const pill = document.createElement('div');
             pill.className = `topic-pill ${isSelected ? 'selected' : ''}`;
             pill.textContent = topic;
-            pill.style.backgroundColor = getTopicColor(topic, isSelected);
+            pill.style.backgroundColor = getTopicColor(topic, allTopics, isSelected);
             pill.style.color = isSelected ? 'white' : 'var(--clr-text-muted)';
-            pill.style.borderColor = isSelected ? 'transparent' : getTopicColor(topic, false);
+            pill.style.borderColor = isSelected ? 'transparent' : getTopicColor(topic, allTopics, false);
 
             pill.addEventListener('click', () => {
                 if (selectedTopics.has(topic)) {

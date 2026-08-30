@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Findings Tests</title>
+  <style>
+    body {
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 2rem;
+    }
+    h2 {
+      margin-top: 0;
+    }
+    #summary {
+      margin: 1rem 0;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+    #results {
+      margin-top: 1rem;
+    }
+    .test-result {
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+      border-left: 4px solid;
+      font-family: monospace;
+    }
+    .pass {
+      background: rgba(34, 197, 94, 0.1);
+      border-color: #22c55e;
+    }
+    .fail {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <h2>Findings Tests</h2>
+  <div id="summary"></div>
+  <div id="results"></div>
+
+  <script type="module">
+    import { getTopicColor } from '../js/topics.js';
+    import {
+      TOPIC_LABEL_OVERRIDES, deriveEventLabel, buildGraphModel, filterFindings
+    } from '../js/findings-model.js';
+
+    // Micro test framework
+    const results = [];
+
+    // expect() - assertion matcher
+    function expect(val) {
+      return {
+        toBe(expected) {
+          if (val !== expected) {
+            throw new Error(`Expected ${JSON.stringify(val)} to be ${JSON.stringify(expected)}`);
+          }
+        },
+        toEqual(expected) {
+          if (!deepEqual(val, expected)) {
+            throw new Error(`Expected ${JSON.stringify(val)} to equal ${JSON.stringify(expected)}`);
+          }
+        },
+        toBeTruthy() {
+          if (!val) {
+            throw new Error(`Expected ${JSON.stringify(val)} to be truthy`);
+          }
+        },
+        toBeFalsy() {
+          if (val) {
+            throw new Error(`Expected ${JSON.stringify(val)} to be falsy`);
+          }
+        }
+      };
+    }
+
+    // Deep equality check helper
+    function deepEqual(a, b) {
+      if (a === b) return true;
+      if (a == null || b == null) return false;
+      if (typeof a !== 'object' || typeof b !== 'object') return false;
+      const keysA = Object.keys(a);
+      const keysB = Object.keys(b);
+      if (keysA.length !== keysB.length) return false;
+      return keysA.every(key => deepEqual(a[key], b[key]));
+    }
+
+    // waitFor() - poll until condition is true
+    async function waitFor(condition, timeout = 2000, interval = 50) {
+      const startTime = Date.now();
+      while (Date.now() - startTime < timeout) {
+        if (condition()) return;
+        await new Promise(resolve => setTimeout(resolve, interval));
+      }
+      throw new Error(`Timeout waiting for condition after ${timeout}ms`);
+    }
+
+    // test() - run a test and record result
+    async function test(name, fn) {
+      let pass = true;
+      let error = null;
+      try {
+        await fn();
+      } catch (e) {
+        pass = false;
+        error = e.message;
+      }
+      results.push({ name, pass, error });
+    }
+
+    (async () => {
+      await test('smoke', async () => { expect(1 + 1).toBe(2); });
+
+      await test('getTopicColor: hue is index*18 in sorted list', async () => {
+        const topics = ['b-topic', 'a-topic', 'c-topic']; // sorts to a,b,c
+        expect(getTopicColor('a-topic', topics)).toBe('hsla(0, 70%, 45%, 1)');
+        expect(getTopicColor('b-topic', topics)).toBe('hsla(18, 70%, 45%, 1)');
+        expect(getTopicColor('c-topic', topics)).toBe('hsla(36, 70%, 45%, 1)');
+      });
+
+      await test('getTopicColor: disabled variant', async () => {
+        expect(getTopicColor('a-topic', ['a-topic'], false)).toBe('hsla(0, 15%, 85%, 0.6)');
+      });
+
+      await test('getTopicColor: unknown topic → fallback, no throw', async () => {
+        expect(getTopicColor('missing', ['a-topic'])).toBe('var(--clr-primary)');
+        expect(getTopicColor('missing', ['a-topic'], false)).toBe('#cbd5e1');
+      });
+
+      await test('getTopicColor: empty/undefined allTopics → fallback', async () => {
+        expect(getTopicColor('x', [])).toBe('var(--clr-primary)');
+        expect(getTopicColor('x', undefined)).toBe('var(--clr-primary)');
+      });
+
+      // Task 2 + 3 append their tests below this line.
+
+      renderResults();
+    })();
+
+    function renderResults() {
+      const summaryEl = document.getElementById('summary');
+      const resultsEl = document.getElementById('results');
+
+      const passed = results.filter(r => r.pass).length;
+      const failed = results.filter(r => !r.pass).length;
+      const allPassed = failed === 0;
+
+      // Render summary
+      const icon = allPassed ? '✅' : '❌';
+      summaryEl.textContent = `${passed} passed, ${failed} failed ${icon}`;
+
+      // Render individual results
+      results.forEach(result => {
+        const div = document.createElement('div');
+        div.className = `test-result ${result.pass ? 'pass' : 'fail'}`;
+        div.textContent = result.pass
+          ? `✓ ${result.name}`
+          : `✗ ${result.name}\n  ${result.error}`;
+        resultsEl.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>
