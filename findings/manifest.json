@@ -1,5 +1,16 @@
 [
   {
+    "slug": "wargames-behind-the-scenes",
+    "title": "WarGames (1983) — Behind the Scenes",
+    "url": "https://www.youtube.com/watch?v=uho_7OZjO2I&t=3913s",
+    "source": "YouTube",
+    "date_added": "2026-08-30",
+    "note": "Retrospective on the making of WarGames; linked at the 1:05:13 mark.",
+    "topics": ["ai safety", "fiction"],
+    "referenced_events": ["wargames"],
+    "referenced_insights": []
+  },
+  {
     "slug": "agent-civilizations-dwarkesh",
     "title": "The Rise and Fall of Agent Civilizations",
     "url": "https://www.dwarkesh.com/p/openai-huggingface",
