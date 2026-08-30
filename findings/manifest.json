@@ -1,5 +1,16 @@
 [
   {
+    "slug": "better-ai-than-ai",
+    "title": "Can I Make a Better AI Than AI?",
+    "url": "https://www.youtube.com/watch?v=GGWHjAyKJCA",
+    "source": "YouTube",
+    "date_added": "2026-08-30",
+    "note": "A creator hand-codes a neural-network driving agent in Python — no ML libraries — trains it with a genetic algorithm over hundreds of generations, then races it against car-AIs written by Claude, GPT, and Gemini.",
+    "topics": ["neural networks", "foundations", "generative ai"],
+    "referenced_events": ["neat", "genetic-algorithms", "alvinn", "the-perceptron"],
+    "referenced_insights": ["forwardpropagation"]
+  },
+  {
     "slug": "wargames-behind-the-scenes",
     "title": "WarGames (1983) — Behind the Scenes",
     "url": "https://www.youtube.com/watch?v=uho_7OZjO2I&t=3913s",
