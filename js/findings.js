@@ -1,5 +1,5 @@
 import { track } from './analytics.js';
-import { getTopicColor } from './topics.js';
+import { getTopicColor, generateMnemonics, getTopicInitials } from './topics.js';
 import { API_BASE_URL } from './config.js';
 import { buildGraphModel, filterFindings, deriveEventLabel } from './findings-model.js';
 
@@ -89,6 +89,7 @@ export async function findingsRouteOnLoad() {
             .then(data => {
                 if (!Array.isArray(data.topics) || !data.topics.length) return;
                 state.allTopics = data.topics;          // verbatim; getTopicColor sorts internally
+                generateMnemonics(state.allTopics);     // same acronyms the AI timeline uses
                 renderTopicPills();                     // recolour topic pills
                 applyFilter();                          // re-render rows → recoloured topic dots
                 state.graph?.requestDraw();             // late-bound topicColor repaints topic nodes
@@ -268,9 +269,11 @@ function selectFinding(slug, { fromGraph = false } = {}) {
     if (row) { row.classList.add('active'); row.scrollIntoView({ block: 'nearest' }); }
 
     const colors = currentColorList();
-    const topicPills = (f.topics || []).map(t =>
-        `<span class="topic-pill selected" style="background:${state.allTopics.length ? getTopicColor(t, colors, true) : NEUTRAL_TOPIC};color:#fff">${esc(t)}</span>`
-    ).join('');
+    // Acronym pills, coloured to match the AI timeline's entry labels.
+    const topicPills = (f.topics || []).map(t => {
+        const bg = state.allTopics.length ? getTopicColor(t, colors, true) : NEUTRAL_TOPIC;
+        return `<span class="finding-topic-pill" style="background-color:${bg}" title="${esc(t)}">${esc(getTopicInitials(t))}</span>`;
+    }).join('');
 
     const insightChips = (f.referenced_insights || []).map(s => {
         const title = (state.insights.find(a => a.slug === s) || {}).title || deriveEventLabel(s);

@@ -4,7 +4,7 @@ import { initUI } from './ui.js';
 import { track } from './analytics.js';
 import { injectShell } from './shell.js';
 import { API_BASE_URL } from './config.js';
-import { getTopicColor } from './topics.js';
+import { getTopicColor, generateMnemonics, getTopicInitials } from './topics.js';
 import { findingsRouteOnLoad } from './findings.js';
 
 // Mirrors TimelineJS slugify() exactly — keep in sync with app/util.py
@@ -33,54 +33,9 @@ const CONFIG = {
 // Global state for topics
 let allTopics = [];
 let selectedTopics = new Set();
-let topicMnemonics = new Map();
 let cartClickHandlerElement = null;
 let lastTimelineData = null;
 let _modalCreating = false;
-
-/**
- * Topic Utility Functions
- */
-const generateMnemonics = (topics) => {
-    topicMnemonics.clear();
-    const used = new Set();
-    
-    // Sort topics for consistency
-    const sorted = [...topics].sort();
-    
-    sorted.forEach(topic => {
-        const words = topic.toLowerCase().split(' ');
-        let mnemonic = "";
-
-        // 1. Try first letter of each word (if > 1 word)
-        if (words.length > 1) {
-            mnemonic = words.map(w => w[0]).join('').slice(0, 3);
-        }
-
-        // 2. If single word or collision, try first 2 letters
-        if (!mnemonic || used.has(mnemonic)) {
-            mnemonic = topic.slice(0, 2).toLowerCase();
-        }
-
-        // 3. Fallback: try different letters from the topic
-        let len = 2;
-        while (used.has(mnemonic) && len < topic.length) {
-            mnemonic = (topic[0] + topic[++len - 1]).toLowerCase();
-        }
-        
-        // 4. Final: if still duplicate, just append a character (unlikely for 2 letters)
-        if (used.has(mnemonic)) {
-            mnemonic = topic.slice(0, 2).toLowerCase() + used.size;
-        }
-
-        used.add(mnemonic);
-        topicMnemonics.set(topic, mnemonic);
-    });
-};
-
-const getTopicInitials = (topicName) => {
-    return topicMnemonics.get(topicName) || topicName.slice(0, 2).toLowerCase();
-};
 
 const updateBellState = (data) => {
     const btn = document.getElementById('modal-bell-btn');
