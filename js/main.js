@@ -5,6 +5,7 @@ import { track } from './analytics.js';
 import { injectShell } from './shell.js';
 import { API_BASE_URL } from './config.js';
 import { getTopicColor } from './topics.js';
+import { findingsRouteOnLoad } from './findings.js';
 
 // Mirrors TimelineJS slugify() exactly — keep in sync with app/util.py
 function slugify(str) {
@@ -1025,6 +1026,13 @@ const routes = {
         canonicalUrl: 'https://mvfm.digital/insights',
         template: 'tpl-insights',
         onLoad: insightsRouteOnLoad
+    },
+    findings: {
+        title: 'Findings — Marcus Vinicius Freitas Margarites',
+        description: 'A curated web of links on AI, its history, and its open problems — with a graph connecting them to the timeline and to Insights.',
+        canonicalUrl: 'https://mvfm.digital/findings',
+        template: 'tpl-findings',
+        onLoad: findingsRouteOnLoad
     },
     'insights-article': {
         get title() { return document.title || 'Insights — mvfm.digital'; },

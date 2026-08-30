@@ -6,6 +6,7 @@ export const NAV_ITEMS = [
     { route: 'resume',   label: 'Résumé' },
     { route: 'ai',       label: 'AI' },
     { route: 'insights', label: 'Insights' },
+    { route: 'findings', label: 'Findings' },
 ];
 
 const TEMPLATES = {
@@ -115,6 +116,48 @@ const TEMPLATES = {
                 <p class="loading-text">Loading articles...</p>
             </div>
         </div>`,
+
+    findings: `
+        <div class="view-header">
+            <h2>Findings</h2>
+            <div class="header-actions">
+                <button id="findings-map-toggle" class="btn-secondary" hidden>Map</button>
+                <button id="findings-search-toggle" class="icon-button" title="Filter findings">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div id="findings-filter" class="search-bar">
+            <div class="search-inner">
+                <input type="text" id="findings-search-input" placeholder="Filter findings…" aria-label="Filter findings">
+                <div class="search-actions">
+                    <button id="findings-filter-clear" class="btn-secondary">Clear</button>
+                </div>
+            </div>
+            <div id="findings-topic-filters" class="topic-filter-list"></div>
+        </div>
+        <div class="findings-split">
+            <div class="findings-list">
+                <ul id="findings-rows" class="findings-rows">
+                    <li class="spinner-container"><div class="spinner"></div>
+                        <p class="loading-text">Loading findings…</p></li>
+                </ul>
+            </div>
+            <div class="findings-graph">
+                <canvas id="findings-canvas"></canvas>
+                <div id="findings-graph-controls" class="findings-graph-controls">
+                    <button data-zoom="in" aria-label="Zoom in">+</button>
+                    <button data-zoom="out" aria-label="Zoom out">−</button>
+                    <button data-zoom="reset" aria-label="Reset view">⤢</button>
+                </div>
+                <div id="findings-graph-legend" class="findings-graph-legend"></div>
+            </div>
+        </div>
+        <aside id="findings-detail" class="findings-detail" hidden></aside>`,
 };
 
 export function injectShell() {

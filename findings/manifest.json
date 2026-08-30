@@ -1,0 +1,35 @@
+[
+  {
+    "slug": "agent-civilizations-dwarkesh",
+    "title": "The Rise and Fall of Agent Civilizations",
+    "url": "https://www.dwarkesh.com/p/openai-huggingface",
+    "source": "Dwarkesh Patel",
+    "date_added": "2026-08-30",
+    "note": "Narrative retelling of the METR/Redwood and OpenAI incident reports.",
+    "topics": ["ai safety", "industry"],
+    "referenced_events": ["hugging-face-breach", "sandbox-escape"],
+    "referenced_insights": ["shortcut"]
+  },
+  {
+    "slug": "karpathy-llm-wiki",
+    "title": "LLM Wiki: knowledge organisation with an LLM + Obsidian",
+    "url": "https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f",
+    "source": "Andrej Karpathy",
+    "date_added": "2026-08-30",
+    "note": "Three-layer pattern (raw sources / LLM-maintained wiki / schema) that inspired this section.",
+    "topics": ["foundations"],
+    "referenced_events": [],
+    "referenced_insights": []
+  },
+  {
+    "slug": "goodhart-taxonomy",
+    "title": "Goodhart's Law and its variants",
+    "url": "https://example.org/goodhart",
+    "source": "placeholder — replace with a real link before launch",
+    "date_added": "2026-08-29",
+    "note": "Reference for how proxy metrics fail under optimisation pressure.",
+    "topics": ["ai safety", "foundations"],
+    "referenced_events": ["goodharts-law"],
+    "referenced_insights": ["again"]
+  }
+]
