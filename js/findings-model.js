@@ -17,6 +17,37 @@ export function deriveEventLabel(slug, overrides = TOPIC_LABEL_OVERRIDES) {
         .join(' ');
 }
 
-// buildGraphModel + filterFindings added in Task 3 / Task 6.
-export const buildGraphModel = () => ({ nodes: [], edges: [] });
+export function buildGraphModel(findings, insights) {
+    const insightTitle = new Map((insights || []).map(a => [a.slug, a.title]));
+    const nodes = new Map();   // id -> node
+    const edges = [];
+
+    const addNode = (id, type, label, ref) => {
+        if (!nodes.has(id)) nodes.set(id, { id, type, label, ref });
+    };
+
+    for (const f of (findings || [])) {
+        const fid = `finding:${f.slug}`;
+        addNode(fid, 'finding', f.title, f.slug);
+
+        for (const t of (f.topics || [])) {
+            const id = `topic:${t}`;
+            addNode(id, 'topic', t, t);
+            edges.push({ source: fid, target: id });
+        }
+        for (const ev of (f.referenced_events || [])) {
+            const id = `event:${ev}`;
+            addNode(id, 'event', deriveEventLabel(ev), ev);
+            edges.push({ source: fid, target: id });
+        }
+        for (const ins of (f.referenced_insights || [])) {
+            const id = `insight:${ins}`;
+            addNode(id, 'insight', insightTitle.get(ins) || deriveEventLabel(ins), ins);
+            edges.push({ source: fid, target: id });
+        }
+    }
+
+    return { nodes: [...nodes.values()], edges };
+}
+
 export const filterFindings = (f) => f;

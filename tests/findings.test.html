@@ -162,6 +162,57 @@
         expect(deriveEventLabel(undefined)).toBe('');
       });
 
+      // Task 3: buildGraphModel tests
+      const F = [
+        { slug: 'a', title: 'A', topics: ['ai safety', 'industry'],
+          referenced_events: ['hugging-face-breach'], referenced_insights: ['shortcut'] },
+        { slug: 'b', title: 'B', topics: ['industry'],
+          referenced_events: ['hugging-face-breach', 'sandbox-escape'], referenced_insights: [] },
+      ];
+      const INS = [{ slug: 'shortcut', title: 'Shortcut' }];
+
+      await test('buildGraphModel: one node per finding', async () => {
+        const { nodes } = buildGraphModel(F, INS);
+        const findingNodes = nodes.filter(n => n.type === 'finding');
+        expect(findingNodes.length).toBe(2);
+        expect(findingNodes.find(n => n.id === 'finding:a').label).toBe('A');
+      });
+
+      await test('buildGraphModel: distinct topic/event/insight nodes, deduped', async () => {
+        const { nodes } = buildGraphModel(F, INS);
+        expect(nodes.filter(n => n.type === 'topic').map(n => n.ref).sort()).toEqual(['ai safety', 'industry']);
+        expect(nodes.filter(n => n.type === 'event').map(n => n.ref).sort()).toEqual(['hugging-face-breach', 'sandbox-escape']);
+        expect(nodes.filter(n => n.type === 'insight').map(n => n.ref)).toEqual(['shortcut']);
+      });
+
+      await test('buildGraphModel: insight label from manifest, event label derived', async () => {
+        const { nodes } = buildGraphModel(F, INS);
+        expect(nodes.find(n => n.id === 'insight:shortcut').label).toBe('Shortcut');
+        expect(nodes.find(n => n.id === 'event:hugging-face-breach').label).toBe('Hugging Face Breach');
+      });
+
+      await test('buildGraphModel: edge count = sum of topics+events+insights', async () => {
+        const { edges } = buildGraphModel(F, INS);
+        // a: 2 topics + 1 event + 1 insight = 4 ; b: 1 topic + 2 events + 0 = 3
+        expect(edges.length).toBe(7);
+      });
+
+      await test('buildGraphModel: every edge source is a finding, no finding-finding/topic-event edges', async () => {
+        const { edges } = buildGraphModel(F, INS);
+        expect(edges.every(e => e.source.startsWith('finding:'))).toBeTruthy();
+        expect(edges.some(e => e.target.startsWith('finding:'))).toBeFalsy();
+      });
+
+      await test('buildGraphModel: [] input → empty model', async () => {
+        expect(buildGraphModel([], [])).toEqual({ nodes: [], edges: [] });
+      });
+
+      await test('buildGraphModel: unknown insight slug still gets a node (derived label)', async () => {
+        const { nodes } = buildGraphModel(
+          [{ slug: 'x', title: 'X', topics: [], referenced_events: [], referenced_insights: ['ghost-article'] }], []);
+        expect(nodes.find(n => n.id === 'insight:ghost-article').label).toBe('Ghost Article');
+      });
+
       renderResults();
     })();
 
