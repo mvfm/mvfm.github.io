@@ -5,6 +5,17 @@ import { buildGraphModel, filterFindings, deriveEventLabel } from './findings-mo
 
 const NEUTRAL_TOPIC = 'var(--clr-text-muted)';
 
+// Graph node/edge colours — light-theme, mirror style.css tokens and TYPE_STYLE
+// in findings-graph.js (keep the four node hexes in sync with that map).
+const GRAPH_PALETTE = {
+    label: '#334155',                  // slate, readable on white (cf. --clr-text #0f172a)
+    edge:  'rgba(100,116,139,0.55)',   // mid grey, reads on white
+    finding: '#8b5cf6',
+    topic:   '#64748b',
+    event:   '#f59e0b',
+    insight: '#ec4899',
+};
+
 const esc = (s) => String(s ?? '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -31,6 +42,12 @@ export async function findingsRouteOnLoad() {
     const rows = document.getElementById('findings-rows');
     if (!rows) return;
 
+    // Filter state is module-level but the template is re-injected fresh on every
+    // /findings load — reset so a stale query/topic set can't silently filter the list.
+    state.query = '';
+    state.selectedTopics.clear();
+    document.getElementById('contentPanel')?.classList.remove('findings-empty');
+
     try {
         const [fRes, iRes] = await Promise.all([
             fetch('/findings/manifest.json'),
@@ -42,11 +59,13 @@ export async function findingsRouteOnLoad() {
     } catch (err) {
         console.error('[findings] failed to load manifest:', err);
         rows.innerHTML = '<li class="loading-text" style="color:#ff6b6b">Failed to load findings.</li>';
+        document.getElementById('contentPanel')?.classList.add('findings-empty');
         return;
     }
 
     if (!state.findings.length) {
         rows.innerHTML = '<li class="loading-text">Nothing here yet.</li>';
+        document.getElementById('contentPanel')?.classList.add('findings-empty');
         return;
     }
 
@@ -87,6 +106,7 @@ export async function findingsRouteOnLoad() {
     if (canvas) {
         const { FindingsGraph } = await import('./findings-graph.js');
         state.graph = new FindingsGraph(canvas, state.model, {
+            palette: GRAPH_PALETTE,
             topicColor: (label) => state.allTopics.length ? getTopicColor(label, state.allTopics) : null,
             onSelectFinding: (ref) => {
                 track('findings_graph_node_click', { node_type: 'finding', id: ref });
@@ -123,7 +143,9 @@ export async function findingsRouteOnLoad() {
         const showingMap = split.classList.toggle('show-map');
         mapToggle.textContent = showingMap ? 'List' : 'Map';
         track('findings_map_toggle', { to: showingMap ? 'map' : 'list' });
-        if (showingMap) requestAnimationFrame(() => state.graph?.requestDraw());
+        // Graph box was display:none — its canvas backing store is stale. Re-measure
+        // before the first paint so the map isn't blurry until the next resize.
+        if (showingMap) requestAnimationFrame(() => { state.graph?.resize?.(); state.graph?.requestDraw(); });
     });
 
     const hashSlug = decodeURIComponent(location.hash.replace(/^#/, ''));
@@ -184,7 +206,8 @@ function renderLegend() {
     const el = document.getElementById('findings-graph-legend');
     if (!el) return;
     const items = [
-        ['#8b5cf6', 'Finding'], ['#64748b', 'Topic'], ['#f59e0b', 'Event'], ['#ec4899', 'Insight'],
+        [GRAPH_PALETTE.finding, 'Finding'], [GRAPH_PALETTE.topic, 'Topic'],
+        [GRAPH_PALETTE.event, 'Event'], [GRAPH_PALETTE.insight, 'Insight'],
     ];
     el.innerHTML = items.map(([c, l]) => `<span><i style="background:${c}"></i>${l}</span>`).join('');
 }

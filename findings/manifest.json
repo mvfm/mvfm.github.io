@@ -23,9 +23,9 @@
   },
   {
     "slug": "goodhart-taxonomy",
-    "title": "Goodhart's Law and its variants",
-    "url": "https://example.org/goodhart",
-    "source": "placeholder — replace with a real link before launch",
+    "title": "Goodhart Taxonomy",
+    "url": "https://www.lesswrong.com/posts/EbFABnst8LsidYs5Y/goodhart-taxonomy",
+    "source": "Scott Garrabrant · LessWrong",
     "date_added": "2026-08-29",
     "note": "Reference for how proxy metrics fail under optimisation pressure.",
     "topics": ["ai safety", "foundations"],

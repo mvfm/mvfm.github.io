@@ -15,6 +15,12 @@ const TYPE_STYLE = {
     insight: { r: 9,  fill: '#ec4899' },
 };
 
+// Light-theme defaults (the site is light-only). opts.palette overrides per key.
+const PALETTE = {
+    label: '#334155',                  // dark slate — readable on the white page
+    edge:  'rgba(100,116,139,0.55)',   // mid grey with enough alpha to read on white
+};
+
 const SIM = {
     repulsion: 2600,
     spring: 0.02,
@@ -43,6 +49,7 @@ export class FindingsGraph {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.opts = opts;
+        this.P = { ...PALETTE, ...(opts.palette || {}) };
 
         this.nodes = model.nodes.map(n => ({ ...n, ...seed(n.id), vx: 0, vy: 0, fx: null, fy: null }));
         this.index = new Map(this.nodes.map(n => [n.id, n]));
@@ -61,6 +68,7 @@ export class FindingsGraph {
 
         this.view = { x: 0, y: 0, k: 1 };     // pan x/y (world units), zoom k
         this.filterSet = null;                 // Set<slug> or null
+        this.visibleNonFinding = null;         // Set<nodeId> of non-finding nodes still tied to a visible finding
         this.hoverId = null;
         this._raf = null;
         this._drawScheduled = false;
@@ -117,18 +125,25 @@ export class FindingsGraph {
         ctx.clearRect(0, 0, this.W, this.H);
 
         const dim = (id) => this.hoverId && id !== this.hoverId && !this._isNeighbor(id) ? 0.15 : 1;
-        const faded = (n) => this.filterSet && n.type === 'finding' && !this.filterSet.has(n.ref) ? 0.15 : 1;
+        // Spec §5: with a filter active, fade non-matching finding nodes AND any
+        // topic/event/insight node left with no visible finding.
+        const faded = (n) => {
+            if (!this.filterSet) return 1;
+            if (n.type === 'finding') return this.filterSet.has(n.ref) ? 1 : 0.15;
+            return (this.visibleNonFinding && this.visibleNonFinding.has(n.id)) ? 1 : 0.15;
+        };
 
         // edges
         ctx.lineWidth = 1;
+        ctx.strokeStyle = this.P.edge;
         for (const e of this.edges) {
-            const alpha = Math.min(dim(e.a.id), dim(e.b.id)) * Math.min(faded(e.a), faded(e.b)) * 0.35;
-            ctx.strokeStyle = `rgba(148,163,184,${alpha})`;
+            ctx.globalAlpha = Math.min(dim(e.a.id), dim(e.b.id)) * Math.min(faded(e.a), faded(e.b));
             ctx.beginPath();
             ctx.moveTo(this._sx(e.a.x), this._sy(e.a.y));
             ctx.lineTo(this._sx(e.b.x), this._sy(e.b.y));
             ctx.stroke();
         }
+        ctx.globalAlpha = 1;
         // nodes
         for (const n of this.nodes) {
             const a = dim(n.id) * faded(n);
@@ -141,7 +156,7 @@ export class FindingsGraph {
             const showLabel = n.type !== 'finding' || this.view.k > 1.4 || this.hoverId === n.id;
             if (showLabel && n.label) {
                 ctx.globalAlpha = a;
-                ctx.fillStyle = '#cbd5e1';
+                ctx.fillStyle = this.P.label;
                 ctx.font = '11px system-ui, sans-serif';
                 ctx.fillText(n.label, this._sx(n.x) + r + 3, this._sy(n.y) + 3);
             }
@@ -308,8 +323,23 @@ export class FindingsGraph {
 
     setFilter({ matchedFindingSlugs = null } = {}) {
         this.filterSet = matchedFindingSlugs;
+        if (matchedFindingSlugs) {
+            // Any non-finding node that still connects to a matched finding stays lit.
+            const keep = new Set();
+            for (const e of this.edges) {
+                const f = e.a.type === 'finding' ? e.a : (e.b.type === 'finding' ? e.b : null);
+                const other = e.a === f ? e.b : e.a;
+                if (f && other.type !== 'finding' && matchedFindingSlugs.has(f.ref)) keep.add(other.id);
+            }
+            this.visibleNonFinding = keep;
+        } else {
+            this.visibleNonFinding = null;
+        }
         this.requestDraw();   // filter fade is a redraw, not a re-solve
     }
+
+    // Force a backing-store re-measure (e.g. after display:none → visible on mobile).
+    resize() { this._resize(); }
 
     focus(nodeId) {
         const n = this.index.get(nodeId);
