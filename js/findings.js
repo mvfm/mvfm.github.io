@@ -58,14 +58,43 @@ export async function findingsRouteOnLoad() {
     wireFilterUI();
     wireDetailDismiss();
 
-    // Task 11 instantiates the graph here.
     // Task 12 kicks off the non-blocking /timeline topic-colour fetch here.
 
-    // TEMP (Task 8) — visual verification only; replaced by the fully-wired
-    // version (real callbacks + teardown) in Task 11.
-    const { FindingsGraph } = await import('./findings-graph.js');
+    state.graph?.destroy?.();
+    state.graph = null;
+
     const canvas = document.getElementById('findings-canvas');
-    if (canvas) state.graph = new FindingsGraph(canvas, state.model, {});
+    if (canvas) {
+        const { FindingsGraph } = await import('./findings-graph.js');
+        state.graph = new FindingsGraph(canvas, state.model, {
+            topicColor: (label) => state.allTopics.length ? getTopicColor(label, state.allTopics) : null,
+            onSelectFinding: (ref) => {
+                track('findings_graph_node_click', { node_type: 'finding', id: ref });
+                selectFinding(ref, { fromGraph: true });
+            },
+            onSelectTopic: (ref) => {
+                track('findings_graph_node_click', { node_type: 'topic', id: ref });
+                state.selectedTopics.has(ref) ? state.selectedTopics.delete(ref) : state.selectedTopics.add(ref);
+                renderTopicPills();
+                applyFilter();
+            },
+            onNavigate: (type, ref) => {
+                track('findings_graph_node_click', { node_type: type, id: ref });
+                track('findings_graph_nav', { node_type: type, slug: ref });
+                location.href = type === 'event' ? `/ai#event-${ref}` : `/insights/${ref}.html`;
+            },
+        });
+
+        // zoom buttons
+        document.getElementById('findings-graph-controls')?.addEventListener('click', (e) => {
+            const z = e.target.dataset.zoom;
+            if (z === 'in') state.graph.zoomBy(1.2);
+            else if (z === 'out') state.graph.zoomBy(1 / 1.2);
+            else if (z === 'reset') state.graph.resetView();
+        });
+
+        renderLegend();
+    }
 
     const hashSlug = decodeURIComponent(location.hash.replace(/^#/, ''));
     if (hashSlug && state.findings.some(f => f.slug === hashSlug)) {
@@ -118,7 +147,16 @@ export function applyFilter() {
         li.addEventListener('click', () => selectFinding(li.dataset.slug));
     });
 
-    // Task 11: state.graph?.setFilter({ matchedFindingSlugs: matchedSlugs });
+    state.graph?.setFilter({ matchedFindingSlugs: matchedSlugs });
+}
+
+function renderLegend() {
+    const el = document.getElementById('findings-graph-legend');
+    if (!el) return;
+    const items = [
+        ['#8b5cf6', 'Finding'], ['#64748b', 'Topic'], ['#f59e0b', 'Event'], ['#ec4899', 'Insight'],
+    ];
+    el.innerHTML = items.map(([c, l]) => `<span><i style="background:${c}"></i>${l}</span>`).join('');
 }
 
 function rowHtml(f) {

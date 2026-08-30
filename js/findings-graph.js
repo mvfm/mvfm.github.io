@@ -161,6 +161,7 @@ export class FindingsGraph {
     _kick() {
         if (REDUCED || this._raf) return;
         const loop = () => {
+            if (!document.body.contains(this.canvas)) { this.destroy(); return; }
             this._tick();
             this._draw();
             if (this.alpha > SIM.minAlpha || this._dragging) {
@@ -224,7 +225,7 @@ export class FindingsGraph {
 
     _bindPointer() {
         const c = this.canvas;
-        let dragNode = null, panning = false, last = null;
+        let dragNode = null, panning = false, last = null, moved = false;
 
         c.addEventListener('mousemove', (e) => {
             const rect = c.getBoundingClientRect();
@@ -233,10 +234,12 @@ export class FindingsGraph {
                 const k = this.view.k;
                 dragNode.fx = (px - this.W / 2) / k + this.view.x;
                 dragNode.fy = (py - this.H / 2) / k + this.view.y;
+                moved = true;
                 this._reheat(0.3);
                 return;
             }
             if (panning) {
+                moved = true;
                 this.view.x -= (px - last.x) / this.view.k;
                 this.view.y -= (py - last.y) / this.view.k;
                 last = { x: px, y: py };
@@ -252,6 +255,7 @@ export class FindingsGraph {
             const rect = c.getBoundingClientRect();
             const px = e.clientX - rect.left, py = e.clientY - rect.top;
             const hit = this._pick(px, py);
+            moved = false;
             if (hit) { dragNode = hit; hit.fx = hit.x; hit.fy = hit.y; }
             else { panning = true; last = { x: px, y: py }; }
         });
@@ -266,6 +270,7 @@ export class FindingsGraph {
         window.addEventListener('mouseup', this._onUp);
 
         c.addEventListener('click', (e) => {
+            if (moved) return;   // suppress the click that follows a drag/pan
             const rect = c.getBoundingClientRect();
             const hit = this._pick(e.clientX - rect.left, e.clientY - rect.top);
             if (!hit) return;
