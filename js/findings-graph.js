@@ -1,10 +1,12 @@
 // Hand-rolled force-directed graph on a 2D canvas. No external libraries.
 // Model: { nodes:[{id,type,label,ref}], edges:[{source,target}] } (node ids).
 //
-// Task 8 scope: canvas scaffold, deterministic seed layout, DPR-aware sizing
-// with a ResizeObserver, and a single static _draw(). No physics, no animation
-// loop, no pointer interaction — those arrive in Tasks 9 and 10. _kick/_stop/
-// setFilter/focus are intentional no-op stubs until then.
+// Full engine: canvas scaffold + deterministic seed layout + DPR-aware sizing
+// (ResizeObserver), a self-halting rAF force simulation (repulsion / springs /
+// centering, alpha-cooled), and pointer interaction — hover highlight, node
+// drag (pins via fx/fy), empty-space pan, wheel zoom-to-cursor, click →
+// opts callbacks, and minimal one-finger touch pan. Public control surface:
+// setFilter({ matchedFindingSlugs }), focus(nodeId), zoomBy(f), resetView().
 
 const TYPE_STYLE = {
     finding: { r: 6,  fill: '#8b5cf6' },
@@ -66,6 +68,7 @@ export class FindingsGraph {
         this._ro = new ResizeObserver(() => this._resize());
         this._ro.observe(canvas);
         this._resize();
+        this._bindPointer();
 
         this._onVis = () => { if (document.hidden) this._stop(); else this._kick(); };
         document.addEventListener('visibilitychange', this._onVis);
@@ -207,17 +210,120 @@ export class FindingsGraph {
         this.alpha *= 0.985;
     }
 
-    // no-ops until Task 10 (interaction)
-    setFilter() {}
-    focus() {}
+    // screen (canvas px) → nearest node within its on-screen radius, else null
+    _pick(px, py) {
+        let best = null, bestD = Infinity;
+        for (const n of this.nodes) {
+            const dx = px - this._sx(n.x), dy = py - this._sy(n.y);
+            const d = Math.hypot(dx, dy);
+            const r = this._nodeRadius(n) * Math.sqrt(this.view.k) + 4;
+            if (d < r && d < bestD) { best = n; bestD = d; }
+        }
+        return best;
+    }
+
+    _bindPointer() {
+        const c = this.canvas;
+        let dragNode = null, panning = false, last = null;
+
+        c.addEventListener('mousemove', (e) => {
+            const rect = c.getBoundingClientRect();
+            const px = e.clientX - rect.left, py = e.clientY - rect.top;
+            if (dragNode) {
+                const k = this.view.k;
+                dragNode.fx = (px - this.W / 2) / k + this.view.x;
+                dragNode.fy = (py - this.H / 2) / k + this.view.y;
+                this._reheat(0.3);
+                return;
+            }
+            if (panning) {
+                this.view.x -= (px - last.x) / this.view.k;
+                this.view.y -= (py - last.y) / this.view.k;
+                last = { x: px, y: py };
+                this.requestDraw();
+                return;
+            }
+            const hit = this._pick(px, py);
+            const id = hit ? hit.id : null;
+            if (id !== this.hoverId) { this.hoverId = id; c.style.cursor = hit ? 'pointer' : 'default'; this.requestDraw(); }
+        });
+
+        c.addEventListener('mousedown', (e) => {
+            const rect = c.getBoundingClientRect();
+            const px = e.clientX - rect.left, py = e.clientY - rect.top;
+            const hit = this._pick(px, py);
+            if (hit) { dragNode = hit; hit.fx = hit.x; hit.fy = hit.y; }
+            else { panning = true; last = { x: px, y: py }; }
+        });
+
+        // window-level so a release outside the canvas still ends the gesture;
+        // stored on `this` so destroy() can remove it (the canvas-clone trick
+        // in destroy() only drops listeners bound to the canvas itself).
+        this._onUp = () => {
+            if (dragNode) { dragNode.fx = null; dragNode.fy = null; dragNode = null; }
+            panning = false;
+        };
+        window.addEventListener('mouseup', this._onUp);
+
+        c.addEventListener('click', (e) => {
+            const rect = c.getBoundingClientRect();
+            const hit = this._pick(e.clientX - rect.left, e.clientY - rect.top);
+            if (!hit) return;
+            const { onSelectFinding, onSelectTopic, onNavigate } = this.opts;
+            if (hit.type === 'finding') onSelectFinding && onSelectFinding(hit.ref);
+            else if (hit.type === 'topic') onSelectTopic && onSelectTopic(hit.ref);
+            else onNavigate && onNavigate(hit.type, hit.ref);
+        });
+
+        c.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const rect = c.getBoundingClientRect();
+            const px = e.clientX - rect.left, py = e.clientY - rect.top;
+            const wx = (px - this.W / 2) / this.view.k + this.view.x;
+            const wy = (py - this.H / 2) / this.view.k + this.view.y;
+            const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+            this.view.k = Math.max(0.3, Math.min(4, this.view.k * factor));
+            this.view.x = wx - (px - this.W / 2) / this.view.k;
+            this.view.y = wy - (py - this.H / 2) / this.view.k;
+            this.requestDraw();
+        }, { passive: false });
+
+        // minimal touch: one finger = pan, tap falls through to synthetic click
+        let t0 = null;
+        c.addEventListener('touchstart', (e) => { if (e.touches.length === 1) t0 = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }, { passive: true });
+        c.addEventListener('touchmove', (e) => {
+            if (e.touches.length !== 1 || !t0) return;
+            const t = e.touches[0];
+            this.view.x -= (t.clientX - t0.x) / this.view.k;
+            this.view.y -= (t.clientY - t0.y) / this.view.k;
+            t0 = { x: t.clientX, y: t.clientY };
+            this.requestDraw();
+        }, { passive: true });
+    }
+
+    setFilter({ matchedFindingSlugs = null } = {}) {
+        this.filterSet = matchedFindingSlugs;
+        this.requestDraw();   // filter fade is a redraw, not a re-solve
+    }
+
+    focus(nodeId) {
+        const n = this.index.get(nodeId);
+        if (!n) return;
+        this.view.x = n.x; this.view.y = n.y;
+        this.view.k = Math.max(this.view.k, 1.5);
+        this.requestDraw();
+    }
+
+    zoomBy(f) { this.view.k = Math.max(0.3, Math.min(4, this.view.k * f)); this.requestDraw(); }
+    resetView() { this.view = { x: 0, y: 0, k: 1 }; this.requestDraw(); }
 
     destroy() {
         this._stop();
-        if (this._raf) cancelAnimationFrame(this._raf);
         this._ro.disconnect();
         document.removeEventListener('visibilitychange', this._onVis);
-        // Drop any listeners Task 10 attaches directly to the canvas. Guarded so
-        // destroy() is safe when the canvas is already detached from the DOM.
+        if (this._onUp) window.removeEventListener('mouseup', this._onUp);
+        // Drop the listeners bound directly to the canvas. Guarded so destroy()
+        // is safe when the canvas is already detached from the DOM.
         if (this.canvas.parentNode) {
             this.canvas.replaceWith(this.canvas.cloneNode(false));
         }
