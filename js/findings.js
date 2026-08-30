@@ -289,7 +289,7 @@ function selectFinding(slug, { fromGraph = false } = {}) {
         ${topicPills ? `<div class="findings-detail-topics">${topicPills}</div>` : ''}
         ${insightChips ? `<div class="findings-detail-chiprow">${insightChips}</div>` : ''}
         ${eventChips ? `<div class="findings-detail-chiprow">${eventChips}</div>` : ''}
-        <a class="btn-primary findings-visit" href="${esc(f.url)}" target="_blank" rel="noopener">Visit source ↗</a>`;
+        <a class="btn-primary findings-visit" href="${esc(f.url)}" target="_blank" rel="noopener">Visit Source ↗</a>`;
     panel.hidden = false;
     panel.classList.add('show');
 
