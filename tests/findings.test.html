@@ -137,6 +137,31 @@
 
       // Task 2 + 3 append their tests below this line.
 
+      await test('deriveEventLabel: un-slugify dashes + title case', async () => {
+        expect(deriveEventLabel('hugging-face-breach')).toBe('Hugging Face Breach');
+        expect(deriveEventLabel('backpropagation')).toBe('Backpropagation');
+      });
+
+      await test('deriveEventLabel: strips leading underscore (TimelineJS digit rule)', async () => {
+        expect(deriveEventLabel('_2001-a-space-odyssey')).toBe('2001 A Space Odyssey');
+      });
+
+      await test('deriveEventLabel: overrides map wins when key present', async () => {
+        const ov = { 'gpt-4': 'GPT-4', 'openai': 'OpenAI' };
+        expect(deriveEventLabel('gpt-4', ov)).toBe('GPT-4');
+        expect(deriveEventLabel('openai', ov)).toBe('OpenAI');
+        expect(deriveEventLabel('some-other-event', ov)).toBe('Some Other Event');
+      });
+
+      await test('deriveEventLabel: shipped overrides map is empty', async () => {
+        expect(Object.keys(TOPIC_LABEL_OVERRIDES).length).toBe(0);
+      });
+
+      await test('deriveEventLabel: empty/garbage input → empty string', async () => {
+        expect(deriveEventLabel('')).toBe('');
+        expect(deriveEventLabel(undefined)).toBe('');
+      });
+
       renderResults();
     })();
 
