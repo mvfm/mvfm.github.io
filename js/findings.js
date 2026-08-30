@@ -61,6 +61,12 @@ export async function findingsRouteOnLoad() {
     // Task 11 instantiates the graph here.
     // Task 12 kicks off the non-blocking /timeline topic-colour fetch here.
 
+    // TEMP (Task 8) — visual verification only; replaced by the fully-wired
+    // version (real callbacks + teardown) in Task 11.
+    const { FindingsGraph } = await import('./findings-graph.js');
+    const canvas = document.getElementById('findings-canvas');
+    if (canvas) state.graph = new FindingsGraph(canvas, state.model, {});
+
     const hashSlug = decodeURIComponent(location.hash.replace(/^#/, ''));
     if (hashSlug && state.findings.some(f => f.slug === hashSlug)) {
         selectFinding(hashSlug);
