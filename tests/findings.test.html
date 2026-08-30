@@ -213,6 +213,28 @@
         expect(nodes.find(n => n.id === 'insight:ghost-article').label).toBe('Ghost Article');
       });
 
+      // Task 6: filterFindings tests
+      const FF = [
+        { slug: 'a', title: 'Alpha', source: 'Site X', note: 'about safety', topics: ['ai safety', 'industry'] },
+        { slug: 'b', title: 'Beta',  source: 'Blog Y', note: 'about chips',  topics: ['industry'] },
+        { slug: 'c', title: 'Gamma', source: 'Alpha Weekly', note: '', topics: ['foundations'] },
+      ];
+
+      await test('filterFindings: no filter → all', async () => {
+        expect(filterFindings(FF, { query: '', topics: [] }).length).toBe(3);
+      });
+      await test('filterFindings: query matches title/source/note, case-insensitive', async () => {
+        expect(filterFindings(FF, { query: 'alpha', topics: [] }).map(f => f.slug).sort()).toEqual(['a', 'c']);
+        expect(filterFindings(FF, { query: 'CHIPS', topics: [] }).map(f => f.slug)).toEqual(['b']);
+      });
+      await test('filterFindings: topics use AND semantics', async () => {
+        expect(filterFindings(FF, { query: '', topics: ['industry'] }).map(f => f.slug).sort()).toEqual(['a', 'b']);
+        expect(filterFindings(FF, { query: '', topics: ['ai safety', 'industry'] }).map(f => f.slug)).toEqual(['a']);
+      });
+      await test('filterFindings: query AND topics combined', async () => {
+        expect(filterFindings(FF, { query: 'beta', topics: ['ai safety'] }).length).toBe(0);
+      });
+
       renderResults();
     })();
 

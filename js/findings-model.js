@@ -50,4 +50,11 @@ export function buildGraphModel(findings, insights) {
     return { nodes: [...nodes.values()], edges };
 }
 
-export const filterFindings = (f) => f;
+export function filterFindings(findings, { query = '', topics = [] } = {}) {
+    const q = query.trim().toLowerCase();
+    return (findings || []).filter(f => {
+        const hay = `${f.title || ''} ${f.source || ''} ${f.note || ''}`.toLowerCase();
+        if (q && !hay.includes(q)) return false;
+        return topics.every(t => (f.topics || []).includes(t));
+    });
+}

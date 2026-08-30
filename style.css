@@ -1447,3 +1447,31 @@ ol li {
         grid-column: 1;
     }
 }
+
+/* ===== Findings ===== */
+.findings-split { display: flex; gap: 1.5rem; align-items: flex-start; }
+.findings-list { flex: 0 0 22rem; max-width: 22rem; }
+.findings-graph { position: relative; flex: 1 1 auto; min-height: 32rem;
+    border: 1px solid var(--clr-panel-border); border-radius: var(--radius-md); overflow: hidden; }
+#findings-canvas { display: block; width: 100%; height: 100%; }
+
+.findings-rows { list-style: none; margin: 0; padding: 0; }
+.finding-row { display: flex; flex-direction: column; gap: .35rem; padding: .75rem;
+    border-radius: 8px; cursor: pointer; transition: background .15s; }
+.finding-row:hover, .finding-row.active { background: rgba(120,140,180,.12); }
+.finding-row-title { font-weight: 600; }
+.finding-row-meta { font-size: .8rem; color: var(--clr-text-muted); }
+.finding-row-tags { display: flex; align-items: center; gap: .3rem; }
+.finding-dot { width: .6rem; height: .6rem; border-radius: 50%; display: inline-block; }
+.finding-refs { font-size: .75rem; color: var(--clr-text-muted); margin-left: .25rem; }
+
+#findings-filter { /* reuses .search-bar; hidden until .show like the AI tab */ }
+
+.findings-graph-controls { position: absolute; top: .5rem; right: .5rem; display: flex; gap: .25rem; }
+.findings-graph-controls button { width: 1.9rem; height: 1.9rem; border-radius: 6px;
+    border: 1px solid var(--clr-panel-border); background: var(--clr-bg-main);
+    color: var(--clr-text); cursor: pointer; font-size: 1rem; line-height: 1; }
+.findings-graph-legend { position: absolute; left: .5rem; bottom: .5rem; display: flex;
+    flex-wrap: wrap; gap: .5rem; font-size: .75rem; color: var(--clr-text-muted); }
+.findings-graph-legend span { display: inline-flex; align-items: center; gap: .3rem; }
+.findings-graph-legend i { width: .7rem; height: .7rem; border-radius: 50%; display: inline-block; }
