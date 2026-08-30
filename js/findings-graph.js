@@ -13,6 +13,17 @@ const TYPE_STYLE = {
     insight: { r: 9,  fill: '#ec4899' },
 };
 
+const SIM = {
+    repulsion: 2600,
+    spring: 0.02,
+    lenTopic: 70,
+    lenOther: 130,
+    center: 0.008,
+    damping: 0.85,
+    minAlpha: 0.02,
+};
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 function hash(str) {
     let h = 2166136261;
     for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
@@ -42,6 +53,10 @@ export class FindingsGraph {
             this.degree.set(e.b.id, this.degree.get(e.b.id) + 1);
         }
 
+        this.alpha = 1;
+        this._restLen = new Map(this.edges.map((e, i) => [i,
+            (e.a.type === 'topic' || e.b.type === 'topic') ? SIM.lenTopic : SIM.lenOther]));
+
         this.view = { x: 0, y: 0, k: 1 };     // pan x/y (world units), zoom k
         this.filterSet = null;                 // Set<slug> or null
         this.hoverId = null;
@@ -54,6 +69,9 @@ export class FindingsGraph {
 
         this._onVis = () => { if (document.hidden) this._stop(); else this._kick(); };
         document.addEventListener('visibilitychange', this._onVis);
+
+        if (REDUCED) { for (let i = 0; i < 400; i++) this._tick(); this.requestDraw(); }
+        else this._kick();
     }
 
     _resize() {
@@ -137,9 +155,59 @@ export class FindingsGraph {
         return false;
     }
 
-    // no-ops until later tasks (Task 9 sim, Task 10 interaction)
-    _kick() {}
-    _stop() {}
+    _kick() {
+        if (REDUCED || this._raf) return;
+        const loop = () => {
+            this._tick();
+            this._draw();
+            if (this.alpha > SIM.minAlpha || this._dragging) {
+                this._raf = requestAnimationFrame(loop);
+            } else {
+                this._raf = null;
+            }
+        };
+        this._raf = requestAnimationFrame(loop);
+    }
+    _stop() { if (this._raf) { cancelAnimationFrame(this._raf); this._raf = null; } }
+
+    _reheat(a = 0.4) { this.alpha = Math.max(this.alpha, a); this._kick(); }
+
+    _tick() {
+        const ns = this.nodes;
+        // repulsion (O(n^2), fine < ~800 nodes)
+        for (let i = 0; i < ns.length; i++) {
+            const p = ns[i];
+            for (let j = i + 1; j < ns.length; j++) {
+                const q = ns[j];
+                let dx = p.x - q.x, dy = p.y - q.y;
+                let d2 = dx * dx + dy * dy || 0.01;
+                const f = (SIM.repulsion * this.alpha) / d2;
+                const d = Math.sqrt(d2);
+                const fx = (dx / d) * f, fy = (dy / d) * f;
+                p.vx += fx; p.vy += fy; q.vx -= fx; q.vy -= fy;
+            }
+        }
+        // springs
+        this.edges.forEach((e, i) => {
+            const L = this._restLen.get(i);
+            let dx = e.b.x - e.a.x, dy = e.b.y - e.a.y;
+            const d = Math.sqrt(dx * dx + dy * dy) || 0.01;
+            const f = SIM.spring * (d - L) * this.alpha;
+            const fx = (dx / d) * f, fy = (dy / d) * f;
+            e.a.vx += fx; e.a.vy += fy; e.b.vx -= fx; e.b.vy -= fy;
+        });
+        // centering + integrate
+        for (const n of ns) {
+            n.vx -= n.x * SIM.center * this.alpha;
+            n.vy -= n.y * SIM.center * this.alpha;
+            if (n.fx != null) { n.x = n.fx; n.y = n.fy; n.vx = n.vy = 0; continue; }
+            n.vx *= SIM.damping; n.vy *= SIM.damping;
+            n.x += n.vx; n.y += n.vy;
+        }
+        this.alpha *= 0.985;
+    }
+
+    // no-ops until Task 10 (interaction)
     setFilter() {}
     focus() {}
 
