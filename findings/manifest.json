@@ -1,5 +1,16 @@
 [
   {
+    "slug": "project-sid-minecraft",
+    "title": "This AI Minecraft Simulation Is Terrifying Scientists",
+    "url": "https://www.youtube.com/watch?v=u7U6nIsJrHM",
+    "source": "YouTube",
+    "date_added": "2026-08-30",
+    "note": "Video essay on Project Sid — Altera's 1000+ AI-agent Minecraft civilization (PIANO architecture): agents self-organise into roles, vote on laws, and spread culture and religion — and what agent swarms could mean loose on real networks.",
+    "topics": ["ai safety", "tools"],
+    "referenced_events": ["project-sid"],
+    "referenced_insights": []
+  },
+  {
     "slug": "better-ai-than-ai",
     "title": "Can I Make a Better AI Than AI?",
     "url": "https://www.youtube.com/watch?v=GGWHjAyKJCA",
@@ -18,7 +29,7 @@
     "date_added": "2026-08-30",
     "note": "Retrospective on the making of WarGames; linked at the 1:05:13 mark.",
     "topics": ["ai safety", "fiction"],
-    "referenced_events": ["wargames"],
+    "referenced_events": ["wargames", "ai-opts-for-nuclear-use"],
     "referenced_insights": []
   },
   {
@@ -42,16 +53,5 @@
     "topics": ["foundations"],
     "referenced_events": [],
     "referenced_insights": []
-  },
-  {
-    "slug": "goodhart-taxonomy",
-    "title": "Goodhart Taxonomy",
-    "url": "https://www.lesswrong.com/posts/EbFABnst8LsidYs5Y/goodhart-taxonomy",
-    "source": "Scott Garrabrant · LessWrong",
-    "date_added": "2026-08-29",
-    "note": "Reference for how proxy metrics fail under optimisation pressure.",
-    "topics": ["ai safety", "foundations"],
-    "referenced_events": ["goodharts-law"],
-    "referenced_insights": ["again"]
   }
 ]
