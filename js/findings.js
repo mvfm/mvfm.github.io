@@ -116,6 +116,16 @@ export async function findingsRouteOnLoad() {
         renderLegend();
     }
 
+    // Mobile: #findings-map-toggle swaps the list ⇄ graph on narrow viewports.
+    const mapToggle = document.getElementById('findings-map-toggle');
+    const split = document.querySelector('.findings-split');
+    mapToggle?.addEventListener('click', () => {
+        const showingMap = split.classList.toggle('show-map');
+        mapToggle.textContent = showingMap ? 'List' : 'Map';
+        track('findings_map_toggle', { to: showingMap ? 'map' : 'list' });
+        if (showingMap) requestAnimationFrame(() => state.graph?.requestDraw());
+    });
+
     const hashSlug = decodeURIComponent(location.hash.replace(/^#/, ''));
     if (hashSlug && state.findings.some(f => f.slug === hashSlug)) {
         selectFinding(hashSlug);

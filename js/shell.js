@@ -121,7 +121,7 @@ const TEMPLATES = {
         <div class="view-header">
             <h2>Findings</h2>
             <div class="header-actions">
-                <button id="findings-map-toggle" class="btn-secondary" hidden>Map</button>
+                <button id="findings-map-toggle" class="btn-secondary">Map</button>
                 <button id="findings-search-toggle" class="icon-button" title="Filter findings">
                     <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
                         stroke-linecap="round" stroke-linejoin="round">
