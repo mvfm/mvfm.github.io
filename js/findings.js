@@ -1,6 +1,6 @@
 import { track } from './analytics.js';
 import { getTopicColor } from './topics.js';
-import { buildGraphModel, filterFindings } from './findings-model.js';
+import { buildGraphModel, filterFindings, deriveEventLabel } from './findings-model.js';
 
 const NEUTRAL_TOPIC = 'var(--clr-text-muted)';
 
@@ -56,9 +56,15 @@ export async function findingsRouteOnLoad() {
     renderTopicPills();
     applyFilter();          // initial full render
     wireFilterUI();
+    wireDetailDismiss();
 
     // Task 11 instantiates the graph here.
     // Task 12 kicks off the non-blocking /timeline topic-colour fetch here.
+
+    const hashSlug = decodeURIComponent(location.hash.replace(/^#/, ''));
+    if (hashSlug && state.findings.some(f => f.slug === hashSlug)) {
+        selectFinding(hashSlug);
+    }
 }
 
 function currentColorList() {
@@ -155,7 +161,73 @@ function wireFilterUI() {
     });
 }
 
-// Placeholder until Task 7.
-function selectFinding(slug) { console.log('[findings] select', slug); }
+function selectFinding(slug, { fromGraph = false } = {}) {
+    const f = state.findings.find(x => x.slug === slug);
+    const panel = document.getElementById('findings-detail');
+    if (!f || !panel) return;
+
+    document.querySelectorAll('.finding-row.active').forEach(el => el.classList.remove('active'));
+    const row = document.querySelector(`.finding-row[data-slug="${CSS.escape(slug)}"]`);
+    if (row) { row.classList.add('active'); row.scrollIntoView({ block: 'nearest' }); }
+
+    const colors = currentColorList();
+    const topicPills = (f.topics || []).map(t =>
+        `<span class="topic-pill selected" style="background:${state.allTopics.length ? getTopicColor(t, colors, true) : NEUTRAL_TOPIC};color:#fff">${esc(t)}</span>`
+    ).join('');
+
+    const insightChips = (f.referenced_insights || []).map(s => {
+        const title = (state.insights.find(a => a.slug === s) || {}).title || deriveEventLabel(s);
+        return `<a class="finding-chip" href="/insights/${esc(s)}.html">✦ ${esc(title)}</a>`;
+    }).join('');
+
+    const eventChips = (f.referenced_events || []).map(s =>
+        `<a class="finding-chip" href="/ai#event-${esc(s)}">⧉ ${esc(deriveEventLabel(s))}</a>`
+    ).join('');
+
+    panel.innerHTML = `
+        <button class="findings-detail-close" aria-label="Close">&#x2715;</button>
+        <h3>${esc(f.title)}</h3>
+        <p class="findings-detail-meta">${esc(f.source)} · ${esc(fmtDate(f.date_added))}</p>
+        ${f.note ? `<p class="findings-detail-note">${esc(f.note)}</p>` : ''}
+        ${topicPills ? `<div class="findings-detail-topics">${topicPills}</div>` : ''}
+        ${insightChips ? `<div class="findings-detail-chiprow">${insightChips}</div>` : ''}
+        ${eventChips ? `<div class="findings-detail-chiprow">${eventChips}</div>` : ''}
+        <a class="btn-primary findings-visit" href="${esc(f.url)}" target="_blank" rel="noopener">Visit source ↗</a>`;
+    panel.hidden = false;
+    panel.classList.add('show');
+
+    panel.querySelector('.findings-detail-close').addEventListener('click', closeDetail);
+    panel.querySelector('.findings-visit').addEventListener('click', () => {
+        track('finding_source_visit', { slug: f.slug, url: f.url });
+    });
+
+    if (location.hash !== `#${slug}`) history.replaceState(null, '', `#${slug}`);
+    track('finding_view', { slug: f.slug });
+
+    if (!fromGraph) state.graph?.focus?.(`finding:${slug}`);
+}
+
+function closeDetail() {
+    const panel = document.getElementById('findings-detail');
+    if (!panel) return;
+    panel.classList.remove('show');
+    panel.hidden = true;
+    document.querySelectorAll('.finding-row.active').forEach(el => el.classList.remove('active'));
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+}
+
+// Esc + click-outside dismiss — attach once per route load.
+function wireDetailDismiss() {
+    const onKey = (e) => { if (e.key === 'Escape') closeDetail(); };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('click', (e) => {
+        const panel = document.getElementById('findings-detail');
+        if (!panel || panel.hidden) return;
+        if (panel.contains(e.target)) return;
+        if (e.target.closest('.finding-row') || e.target.closest('#findings-canvas')) return;
+        closeDetail();
+    });
+}
 
 export { state as _state };
+export { selectFinding, closeDetail };
