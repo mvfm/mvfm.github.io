@@ -1,0 +1,3 @@
+
+# host_image.py cross-process lock
+.host_image.lock/
