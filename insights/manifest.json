@@ -1,5 +1,29 @@
 [
   {
+    "slug": "pocket",
+    "title": "Pocket",
+    "description": "Dedicated neural accelerators became everyday consumer hardware in phones years before PCs — and the reason begins with the battery.",
+    "date": "2026-09",
+    "topics": [
+      "deep learning",
+      "industry"
+    ],
+    "referenced_events": [
+      "cuda-gpus-go-general-purpose",
+      "gpu-deep-learning",
+      "siri",
+      "googles-tensor-processing-unit",
+      "newton-fixes-handwriting",
+      "diannao",
+      "kirin-970-npu",
+      "a11-bionic-neural-engine",
+      "neural-engine-reaches-the-mac",
+      "llamacpp",
+      "copilot-pc",
+      "openclaw"
+    ]
+  },
+  {
     "slug": "shortcut",
     "title": "Shortcut",
     "description": "How OpenAI's evaluation agents breached Hugging Face, learned to game the grader, and exposed a new problem in AI containment.",

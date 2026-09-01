@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pocket — Insights — mvfm.digital</title>
+    <meta name="description" content="Dedicated neural accelerators became everyday consumer hardware in phones years before PCs — and the reason begins with the battery." />
+    <meta name="author" content="Marcus Vinicius Freitas Margarites" />
+    <link rel="canonical" href="https://mvfm.digital/insights/pocket" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://mvfm.digital/insights/pocket" />
+    <meta property="og:title" content="Pocket — Insights — mvfm.digital" />
+    <meta property="og:description" content="Dedicated neural accelerators became everyday consumer hardware in phones years before PCs — and the reason begins with the battery." />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Pocket — Insights — mvfm.digital" />
+    <meta name="twitter:description" content="Dedicated neural accelerators became everyday consumer hardware in phones years before PCs — and the reason begins with the battery." />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Pocket",
+      "description": "Dedicated neural accelerators became everyday consumer hardware in phones years before PCs — and the reason begins with the battery.",
+      "url": "https://mvfm.digital/insights/pocket",
+      "datePublished": "2026-09",
+      "author": {
+        "@type": "Person",
+        "name": "Marcus Vinicius Freitas Margarites",
+        "url": "https://mvfm.digital"
+      }
+    }
+    </script>
+
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="stylesheet" href="/style.css">
+    <!-- TimelineJS CSS -->
+    <link title="timeline-styles" rel="stylesheet"
+        href="https://cdn.knightlab.com/libs/timeline3/3.9.1/css/timeline.css">
+
+    <!-- Start Single Page Apps for GitHub Pages -->
+    <script type="text/javascript">
+        (function (l) {
+            if (l.search[1] === 'p' && l.search[2] === '=') {
+                var decoded = l.search.slice(1).split('&').map(function (s) {
+                    return s.replace(/~and~/g, '&')
+                }).filter(function (s) {
+                    return s.slice(0, 2) === 'p='
+                })[0];
+                if (decoded !== undefined) {
+                    window.history.replaceState(null, null,
+                        l.pathname.slice(0, (l.pathname.slice(-1) === '/' ? -1 : undefined)) + decoded.slice(2) +
+                        l.hash
+                    );
+                }
+            }
+        }(window.location))
+    </script>
+    <!-- End Single Page Apps for GitHub Pages -->
+</head>
+
+<body>
+    <div class="app">
+        <div id="topBar">
+            <header>
+                <h1 class="brand"></h1>
+            </header>
+            <nav>
+                <div class="menu"></div>
+            </nav>
+        </div>
+        <main>
+            <canvas id="golCanvas" aria-hidden="true"></canvas>
+            <section id="contentPanel" class="panel" aria-live="polite" aria-atomic="true"></section>
+            <aside id="statsPanel" aria-live="polite" aria-atomic="true">
+                <div class="row"><span class="label">GEN</span>
+                    <div class="digits" id="genDigits"></div>
+                </div>
+                <div class="row"><span class="label">ALIVE</span>
+                    <div class="digits" id="aliveDigits"></div>
+                </div>
+                <div class="row"><span class="label">TOTAL</span>
+                    <div class="digits" id="totalDigits"></div>
+                </div>
+                <div class="row"><span class="label">OCC%</span>
+                    <div class="digits" id="occDigits"></div><span class="percent">%</span>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Article content -->
+    <template id="tpl-feature">
+        <article class="insight-article">
+            <header class="insight-article-header">
+                <h1>Pocket</h1>
+                <p class="insight-article-meta">September 2026</p>
+            </header>
+
+            <div class="insight-article-body">
+
+                <p class="insight-standfirst">The processor built to run neural networks reached ordinary people years before it reached their laptops. It arrived in a pocket, in hundreds of millions of them, and it got there because of the one part of a phone that never stops being a problem: the battery.</p>
+
+                <figure class="insight-hero-image">
+                    <img src="/img/insights/pocket-battery.png" alt="A close-up of a smartphone battery, thin and foil-wrapped, next to a coin for scale." loading="eager">
+                    <figcaption>The constraint nobody explains until it explains everything.</figcaption>
+                </figure>
+
+                <!-- ─── CHAPTER BREAK ─────────────────────────── -->
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">I</span>
+                    The Tyrant in the Case
+                </h2>
+
+                <aside class="insight-callout">
+                    Plugged into a wall, waste is invisible. In a pocket, it has a temperature.
+                </aside>
+                <div class="insight-text">
+                    <p>A CPU or GPU can run a neural network. Inside a phone, the real question is what that run costs in energy, heat, and time. General-purpose processors are built to do many things adequately; a dedicated accelerator can repeat the small set of matrix operations that inference actually needs, over and over, with far less overhead per sum.</p>
+                    <p>On a desktop, inefficiency hides behind a wall socket, a bigger heat sink, and fans that make their own announcement. Inside a phone, the same waste comes back as lost battery life, throttled performance, and a warm rectangle in someone's hand.</p>
+                    <p>The workloads made the constraint worse. Wake-word detection — "Hey Siri," "OK Google," "Hey Bixby," depending on which logo faced you across the pillow — had to keep listening while the phone appeared to be doing nothing at all. <a href="/ai#event-siri">Siri had already turned spoken requests into a mass-market habit</a>. Real-time camera processing had to keep pace with the viewfinder. Face unlock had to finish inside the small motion of lifting the phone toward your eyes.</p>
+                    <p>None of this could be sent to the cloud and forgotten. Some of it had to work on a plane, in a lift, on a bad connection. Keeping it on the device also cut latency and kept intimate camera and microphone data closer to the person it belonged to. The phone needed computation that was there immediately and cheap enough to disappear into ordinary use.</p>
+                    <p>Phones had been dividing that kind of work for years among specialist <em>blocks</em> — separate patches of the chip, each wired for one job and nothing else: parts for signals, parts for images, parts for always-on sensing. The NPU did not invent specialization inside the phone. It gave neural-network inference a block of its own.</p>
+                </div>
+
+                <!-- ─── CHAPTER BREAK ─────────────────────────── -->
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">II</span>
+                    The Pocket Had Done This Before
+                </h2>
+
+                <aside class="insight-callout">
+                    The hardware was new in 2017. The idea had been riding around in a pocket since the Clinton administration.
+                </aside>
+                <div class="insight-text">
+                    <p>Dedicated neural silicon itself was not new. <a href="/ai#event-googles-tensor-processing-unit">Google had put its first Tensor Processing Unit into data centers in 2015</a>, and experimental neural chips go back decades before that. What changed in the late 2010s was the address. The accelerator moved inside a product that hundreds of millions of people carried against their leg.</p>
+                    <p>The software had made the trip much earlier, on an even smaller machine. More than twenty years before any phone shipped a neural chip, Apple had already run a neural network on something you could put in a pocket. <a href="/ai#event-newton-fixes-handwriting">Newton OS 2.0's handwriting recognizer</a>, shipping in devices from late 1995, paired a neural-network character classifier — built by Larry Yaeger, Brandyn Webb, and Richard Lyon — with a context-driven search over word hypotheses, and pushed accuracy to around 97 percent. It ran on an ordinary ARM processor, with no silicon built for the job, because none existed.</p>
+                    <p>The algorithm had been commuting in a pocket since the Clinton administration. What arrived in 2017 was not the idea. It was a chip that existed for no other reason than to run it.</p>
+                </div>
+
+                <!-- ─── CHAPTER BREAK ─────────────────────────── -->
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">III</span>
+                    Ten Days
+                </h2>
+
+                <aside class="insight-callout">
+                    Huawei announced a neural processor for a phone. Ten days later, Apple announced one too.
+                </aside>
+                <div class="insight-text">
+                    <p>At IFA Berlin on 2 September 2017, Huawei unveiled the <a href="/ai#event-kirin-970-npu">Kirin 970</a>, which it billed as the first smartphone system-on-chip with a dedicated Neural Processing Unit — not a faster general-purpose core, but a block built specifically for neural-network math.</p>
+                    <p>The block was not Huawei's own design. It was licensed from Cambricon, a Beijing company barely two years old, spun out of the Chinese Academy of Sciences by the brothers Chen Yunji and Chen Tianshi. <a href="/ai#event-diannao">Their 2014 paper on a small accelerator they called DianNao</a> — "electric brain" — had shown that a chip built for the few operations neural networks actually repeat could beat a general-purpose processor by two orders of magnitude, won a best-paper award, and drawn almost no attention outside the field. Three years later that design was riding in a flagship phone sold on three continents.</p>
+                    <p>On 12 September, Apple announced the <a href="/ai#event-a11-bionic-neural-engine">A11 Bionic</a>. Its dual-core Neural Engine could perform up to 600 billion operations per second and drove Face ID, Animoji, and other machine-learning features in the iPhone X.</p>
+                    <p>The timing matters less as a race with a winner than as evidence of a pressure felt right across the industry. Two of the world's largest phone makers had independently reached the same architectural answer: put specialized neural computation next to the CPU and GPU, close to the sensors, inside the power budget.</p>
+                    <p>The pattern spread fast. MediaTek announced a mobile AI Processing Unit in February 2018. Samsung announced an integrated NPU that November. Qualcomm's Snapdragon 855 followed in December with a dedicated tensor accelerator inside its broader AI Engine. By 2019, on-device AI acceleration was a normal feature of flagship phone chips, even as manufacturers kept disagreeing about what to call the blocks and how to split the work between them.</p>
+                    <p>The industry had found the category before it agreed on a name for it — a familiar sequence in computing.</p>
+                </div>
+
+                <!-- ─── CHAPTER BREAK ─────────────────────────── -->
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">IV</span>
+                    The Camera Was the Argument
+                </h2>
+
+                <aside class="insight-callout">
+                    By 2016, megapixels no longer explained why one phone took a better photograph than another. The pixels had converged. The photographs had not.
+                </aside>
+                <div class="insight-text">
+                    <p>Google's original Pixel made the shift visible. Its camera hardware was competitive — a 12.3-megapixel sensor with large pixels — but the difference reviewers kept noticing came from what happened after the light landed. HDR+ captured a burst of short exposures, aligned them, threw out movement, and merged them into a cleaner photograph with wider dynamic range.</p>
+                    <p>This was computational photography, not proof that every good camera pipeline needed a neural network. The original HDR+ was mostly an ingenious stack of ordinary imaging math. Its commercial lesson was the bigger one: software could paper over physical limits that phone makers could not design away. A thin device would never carry the lens and sensor area of a real camera, but computation could make better use of every photon it caught.</p>
+                    <p>The spec sheet still mattered. It just could no longer tell you, by itself, which phone would take the better picture.</p>
+                    <p>Machine learning soon joined the argument. Phones began leaning on learned models for segmentation, scene recognition, depth, noise reduction, and enhancement. Once the viewfinder became a live stream of decisions rather than a plain window onto the sensor, efficient on-device inference stopped being a nice-to-have and became product infrastructure.</p>
+                    <p>Huawei made the connection explicit in the Mate 10, whose camera used the Kirin 970 to recognize up to 13 scene and object categories in real time and adjust settings to match. Huawei also claimed that, for its chosen AI tasks, the NPU delivered up to 25 times the performance and 50 times the energy efficiency of four Cortex-A73 CPU cores. Those were Huawei's benchmarks, on Huawei's tasks, but they made the product case cleanly: better pictures without asking the battery to pay CPU prices.</p>
+                    <p>The NPU was not a research project waiting for an application. The camera was the application waiting for an NPU.</p>
+                </div>
+
+                <!-- ─── CHAPTER BREAK ─────────────────────────── -->
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">V</span>
+                    The Mac Received the Family Resemblance
+                </h2>
+
+                <aside class="insight-callout">
+                    The Mac did not begin from scratch. It inherited a three-year head start from the iPhone.
+                </aside>
+                <div class="insight-text">
+                    <p>In November 2020, Apple released the <a href="/ai#event-neural-engine-reaches-the-mac">M1</a>, the first Apple-designed system-on-chip to replace Intel processors inside the Mac. It carried a 16-core Neural Engine rated at 11 trillion operations per second — the same published core count and throughput as the A14 Bionic then shipping in the iPhone 12 and iPad Air.</p>
+                    <p>Apple described the M1 as a chip designed specifically for the Mac. The continuity was plain anyway. Apple had already built the Neural Engine, the Core ML software stack, and years of practice spreading inference across a CPU, a GPU, and a dedicated accelerator. The Mac joined an existing family rather than starting its own.</p>
+                    <p>The uses changed with the address. On the Mac, Apple talked up video analysis, voice recognition, image processing, and developer workloads rather than Face ID. The phone's specialist had moved to the Mac and discovered a broader job description.</p>
+                    <p>The battery constraint did not vanish — performance per watt was central to the whole Apple silicon pitch — but the accelerator no longer needed one killer mobile feature to justify its seat. It had become part of the platform.</p>
+                    <p>The result was a mainstream laptop with a substantial dedicated neural accelerator more than two years before comparable hardware turned up in x86 Windows laptops.</p>
+                </div>
+
+                <!-- ─── CHAPTER BREAK ─────────────────────────── -->
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">VI</span>
+                    The Desk Had an Alibi
+                </h2>
+
+                <aside class="insight-callout">
+                    The PC already had an answer for heavy neural computation. It was powerful, widely supported, and usually called a GPU.
+                </aside>
+                <div class="insight-text">
+                    <p>The PC ecosystem felt far less pressure to standardize on a dedicated NPU. <a href="/ai#event-cuda-gpus-go-general-purpose">CUDA had turned graphics processors into general-purpose parallel hardware</a>, and researchers had already shown that <a href="/ai#event-gpu-deep-learning">deep networks trained dramatically faster on GPUs</a>. For developers and enthusiasts, especially on desktops with discrete graphics cards, the obvious AI accelerator was already installed.</p>
+                    <p>On a desktop, buying a bigger graphics card was usually easier than talking an entire ecosystem into supporting a new kind of chip. The wall socket did not object.</p>
+                    <p>That answer was powerful but uneven. Plenty of laptops had no discrete GPU. The ones that did paid for it in cost, heat, and battery life. Integrated graphics helped a little; CPUs slowly picked up instructions useful for machine learning. There was no single neural block, performance target, or everyday workload the Windows ecosystem had to converge on. Intel put a small Gaussian &amp; Neural Accelerator into some Ice Lake laptop chips in 2019 for low-power audio work such as noise suppression, but it stayed a hint rather than the center of the platform.</p>
+                    <p>Then, in the space of two years, the Windows world converged after all. AMD introduced Ryzen AI, the first dedicated AI hardware inside an x86 Windows processor, in early 2023. Qualcomm announced the Snapdragon X Elite and its integrated NPU that October. Intel launched Core Ultra with an NPU as a headline feature in December. The following May, <a href="/ai#event-copilot-pc">Microsoft's Copilot+ PC specification</a> turned NPU performance into a category requirement.</p>
+                    <p>Generative AI strengthened the case without being the whole of it. Video effects, live captions, translation, image generation, audio cleanup, accessibility features, and background inference all benefit from work that can run locally without hogging the CPU or GPU. Meanwhile, <a href="/ai#event-llamacpp">llama.cpp had shown that useful language models could run on an ordinary laptop</a>, offering privacy, low latency, and the small pleasure of not paying per token.</p>
+                    <p>The PC did not copy the phone's use cases. It backed into the phone's constraints.</p>
+                </div>
+
+                <!-- ─── CHAPTER BREAK ─────────────────────────── -->
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">VII</span>
+                    The Shape of the Constraint
+                </h2>
+
+                <aside class="insight-callout">
+                    Phones did not invent neural computation. They made building silicon just for it normal.
+                </aside>
+                <div class="insight-text">
+                    <p>The smartphone's lasting contribution was not a particular NPU design. It was a design rule: when inference has to be immediate, private, frequent, and nearly invisible in its energy use, general-purpose compute stops being the whole answer.</p>
+                    <p>By early 2026 that logic had produced an unlikely buying craze. As <a href="/ai#event-openclaw">Clawdbot — later renamed OpenClaw</a> spread, people bought Mac minis to give personal agents a small, quiet machine that could stay online around the clock. Many of those agents still called cloud models, so the Neural Engine was not necessarily doing the thinking. The appeal was the rest of the mobile inheritance: low power draw, a compact box, unified memory when models did run locally, and a computer cheap enough to hand over to a single task.</p>
+                    <p>Apple carried the rule from the phone to the Mac deliberately. Windows PCs reached it from the other direction, once on-device AI became a platform promise. Different routes, similar silicon.</p>
+                    <p>The phone got there first because it had the least room to argue. It was not the first time a pocket had done the thinking. It was only the first time the pocket brought its own chip.</p>
+                </div>
+
+                <hr class="insight-separator">
+                <p class="insight-cta"><em>From data-center TPUs to the chip in your pocket, <a href="/ai?q=insights=pocket">explore the moments that moved neural computation into hardware</a>.</em></p>
+
+            </div>
+        </article>
+    </template>
+
+    <!-- TimelineJS JS -->
+    <script src="https://cdn.knightlab.com/libs/timeline3/3.9.1/js/timeline.js"></script>
+    <script>window.__FEATURE_SLUG__ = 'pocket';</script>
+    <script type="module" src="/js/main.js"></script>
+
+    <!-- Fallback content for crawlers that don't execute JavaScript -->
+    <noscript>
+        <style>.app { display: none; }</style>
+        <main>
+            <nav>
+                <a href="https://mvfm.digital/">Home</a> |
+                <a href="https://mvfm.digital/resume">Resume</a> |
+                <a href="https://mvfm.digital/contact">Contact</a> |
+                <a href="https://mvfm.digital/ai">AI Timeline</a> |
+                <a href="https://mvfm.digital/insights">Insights</a>
+            </nav>
+            <article>
+                <h1>Pocket</h1>
+                <p>Dedicated neural accelerators became everyday consumer hardware in phones years before PCs — and the reason begins with the battery.</p>
+                <p>By Marcus Vinicius Freitas Margarites — September 2026</p>
+                <h2>I — The Tyrant in the Case</h2>
+                <p>Phones needed neural inference that was immediate, private, and cheap enough in energy to run continuously, making a dedicated accelerator more practical than repeatedly taxing general-purpose processors.</p>
+                <h2>II — The Pocket Had Done This Before</h2>
+                <p>Neural software had already run in pocket devices by 1995, but the late 2010s brought silicon designed expressly for the neural-network operations those devices increasingly depended on.</p>
+                <h2>III — Ten Days</h2>
+                <p>Huawei's Kirin 970 and Apple's A11 Bionic arrived ten days apart in September 2017, revealing an industry-wide convergence on dedicated on-device neural processing.</p>
+                <h2>IV — The Camera Was the Argument</h2>
+                <p>Computational photography demonstrated that software could overcome the physical limits of phone cameras, and learned models made efficient on-device inference a core part of the product.</p>
+                <h2>V — The Mac Received the Family Resemblance</h2>
+                <p>Apple carried the Neural Engine, Core ML stack, and its phone-honed performance-per-watt discipline into the M1 Mac, giving mainstream laptops dedicated neural acceleration in 2020.</p>
+                <h2>VI — The Desk Had an Alibi</h2>
+                <p>PCs long relied on GPUs for AI work, but battery-sensitive local workloads eventually pushed AMD, Qualcomm, Intel, and Microsoft toward dedicated NPUs and the Copilot+ PC category.</p>
+                <h2>VII — The Shape of the Constraint</h2>
+                <p>The smartphone normalized purpose-built neural silicon by proving that frequent, private, low-latency inference requires computation designed to disappear into a device's energy budget.</p>
+            </article>
+        </main>
+    </noscript>
+</body>
+
+</html>
