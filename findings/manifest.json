@@ -1,5 +1,16 @@
 [
   {
+    "slug": "john-mccarthy-oral-history",
+    "title": "Oral History: John McCarthy",
+    "url": "https://ethw.org/Oral-History:John_McCarthy#Introduction_to_Artificial_Intelligence",
+    "source": "ETHW · IEEE History Center",
+    "date_added": "2026-09-01",
+    "note": "A 2011 oral history recorded at Stanford months before McCarthy's death (interviewers Peter Asaro and Selma Šabanović, for Indiana University and the IEEE History Center). McCarthy traces his route into the field: the 1948 Hixon Symposium at Caltech that first suggested using computers to \"behave intelligently\", von Neumann's \"write it up\" brush-off at Princeton, and the 1956 Dartmouth Summer Research Project he organised. On the name itself, he explains he deliberately steered clear of \"cybernetics\" — and of Norbert Wiener — because, having read Wiener's book, he knew his own logic-and-facts approach to intelligence had nothing to do with Wiener's feedback control; \"artificial intelligence\" was the label that kept the new field clear of that baggage.",
+    "topics": ["foundations"],
+    "referenced_events": ["ai-gets-its-name"],
+    "referenced_insights": []
+  },
+  {
     "slug": "cpu-cant-tell-code-from-data",
     "title": "Your CPU Can't Tell Code From Data - Inside the Von Neumann Architecture",
     "url": "https://www.youtube.com/watch?v=PAny8UqGOlE",
