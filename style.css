@@ -1480,9 +1480,12 @@ ol li {
     border: 1px solid var(--clr-panel-border); background: var(--clr-bg-main);
     color: var(--clr-text); cursor: pointer; font-size: 1rem; line-height: 1; }
 .findings-graph-legend { position: absolute; left: .5rem; bottom: .5rem; display: flex;
-    flex-wrap: wrap; gap: .5rem; font-size: .75rem; color: var(--clr-text-muted); }
+    flex-wrap: wrap; gap: .3rem .6rem; font-size: .75rem; color: var(--clr-text-muted);
+    max-width: calc(100% - 1rem); max-height: 45%; overflow-y: auto;
+    padding: .4rem .55rem; border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.9); border: 1px solid var(--clr-panel-border); }
 .findings-graph-legend span { display: inline-flex; align-items: center; gap: .3rem; }
-.findings-graph-legend i { width: .7rem; height: .7rem; border-radius: 50%; display: inline-block; }
+.findings-graph-legend i { width: .7rem; height: .7rem; border-radius: 50%; display: inline-block; flex-shrink: 0; }
 
 /* Anchored inside .findings-split (not the viewport) so it can never be
    clipped by the sticky header or the scroll position. Overlays the graph. */

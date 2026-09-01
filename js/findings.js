@@ -91,6 +91,7 @@ export async function findingsRouteOnLoad() {
                 state.allTopics = data.topics;          // verbatim; getTopicColor sorts internally
                 generateMnemonics(state.allTopics);     // same acronyms the AI timeline uses
                 renderTopicPills();                     // recolour topic pills
+                renderLegend();                         // one coloured swatch per topic
                 applyFilter();                          // re-render rows → recoloured topic dots
                 state.graph?.requestDraw();             // late-bound topicColor repaints topic nodes
             })
@@ -206,11 +207,27 @@ export function applyFilter() {
 function renderLegend() {
     const el = document.getElementById('findings-graph-legend');
     if (!el) return;
-    const items = [
-        [GRAPH_PALETTE.finding, 'Finding'], [GRAPH_PALETTE.topic, 'Topic'],
-        [GRAPH_PALETTE.event, 'Event'], [GRAPH_PALETTE.insight, 'Insight'],
+
+    const swatch = (color, label) =>
+        `<span><i style="background:${color}"></i>${esc(label)}</span>`;
+
+    // Fixed node types.
+    const parts = [
+        swatch(GRAPH_PALETTE.finding, 'Finding'),
+        swatch(GRAPH_PALETTE.event, 'Event'),
+        swatch(GRAPH_PALETTE.insight, 'Insight'),
     ];
-    el.innerHTML = items.map(([c, l]) => `<span><i style="background:${c}"></i>${l}</span>`).join('');
+
+    // Topic nodes are coloured per-topic (matching the AI tab), so give each its
+    // own swatch. Before /timeline answers we can't colour them — one placeholder.
+    const topics = state.topicsInUse || [];
+    if (topics.length && state.allTopics.length) {
+        for (const t of topics) parts.push(swatch(getTopicColor(t, state.allTopics, true), t));
+    } else if (topics.length) {
+        parts.push(swatch(GRAPH_PALETTE.topic, 'Topics'));
+    }
+
+    el.innerHTML = parts.join('');
 }
 
 function rowHtml(f) {
