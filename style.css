@@ -1451,7 +1451,8 @@ ol li {
 
 /* ===== Findings ===== */
 .findings-split { display: flex; gap: 1.5rem; align-items: flex-start; position: relative; }
-.findings-list { flex: 0 0 22rem; max-width: 22rem; }
+/* Own scroll region so a long list never pushes the graph out of view. */
+.findings-list { flex: 0 0 22rem; max-width: 22rem; max-height: 32rem; overflow-y: auto; padding-right: .25rem; }
 .findings-graph { position: relative; flex: 1 1 auto; height: 32rem;
     border: 1px solid var(--clr-panel-border); border-radius: var(--radius-md); overflow: hidden; }
 #findings-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
@@ -1513,7 +1514,7 @@ ol li {
 /* Mobile: collapse the split view to list + a Map toggle */
 @media (max-width: 760px) {
     .findings-split { flex-direction: column; }
-    .findings-list { flex-basis: auto; max-width: none; width: 100%; }
+    .findings-list { flex-basis: auto; max-width: none; width: 100%; max-height: none; overflow-y: visible; }
     .findings-graph { width: 100%; height: 24rem; }
     .findings-split.show-map .findings-list { display: none; }
     .findings-split:not(.show-map) .findings-graph { display: none; }
