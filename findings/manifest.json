@@ -1,5 +1,27 @@
 [
   {
+    "slug": "cpu-cant-tell-code-from-data",
+    "title": "Your CPU Can't Tell Code From Data - Inside the Von Neumann Architecture",
+    "url": "https://www.youtube.com/watch?v=PAny8UqGOlE",
+    "source": "NCOT Technology · YouTube",
+    "date_added": "2026-08-31",
+    "note": "A retro-computing channel picks apart the cryptic DATA-statement number pairs in old BASIC listings — they turn out to be raw machine code, and one line just tells the CPU to jump into the array and run it. The point: a von Neumann CPU genuinely can't tell code from data, it executes whatever the pointer lands on, and the video carries that idea from the BBC Micro to a modern C program pulling the same trick with mmap. It's also why a Super Mario World run can reprogram itself mid-game and why buffer overflows have worked for decades, with the NX bit and Harvard-style split memory bolted on afterward as guardrails.",
+    "topics": ["foundations"],
+    "referenced_events": ["von-neumann-architecture"],
+    "referenced_insights": []
+  },
+  {
+    "slug": "white-rabbit-engelbart-english",
+    "title": "White Rabbit: Interview with Doug Engelbart and Bill English, Moderated by John Markoff",
+    "url": "https://www.youtube.com/watch?v=L1oNBImSX0M",
+    "source": "Computer History Museum · YouTube",
+    "date_added": "2026-08-31",
+    "note": "Engelbart and Bill English recount inventing the mouse at SRI — a NASA-funded 1964 study that pitted it against the light pen, joystick and graphacon — the three-button limit (\"that's all we could get on\"), and the 1968 \"Mother of All Demos\" at the Fall Joint Computer Conference: the Eidophor projector, leased microwave video links, hypertext, Ted Nelson, Arthur C. Clarke's visit, the chord keyset, and the ARPA money from Bob Taylor that built the lab.",
+    "topics": ["foundations", "tools"],
+    "referenced_events": ["the-mother-of-all-demos", "as-we-may-think", "lickliders-ipto", "the-xerox-alto", "the-world-wide-web"],
+    "referenced_insights": []
+  },
+  {
     "slug": "project-sid-minecraft",
     "title": "This AI Minecraft Simulation Is Terrifying Scientists",
     "url": "https://www.youtube.com/watch?v=u7U6nIsJrHM",
@@ -24,10 +46,10 @@
   {
     "slug": "wargames-behind-the-scenes",
     "title": "WarGames (1983) | Behind the Scenes",
-    "url": "https://www.youtube.com/watch?v=uho_7OZjO2I&t=3913s",
+    "url": "https://www.youtube.com/watch?v=uho_7OZjO2I",
     "source": "DVDXtras · YouTube",
     "date_added": "2026-08-30",
-    "note": "Retrospective on the making of WarGames; linked at the 1:05:13 mark.",
+    "note": "Retrospective on the making of WarGames.",
     "topics": ["ai safety", "fiction"],
     "referenced_events": ["wargames", "ai-opts-for-nuclear-use"],
     "referenced_insights": []
