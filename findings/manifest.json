@@ -1,5 +1,16 @@
 [
   {
+    "slug": "dec-rise-and-fall",
+    "title": "The Rise and Fall of DEC, the Computer Giant That Beat IBM but Refused to Believe in PCs",
+    "url": "https://www.youtube.com/watch?v=O89XmbCkeQ4",
+    "source": "Tech District · YouTube",
+    "date_added": "2026-09-01",
+    "note": "History of Digital Equipment Corp: founded 1957 in a Maynard, Massachusetts wool mill by ex-Lincoln Lab engineers Ken Olsen and Harlan Anderson, with a name — chosen by VC George Doriot — that dodged the word \"computer\" because Fortune had just reported nobody made money selling them. It traces the rise on interactive minicomputers (the PDP-1 that ran Spacewar, the PDP-8, the PDP-11 that Unix and C were written on, then the VAX and Dave Cutler's VMS carrying DEC to $14 billion and second place behind IBM) and the fall as the company kept refusing to follow its own \"smaller and cheaper wins\" logic one more step: Edson de Castro leaving to found Data General, Olsen's \"no reason for any individual to have a computer in his home\", the cancelled PRISM project that sent Cutler to Microsoft to build Windows NT, and AltaVista — the first full-text web search engine, built in-house to show off the Alpha chip — left with no strategy behind it. Compaq bought what remained in 1998 for $9.6 billion.",
+    "topics": ["industry", "tools"],
+    "referenced_events": ["digital-equipment-corp"],
+    "referenced_insights": []
+  },
+  {
     "slug": "john-mccarthy-oral-history",
     "title": "Oral History: John McCarthy",
     "url": "https://ethw.org/Oral-History:John_McCarthy#Introduction_to_Artificial_Intelligence",
