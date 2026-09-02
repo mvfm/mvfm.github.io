@@ -1,5 +1,16 @@
 [
   {
+    "slug": "artificial-intelligence-1951-pulp",
+    "title": "\"Artificial Intelligence\" in a 1951 Captain Future story",
+    "url": "https://x.com/BergsonsGhost/status/2094888750992207909",
+    "source": "Bergson's Ghost · X",
+    "date_added": "2026-09-02",
+    "note": "In a thread arguing over whether John McCarthy really coined \"artificial intelligence\" for the 1956 Dartmouth proposal — or absorbed it from the cybernetics milieu he was trying to keep the new field clear of — @BergsonsGhost points to an earlier print use in the modern sense. Edmond Hamilton's Captain Future story \"Moon of the Unforgotten\" (Startling Stories, January 1951, p. 120) describes the robot Grag as having \"an artificial intelligence equal to the human.\" Technovelgy, which catalogues the citation, calls it likely the first use of the phrase to mean a thinking machine; scattered 19th-century uses (1849, 1869) meant something else, and the OED still dates the term to the Dartmouth proposal by McCarthy, Minsky, Rochester and Shannon. A scanned copy of the issue is linked from the thread.",
+    "topics": ["foundations", "fiction"],
+    "referenced_events": ["ai-gets-its-name", "the-dartmouth-conference"],
+    "referenced_insights": []
+  },
+  {
     "slug": "dec-rise-and-fall",
     "title": "The Rise and Fall of DEC, the Computer Giant That Beat IBM but Refused to Believe in PCs",
     "url": "https://www.youtube.com/watch?v=O89XmbCkeQ4",

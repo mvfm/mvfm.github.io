@@ -4,7 +4,9 @@
 // (acronyms, internal capitalisation). Starts empty; add one line per
 // acronym-y event as it is first referenced by a finding, e.g.:
 //   'gpt-4': 'GPT-4', 'openai': 'OpenAI', 'rag': 'RAG', 'nlp': 'NLP'
-export const TOPIC_LABEL_OVERRIDES = {};
+export const TOPIC_LABEL_OVERRIDES = {
+    'ai-gets-its-name': 'AI Gets Its Name',
+};
 
 export function deriveEventLabel(slug, overrides = TOPIC_LABEL_OVERRIDES) {
     if (!slug || typeof slug !== 'string') return '';
