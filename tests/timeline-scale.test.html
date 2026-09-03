@@ -182,6 +182,37 @@
       expect(threw).toBeTruthy();
     });
 
+    test('indexAtFrac: round-trips posOf', () => {
+      const s = createScale(sorted);
+      expect(Math.round(s.indexAtFrac(s.posOf(5)))).toBe(5);
+    });
+    test('indexAtFrac: clamps out of range', () => {
+      const s = createScale(sorted);
+      expect(s.indexAtFrac(-1)).toBe(0);
+      expect(s.indexAtFrac(2)).toBe(s.n - 1);
+    });
+    test('clampWindow: orders, bounds, min width', () => {
+      const s = createScale(sorted);
+      const w = s.clampWindow({ f0: 0.9, f1: 0.9 });   // zero width
+      expect(w.f0 < w.f1).toBeTruthy();
+      expect(w.f1 <= 1).toBeTruthy();
+      expect(w.f0 >= 0).toBeTruthy();
+    });
+    test('defaultWindow: centered, clamped at the end', () => {
+      const s = createScale(sorted);
+      const w = s.defaultWindow(s.n - 1);       // newest
+      expect(Math.abs(w.f1 - 1) < 1e-9).toBeTruthy();
+      expect(w.f0 < w.f1).toBeTruthy();
+    });
+    test('domain: extended to enclose an early era', () => {
+      const s = createScale(sorted, { eras: [{ start_date: { year: 1000 }, end_date: { year: 1100 } }] });
+      expect(s.domain.t0 <= 1000).toBeTruthy();
+    });
+    test('entriesInWindow: counts within [f0,f1]', () => {
+      const s = createScale(sorted);
+      expect(s.entriesInWindow({ f0: 0, f1: 1 })).toBe(s.n);
+    });
+
     renderResults();
   </script>
 </body>
