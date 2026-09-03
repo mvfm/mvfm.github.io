@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Timeline Component Tests</title>
+  <style>
+    body {
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 2rem;
+    }
+    h2 {
+      margin-top: 0;
+    }
+    #summary {
+      margin: 1rem 0;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+    #results {
+      margin-top: 1rem;
+    }
+    .test-result {
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+      border-left: 4px solid;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+    .pass {
+      background: rgba(34, 197, 94, 0.1);
+      border-color: #22c55e;
+    }
+    .fail {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <h2>Timeline Component Tests</h2>
+  <div id="summary"></div>
+  <div id="results"></div>
+
+  <script type="module">
+    // ---- paste harness ----
+    import { Stage } from '../js/timeline/stage.js';
+    import { SAMPLE } from './fixtures/timeline-sample.js';
+
+    // Micro test framework
+    const results = [];
+
+    // expect() - assertion matcher
+    function expect(val) {
+      return {
+        toBe(expected) {
+          if (val !== expected) {
+            throw new Error(`Expected ${JSON.stringify(val)} to be ${JSON.stringify(expected)}`);
+          }
+        },
+        toEqual(expected) {
+          if (!deepEqual(val, expected)) {
+            throw new Error(`Expected ${JSON.stringify(val)} to equal ${JSON.stringify(expected)}`);
+          }
+        },
+        toBeTruthy() {
+          if (!val) {
+            throw new Error(`Expected ${JSON.stringify(val)} to be truthy`);
+          }
+        },
+        toBeFalsy() {
+          if (val) {
+            throw new Error(`Expected ${JSON.stringify(val)} to be falsy`);
+          }
+        }
+      };
+    }
+
+    // Deep equality check helper
+    function deepEqual(a, b) {
+      if (a === b) return true;
+      if (a == null || b == null) return false;
+      if (typeof a !== 'object' || typeof b !== 'object') return false;
+      const keysA = Object.keys(a);
+      const keysB = Object.keys(b);
+      if (keysA.length !== keysB.length) return false;
+      return keysA.every(key => deepEqual(a[key], b[key]));
+    }
+
+    // test() - run a test and record result
+    function test(name, fn) {
+      let pass = true;
+      let error = null;
+      try {
+        fn();
+      } catch (e) {
+        pass = false;
+        error = e.message;
+      }
+      results.push({ name, pass, error });
+    }
+
+    function renderResults() {
+      const summaryEl = document.getElementById('summary');
+      const resultsEl = document.getElementById('results');
+
+      const passed = results.filter(r => r.pass).length;
+      const failed = results.filter(r => !r.pass).length;
+      const allPassed = failed === 0;
+
+      const icon = allPassed ? '✅' : '❌';
+      summaryEl.textContent = `${passed} passed, ${failed} failed ${icon}`;
+
+      results.forEach(result => {
+        const div = document.createElement('div');
+        div.className = `test-result ${result.pass ? 'pass' : 'fail'}`;
+        div.textContent = result.pass
+          ? `✓ ${result.name}`
+          : `✗ ${result.name}\n  ${result.error}`;
+        resultsEl.appendChild(div);
+      });
+    }
+    // ---- end harness ----
+
+    const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    const withIds = SAMPLE.events.map(e => ({ ...e, unique_id: slug(e.text.headline) }));
+    const noopSan = html => html.replace(/<(?!\/?(b|i|p|a|br)\b)[^>]*>/gi, '');
+    const baseOpts = {
+      sanitizeText: noopSan,
+      colorForTopic: () => '#123456',
+      insightArticlesFor: () => [],
+      reducedMotion: true,
+      onTextLinkClick(){}, onCartClick(){}, onCartOptionClick(){}, onInsightClick(){},
+    };
+    function mount() { const el = document.createElement('div'); document.body.appendChild(el); return el; }
+
+    test('Stage.show renders headline + text', () => {
+      const el = mount();
+      const st = new Stage(el, baseOpts);
+      st.show(withIds[1], 'initial');
+      expect(el.querySelector('.ait-headline').textContent).toBe('Computing Machinery and Intelligence');
+      expect(el.querySelector('.ait-text a')).toBeTruthy();
+      st.destroy();
+    });
+
+    test('Stage.show renders an <img> for image media', () => {
+      const el = mount(); const st = new Stage(el, baseOpts);
+      st.show(withIds[0], 'initial');
+      expect(el.querySelector('.ait-media img')).toBeTruthy();
+      st.destroy();
+    });
+
+    test('Stage.show renders a YouTube facade (no iframe yet)', () => {
+      const el = mount(); const st = new Stage(el, baseOpts);
+      st.show(withIds[2], 'initial');
+      expect(el.querySelector('.ait-yt-facade')).toBeTruthy();
+      expect(el.querySelector('iframe')).toBeFalsy();
+      st.destroy();
+    });
+
+    test('Stage.show renders a link card for wikipedia media', () => {
+      const el = mount(); const st = new Stage(el, baseOpts);
+      st.show(withIds[3], 'initial');
+      expect(el.querySelector('.ait-linkcard')).toBeTruthy();
+      st.destroy();
+    });
+
+    test('Stage.show omits media panel when media is null', () => {
+      const el = mount(); const st = new Stage(el, baseOpts);
+      st.show(withIds[6], 'initial');
+      expect(el.querySelector('.ait-media')).toBeFalsy();
+      st.destroy();
+    });
+
+    test('Stage.show renders one topic-pill per topic', () => {
+      const el = mount(); const st = new Stage(el, baseOpts);
+      st.show(withIds[4], 'initial');
+      expect(el.querySelectorAll('.ait-topics .topic-pill').length).toBe(2);
+      st.destroy();
+    });
+
+    test('Stage.show renders cart + dropdown options for purchase_links', () => {
+      const el = mount(); const st = new Stage(el, baseOpts);
+      st.show(withIds[3], 'initial');
+      expect(el.querySelector('.cart-btn')).toBeTruthy();
+      expect(el.querySelectorAll('.purchase-dropdown a').length).toBe(2);
+      st.destroy();
+    });
+
+    test('Stage.show renders archived ribbon when is_archived', () => {
+      const el = mount(); const st = new Stage(el, baseOpts);
+      st.show(withIds[3], 'initial');
+      expect(el.querySelector('.archived-ribbon')).toBeTruthy();
+      st.destroy();
+    });
+
+    test('Stage.show renders insight chip + stripe when insightArticlesFor returns entries', () => {
+      const el = mount();
+      const st = new Stage(el, { ...baseOpts, insightArticlesFor: () => [{ slug: 'backprop', title: 'Backprop' }] });
+      st.show(withIds[4], 'initial');
+      expect(el.querySelector('.insight-ref-chip')).toBeTruthy();
+      expect(el.querySelector('.insight-ref-stripe')).toBeTruthy();
+      st.destroy();
+    });
+
+    test('Stage.show sanitises disallowed tags in text', () => {
+      const el = mount(); const st = new Stage(el, baseOpts);
+      st.show({ ...withIds[6], text: { headline: 'X', text: '<script>bad()<\/script><b>ok</b>' } }, 'initial');
+      expect(el.querySelector('.ait-text script')).toBeFalsy();
+      expect(el.querySelector('.ait-text b')).toBeTruthy();
+      st.destroy();
+    });
+
+    test('Stage.show keeps at most 2 card nodes on rapid calls', () => {
+      const el = mount(); const st = new Stage(el, baseOpts);
+      ['initial','next','next','next','prev'].forEach((d,i) => st.show(withIds[i], d));
+      expect(el.querySelectorAll('.ait-card').length <= 2).toBeTruthy();
+      st.destroy();
+    });
+
+    test('Stage.destroy empties the mount', () => {
+      const el = mount(); const st = new Stage(el, baseOpts);
+      st.show(withIds[0], 'initial'); st.destroy();
+      expect(el.children.length).toBe(0);
+    });
+
+    renderResults();
+  </script>
+</body>
+</html>
