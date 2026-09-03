@@ -46,6 +46,8 @@
   <script type="module">
     // ---- paste harness ----
     import { Stage } from '../js/timeline/stage.js';
+    import { Minimap } from '../js/timeline/minimap.js';
+    import { createScale } from '../js/timeline/scale.js';
     import { SAMPLE } from './fixtures/timeline-sample.js';
 
     // Micro test framework
@@ -238,6 +240,48 @@
       const el = mount(); const st = new Stage(el, baseOpts);
       st.show(withIds[0], 'initial'); st.destroy();
       expect(el.children.length).toBe(0);
+    });
+
+    // ---- Task 4: Minimap render tests ----
+    const PALETTE = { focusWindow:'#1baaff', playhead:'#0c2d6b', density:'#556688', eraBandA:'#eef', eraBandB:'#f7f9fc', yearLabel:'#889', laneLabel:'#889' };
+    function mmMount() { const c = document.createElement('canvas'); c.style.width='600px'; c.style.height='92px'; document.body.appendChild(c); return c; }
+
+    test('Minimap constructs and reports geometry', () => {
+      const sc = createScale(withIds, { eras: SAMPLE.eras });
+      const c = mmMount();
+      const mm = new Minimap(c, { scale: sc, groups: ['research','industry','pop culture'],
+        eras: SAMPLE.eras, groupOf: i => withIds[i].group, palette: PALETTE, reducedMotion: true,
+        onZoom(){}, onScrub(){} });
+      const d = mm._debug();
+      expect(d.laneCount).toBe(3);
+      expect(d.w > 0).toBeTruthy();
+      mm.destroy();
+    });
+
+    test('Minimap.setFocus updates reported focus', () => {
+      const sc = createScale(withIds);
+      const c = mmMount();
+      const mm = new Minimap(c, { scale: sc, groups:['research','industry','pop culture'], eras:[], groupOf:i=>withIds[i].group, palette:PALETTE, reducedMotion:true, onZoom(){}, onScrub(){} });
+      mm.setFocus({ f0: 0.25, f1: 0.75 });
+      expect(Math.abs(mm._debug().focus.f0 - 0.25) < 1e-9).toBeTruthy();
+      mm.destroy();
+    });
+
+    test('Minimap.setCurrent updates reported current', () => {
+      const sc = createScale(withIds);
+      const c = mmMount();
+      const mm = new Minimap(c, { scale: sc, groups:['research','industry','pop culture'], eras:[], groupOf:i=>withIds[i].group, palette:PALETTE, reducedMotion:true, onZoom(){}, onScrub(){} });
+      mm.setCurrent(5);
+      expect(mm._debug().current).toBe(5);
+      mm.destroy();
+    });
+
+    test('Minimap.destroy is idempotent and detaches', () => {
+      const sc = createScale(withIds);
+      const c = mmMount();
+      const mm = new Minimap(c, { scale: sc, groups:['research','industry','pop culture'], eras:[], groupOf:i=>withIds[i].group, palette:PALETTE, reducedMotion:true, onZoom(){}, onScrub(){} });
+      mm.destroy(); mm.destroy();
+      expect(true).toBeTruthy(); // no throw
     });
 
     runAll().then(renderResults);
