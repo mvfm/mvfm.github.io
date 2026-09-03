@@ -7,6 +7,15 @@ const AXIS_LABEL_GAP = 30;  // min px between time-axis tick labels (widened per
 
 const pad2 = n => String(n).padStart(2, '0');
 
+// decimal-year for a date object (mirrors scale.js parseDate; tolerates string fields)
+function dateTime(d) {
+  if (!d) return NaN;
+  const y = Number(d.year);
+  if (!Number.isFinite(y)) return NaN;
+  const m = Number(d.month), day = Number(d.day);
+  return y + ((Number.isFinite(m) ? m : 1) - 1) / 12 + ((Number.isFinite(day) ? day : 1) - 1) / 365;
+}
+
 // ISO-ish date for the hover tooltip: "1957", "1957-08", or "1957-08-23"
 // (precision follows what the event actually provides)
 function fmtIsoDate(d) {
@@ -165,7 +174,6 @@ export class Minimap {
     ctx.clearRect(0, 0, W, this._h);
 
     const dom = this.scale.domain;
-    const tspan = dom.t1 - dom.t0 || 1;
     const times = this.scale._times || [];
     // global fraction -> approximate calendar year, via the two visible endpoints
     const yearAtFrac = f => {
@@ -193,12 +201,13 @@ export class Minimap {
       return this.scale.posOf(lo) + (fi - lo) * (this.scale.posOf(hi) - this.scale.posOf(lo));
     };
 
-    // 1. era bands (clipped to the detail viewport)
+    // 1. era bands — placed on the warped axis, exactly like the markers
     this.eras.forEach((era, k) => {
-      const ay = parseFloat(era.start_date.year);
-      const by = era.end_date ? parseFloat(era.end_date.year) : dom.t1;
-      // era boundaries are calendar years; place them by their global fraction
-      const af = clamp01((ay - dom.t0) / tspan), bf = clamp01((by - dom.t0) / tspan);
+      const at = dateTime(era.start_date);
+      if (!Number.isFinite(at)) return;
+      const bt = era.end_date ? dateTime(era.end_date) : dom.t1;
+      const af = fracAtTime(at);
+      const bf = Number.isFinite(bt) ? fracAtTime(bt) : 1;
       const x0 = this._plotX(af), x1 = this._plotX(bf);
       if (x1 < this._laneLabelWidth || x0 > W) return;
       ctx.fillStyle = k % 2 ? palette.eraBandB : palette.eraBandA;
