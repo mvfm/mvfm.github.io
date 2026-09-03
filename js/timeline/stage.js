@@ -171,6 +171,7 @@ export class Stage {
     }
 
     card.appendChild(body);
+    this._buildNav(card);
   }
 
   _buildMedia(media) {
@@ -195,7 +196,9 @@ export class Stage {
       wrap.appendChild(f);
     } else if (isImage(media.url)) {
       const img = document.createElement('img');
-      img.loading = 'lazy'; img.decoding = 'async'; img.alt = media.caption || '';
+      // only 2 cards exist at once; load the media straight away (a lazy image
+      // can sit unloaded when the centred media column starts below the fold)
+      img.decoding = 'async'; img.alt = media.caption || '';
       img.src = media.url;
       img.addEventListener('error', () => { wrap.remove(); });
       wrap.appendChild(img);
@@ -210,16 +213,47 @@ export class Stage {
       a.append(hostSpan, titleSpan);
       wrap.appendChild(a);
     }
-    if (media.caption || media.credit) {
+    if (media.caption) {
       const cap = document.createElement('figcaption');
       cap.className = 'ait-media-caption';
-      cap.textContent = [media.caption, media.credit].filter(Boolean).join(' — ');
+      cap.textContent = media.caption;
       wrap.appendChild(cap);
+    }
+    if (media.credit) {
+      const cr = document.createElement('div');
+      cr.className = 'ait-media-credit';
+      cr.textContent = media.credit;
+      wrap.appendChild(cr);
     }
     return wrap;
   }
 
+  _buildNav(card) {
+    const nb = this.opts.getNeighbours ? this.opts.getNeighbours() : null;
+    if (!nb) return;
+    for (const dir of ['prev', 'next']) {
+      const info = nb[dir];
+      if (!info) continue;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = dir === 'prev' ? 'ait-nav-prev' : 'ait-nav-next';
+      btn.dataset.nav = dir;
+      btn.setAttribute('aria-label', `${dir === 'prev' ? 'Previous' : 'Next'}: ${info.headline}`);
+      const icon = document.createElement('span');
+      icon.className = 'ait-nav-icon'; icon.setAttribute('aria-hidden', 'true');
+      icon.textContent = dir === 'prev' ? '‹' : '›';
+      const title = document.createElement('span');
+      title.className = 'ait-nav-title'; title.textContent = info.headline;
+      const date = document.createElement('span');
+      date.className = 'ait-nav-date'; date.textContent = info.dateText || '';
+      btn.append(icon, title, date);
+      card.appendChild(btn);
+    }
+  }
+
   _handleClick(ev) {
+    const nav = ev.target.closest('.ait-nav-prev, .ait-nav-next');
+    if (nav) { this.opts.onNav?.(nav.dataset.nav); return; }
     const cart = ev.target.closest('.cart-btn');
     if (cart) {
       ev.stopPropagation();

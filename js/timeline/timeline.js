@@ -60,6 +60,8 @@ export class AITimeline {
       onCartClick: opts.onCartClick,
       onCartOptionClick: opts.onCartOptionClick,
       onInsightClick: opts.onInsightClick,
+      getNeighbours: () => this._neighbours(),
+      onNav: (dir) => this.goToIndex(this._current + (dir === 'prev' ? -1 : 1), dir),
     });
 
     this._minimap = null;  // built on first setEvents (needs a scale)
@@ -168,6 +170,19 @@ export class AITimeline {
   }
 
   getCurrentSlide() { return { data: this._events[this._current] }; }
+
+  _neighbours() {
+    const MON = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+      'August', 'September', 'October', 'November', 'December'];
+    const fmt = (e) => {
+      if (!e) return null;
+      const d = e.start_date || {};
+      let dateText = d.year != null ? String(d.year) : '';
+      if (d.month) dateText = `${MON[d.month - 1]} ${dateText}`.trim();
+      return { headline: e.text?.headline || '', dateText };
+    };
+    return { prev: fmt(this._events[this._current - 1]), next: fmt(this._events[this._current + 1]) };
+  }
 
   on(name, cb) { this._listeners[name]?.add(cb); }
   off(name, cb) { this._listeners[name]?.delete(cb); }
