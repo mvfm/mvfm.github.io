@@ -229,7 +229,7 @@ export class Stage {
       const hostSpan = document.createElement('span');
       hostSpan.className = 'ait-linkcard-host'; hostSpan.textContent = host;
       const titleSpan = document.createElement('span');
-      titleSpan.className = 'ait-linkcard-title'; titleSpan.textContent = media.caption || media.url;
+      titleSpan.textContent = media.caption || media.url;
       a.append(hostSpan, titleSpan);
       wrap.appendChild(a);
     }
