@@ -194,13 +194,6 @@ main {
     transform: translateZ(0);
 }
 
-.insight-ref-stripe {
-    width: 5px;
-    height: 100%;
-    background: linear-gradient(to bottom, #7c3aed, #a21caf);
-    border-radius: 6px 0 0 6px;
-}
-
 .timeline-wrapper {
     width: 100%;
 }
@@ -583,11 +576,6 @@ main {
 .seg.on {
     fill: #cfe3ff;
     filter: drop-shadow(0 0 1px rgba(207, 227, 255, 0.5));
-}
-
-ol li {
-    font-size: 0.70rem;
-    line-height: 1.5;
 }
 
 .spinner-container {
@@ -1246,7 +1234,7 @@ ol li {
 .finding-dot { width: .6rem; height: .6rem; border-radius: 50%; display: inline-block; }
 .finding-refs { font-size: .75rem; color: var(--clr-text-muted); margin-left: .25rem; }
 
-#findings-filter { /* reuses .search-bar; hidden until .show like the AI tab */ }
+/* #findings-filter reuses .search-bar — hidden until .show, like the AI tab. */
 
 .findings-graph-controls { position: absolute; top: .5rem; right: .5rem; display: flex; gap: .25rem; }
 .findings-graph-controls button { width: 1.9rem; height: 1.9rem; border-radius: 6px;
