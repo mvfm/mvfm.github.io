@@ -9,7 +9,8 @@ const MON3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oc
 const MONF = ['January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'];
 
-// full, human date for the hover tooltip — "1956", "June 1956", or "12 June 1956"
+// full, human date for the hover tooltip — "1956", "June 1956", or "June 12, 1956"
+// (same format as the card's headline-date / production TimelineJS)
 function fmtFullDate(d) {
   if (!d) return '';
   const y = Number(d.year);
@@ -18,7 +19,7 @@ function fmtFullDate(d) {
   if (!Number.isFinite(m) || m < 1 || m > 12) return String(y);
   const day = Number(d.day);
   return Number.isFinite(day) && day >= 1
-    ? `${day} ${MONF[m - 1]} ${y}`
+    ? `${MONF[m - 1]} ${day}, ${y}`
     : `${MONF[m - 1]} ${y}`;
 }
 

@@ -6,7 +6,13 @@ function ytId(url) { const m = url && url.match(YT_RE); return m ? m[1] : null; 
 function isImage(url) { return /\.(jpe?g|png|gif|webp|svg|avif)(\?|$)/i.test(url || ''); }
 function fmtDate(d) {
   if (!d || d.year == null) return '';
-  return d.month ? `${MONTHS[d.month - 1]} ${d.year}` : String(d.year);
+  const m = Number(d.month);
+  if (!Number.isFinite(m) || m < 1 || m > 12) return String(d.year);
+  const day = Number(d.day);
+  // match production TimelineJS: "August 1957" / "August 23, 1957"
+  return Number.isFinite(day) && day >= 1
+    ? `${MONTHS[m - 1]} ${day}, ${d.year}`
+    : `${MONTHS[m - 1]} ${d.year}`;
 }
 
 export class Stage {
