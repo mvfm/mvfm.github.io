@@ -1,0 +1,37 @@
+// Minimal /timeline-shaped fixture: 8 events, date-sorted, covering every
+// media type and overlay used by Stage. Deliberately spans a wide, skewed range.
+export const SAMPLE = {
+  topics: ['foundations', 'neural networks', 'deep learning', 'books', 'fiction', 'industry'],
+  eras: [
+    { start_date: { year: 1600 }, end_date: { year: 1949, month: 12, day: 31 }, text: { headline: 'Before AI' } },
+    { start_date: { year: 1950 }, end_date: { year: 1999, month: 12, day: 31 }, text: { headline: 'Foundations' } },
+    { start_date: { year: 2000 }, end_date: { year: 2030, month: 12, day: 31 }, text: { headline: 'Modern' } },
+  ],
+  events: [
+    { start_date: { year: 1637 }, group: 'research', topics: ['foundations'],
+      text: { headline: 'Discourse on the Method', text: '<p><b>Descartes</b> on method.</p>' },
+      media: { url: 'https://example.com/descartes.jpg', caption: 'Portrait', credit: 'Public domain' } },
+    { start_date: { year: 1950, month: 10 }, group: 'research', topics: ['foundations', 'neural networks'],
+      text: { headline: 'Computing Machinery and Intelligence', text: '<p><b>Turing</b>. <a href="https://example.com/paper">Paper</a>.</p>' },
+      media: { url: 'https://example.com/turing.png', caption: '', credit: '' } },
+    { start_date: { year: 1958 }, group: 'research', topics: ['neural networks'],
+      text: { headline: 'The Perceptron', text: '<p>Rosenblatt.</p>' },
+      media: { url: 'https://www.youtube.com/watch?v=aircAruvnKk', caption: 'Explainer', credit: 'YouTube' } },
+    { start_date: { year: 1969 }, group: 'research', topics: ['neural networks'], is_archived: true,
+      text: { headline: 'Perceptrons (book)', text: '<p>Minsky & Papert.</p>' },
+      media: { url: 'https://en.wikipedia.org/wiki/Perceptrons_(book)', caption: '', credit: '' },
+      purchase_links: [{ label: 'Amazon', url: 'https://example.com/buy1' }, { label: 'MIT Press', url: 'https://example.com/buy2' }] },
+    { start_date: { year: 1986, month: 10, day: 9 }, group: 'research', topics: ['deep learning', 'neural networks'],
+      text: { headline: 'Learning representations by back-propagating errors', text: '<p>Rumelhart, Hinton, Williams.</p>' },
+      media: { url: 'https://example.com/backprop.jpg', caption: 'Figure 1', credit: 'Nature' } },
+    { start_date: { year: 2012, month: 9, day: 30 }, group: 'research', topics: ['deep learning'],
+      text: { headline: 'AlexNet', text: '<p>ImageNet 2012.</p>' },
+      media: { url: 'https://example.com/alexnet.png', caption: '', credit: '' } },
+    { start_date: { year: 2017, month: 6, day: 12 }, group: 'research', topics: ['deep learning'],
+      text: { headline: 'Attention Is All You Need', text: '<p>Transformers.</p>' },
+      media: null },
+    { start_date: { year: 2023, month: 3, day: 14 }, group: 'industry', topics: ['industry', 'deep learning'],
+      text: { headline: 'GPT-4', text: '<p>OpenAI.</p>' },
+      media: { url: 'https://example.com/gpt4.jpg', caption: '', credit: '' } },
+  ],
+};
