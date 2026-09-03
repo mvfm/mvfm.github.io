@@ -1306,7 +1306,7 @@ ol li {
 :root { --timeline-focus: var(--clr-accent); }
 
 .ait-stage-host { position: relative; height: 460px; overflow: hidden; }
-.ait-stage { position: absolute; inset: 0; outline: none; }
+.ait-stage { outline: none; }
 .ait-card {
   position: absolute; inset: 0; display: flex; gap: 1.25rem;
   padding: 1.25rem; box-sizing: border-box; background: var(--clr-panel-bg, #fff);
