@@ -208,7 +208,7 @@ main {
 #timeline-embed {
     position: relative; /* contain the absolutely-positioned .ait-stage-host */
     width: 100%;
-    /* 435 (card) + 8 (gap) + 117 (minimap) + 8 (breathing room below the strip,
+    /* 452 (card) + 8 (gap) + 100 (minimap) + 8 (breathing room below the strip,
        clear of the rounded corner). Was 600px — a TimelineJS holdover that left
        ~53px of dead grey below the overview strip. */
     height: 568px;
@@ -1308,9 +1308,9 @@ ol li {
 /* ===== AI timeline component ===== */
 :root { --timeline-focus: var(--clr-accent); }
 
-/* Slide area: same 435px-tall, vertically-centred box TimelineJS used inside
-   the 600px embed (the rest is the minimap). */
-.ait-stage-host { position: relative; height: 435px; overflow: hidden; }
+/* Slide area. Started at TimelineJS's 435px; the extra ~17px is height reclaimed
+   from a shorter minimap (see #timeline-embed / .ait-minimap-slider). */
+.ait-stage-host { position: relative; height: 452px; overflow: hidden; }
 .ait-stage { outline: none; }
 .ait-stage:focus-visible { outline: 2px solid var(--clr-accent); outline-offset: -2px; }
 .ait-card {
@@ -1439,7 +1439,7 @@ ol li {
   padding: 3px 0; transform: rotate(35deg);
 }
 
-.ait-minimap-slider { position: relative; display: block; width: 100%; height: 117px; margin-top: .5rem; outline-offset: 2px; }
+.ait-minimap-slider { position: relative; display: block; width: 100%; height: 100px; margin-top: .5rem; outline-offset: 2px; }
 .ait-minimap { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
 .ait-minimap-tip {
   position: absolute; z-index: 20; transform: translateX(-50%);

@@ -3,28 +3,25 @@ const OVERVIEW_H = 12;   // full-range strip with the draggable focus window
 const YEAR_H = 13;       // time-axis tick labels
 const NAME_H = 15;       // entry-headline labels (only when markers are far enough apart)
 const LABEL_MIN_GAP = 108; // px between labelled markers
-const AXIS_LABEL_GAP = 34;  // px between time-axis tick labels
+const AXIS_LABEL_GAP = 30;  // min px between time-axis tick labels (widened per-label by text width)
 
-const MON3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const MONF = ['January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'];
+const pad2 = n => String(n).padStart(2, '0');
 
-// full, human date for the hover tooltip — "1956", "June 1956", or "June 12, 1956"
-// (same format as the card's headline-date / production TimelineJS)
-function fmtFullDate(d) {
+// ISO-ish date for the hover tooltip: "1957", "1957-08", or "1957-08-23"
+// (precision follows what the event actually provides)
+function fmtIsoDate(d) {
   if (!d) return '';
   const y = Number(d.year);
   if (!Number.isFinite(y)) return '';
   const m = Number(d.month);
   if (!Number.isFinite(m) || m < 1 || m > 12) return String(y);
   const day = Number(d.day);
-  return Number.isFinite(day) && day >= 1
-    ? `${MONF[m - 1]} ${day}, ${y}`
-    : `${MONF[m - 1]} ${y}`;
+  return Number.isFinite(day) && day >= 1 ? `${y}-${pad2(m)}-${pad2(day)}` : `${y}-${pad2(m)}`;
 }
 
 // Adaptive time axis: as the window narrows, step from years → months → days.
-// Times are decimal years in the scale's own model: year + (m-1)/12 + (day-1)/365.
+// Labels are ISO-ish ("1997", "1997-04", "1997-04-10"). Times are decimal years
+// in the scale's own model: year + (m-1)/12 + (day-1)/365.
 // Returns [{ tt, label, strong }] for the visible span [t0, t1].
 function axisTicks(t0, t1) {
   const span = t1 - t0;
@@ -40,18 +37,19 @@ function axisTicks(t0, t1) {
         if ((m - 1) % step !== 0) continue;
         const tt = y + (m - 1) / 12;
         if (tt < t0 || tt > t1) continue;
-        out.push({ tt, label: m === 1 ? `${MON3[0]} ${y}` : MON3[m - 1], strong: m === 1 });
+        out.push({ tt, label: `${y}-${pad2(m)}`, strong: m === 1 });
       }
     }
   } else {
     const step = [1, 2, 5, 10, 15].find(s => (span * 365) / s <= 7) || 15;
     for (let y = Math.floor(t0) - 1; y <= Math.ceil(t1) + 1; y++) {
       for (let m = 1; m <= 12; m += 1) {
-        for (let d = 1; d <= 31; d += 1) {
+        const dim = new Date(y, m, 0).getDate();   // real days in this month
+        for (let d = 1; d <= dim; d += 1) {
           if ((d - 1) % step !== 0) continue;
           const tt = y + (m - 1) / 12 + (d - 1) / 365;
           if (tt < t0 || tt > t1) continue;
-          out.push({ tt, label: `${d} ${MON3[m - 1]}`, strong: d === 1 });
+          out.push({ tt, label: `${y}-${pad2(m)}-${pad2(d)}`, strong: d === 1 });
         }
       }
     }
@@ -276,10 +274,13 @@ export class Minimap {
     axisTicks(tw0, tw1).forEach(({ tt, label, strong }) => {
       const x = this._plotX(fracAtTime(tt));
       if (x < this._laneLabelWidth || x > W) return;
-      if (x - lastTickX < AXIS_LABEL_GAP) return;
+      const lw = ctx.measureText(label).width;
+      // space labels by their own width so "1997-04-10" never collides with its neighbour
+      if (x - lastTickX < Math.max(AXIS_LABEL_GAP, lw + 12)) return;
       lastTickX = x;
-      ctx.globalAlpha = strong ? 1 : 0.78;
-      ctx.fillText(label, Math.min(Math.max(this._laneLabelWidth, x - 10), W - ctx.measureText(label).width - 2), yrRowY);
+      ctx.globalAlpha = strong ? 1 : 0.72;
+      const lx = Math.min(Math.max(this._laneLabelWidth, x - lw / 2), W - lw - 2);
+      ctx.fillText(label, lx, yrRowY);
       ctx.globalAlpha = 1;
     });
 
@@ -430,7 +431,7 @@ export class Minimap {
     if (best < 0) { this._hideTip(); return; }
     if (best !== this._hoverIdx) {
       this._hoverIdx = best;
-      const dateText = fmtFullDate(this.opts.dateOf?.(best))
+      const dateText = fmtIsoDate(this.opts.dateOf?.(best))
         || String(Math.floor((this.scale._times || [])[best] ?? 0));
       this._tip.textContent = `${dateText}  ·  ${this.labelOf(best)}`;
       this._tip.hidden = false;
