@@ -1307,6 +1307,7 @@ ol li {
 
 .ait-stage-host { position: relative; height: 460px; overflow: hidden; }
 .ait-stage { outline: none; }
+.ait-stage:focus-visible { outline: 2px solid var(--clr-accent); outline-offset: -2px; }
 .ait-card {
   position: absolute; inset: 0; display: flex; gap: 1.25rem;
   padding: 1.25rem; box-sizing: border-box; background: var(--clr-panel-bg, #fff);
@@ -1342,3 +1343,13 @@ ol li {
 .ait-minimap { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
 
 .ait-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* narrow viewports: stack media above text instead of a ~161px text column */
+@media (max-width: 640px) {
+  .ait-card { flex-direction: column; }
+  .ait-media { flex: 0 0 auto; max-height: 40%; }
+  /* keep the topic pills & cart in the scroll flow (they're absolute inside the
+     scrollable .ait-body, so they'd otherwise scroll away from the text) */
+  .ait-topics { position: static; flex-direction: row; flex-wrap: wrap; }
+  .ait-cart { position: relative; }
+}

@@ -144,7 +144,9 @@ export class AITimeline {
   }
 
   _onZoom(win) {
-    this._focus = win;
+    // minimap clamps before emitting; re-clamp defensively (idempotent, no setFocus
+    // echo so no feedback loop) so an unvalidated window can't be stored.
+    this._focus = this._scale.clampWindow(win);
     clearTimeout(this._zoomTimer);
     this._zoomTimer = setTimeout(() => {
       this.opts.track?.('timeline_zoom', {

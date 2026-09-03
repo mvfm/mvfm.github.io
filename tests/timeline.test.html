@@ -3,42 +3,48 @@
 <head>
   <meta charset="utf-8">
   <title>Timeline Component Tests</title>
+  <!-- load the real component CSS so .ait-* visual state is real and computed
+       styles can be asserted (FIX 2). Harness rules below are scoped to
+       #tl-tests to out-specify style.css's bare element selectors. -->
+  <link rel="stylesheet" href="/style.css">
   <style>
-    body {
+    #tl-tests {
       background: #0f172a;
       color: #e2e8f0;
       font-family: system-ui, -apple-system, sans-serif;
       padding: 2rem;
     }
-    h2 {
+    #tl-tests h2 {
       margin-top: 0;
+      color: #e2e8f0;
     }
-    #summary {
+    #tl-tests #summary {
       margin: 1rem 0;
       font-weight: bold;
       font-size: 1.1rem;
     }
-    #results {
+    #tl-tests #results {
       margin-top: 1rem;
     }
-    .test-result {
+    #tl-tests .test-result {
       padding: 0.75rem;
       margin: 0.5rem 0;
       border-left: 4px solid;
       font-family: monospace;
       white-space: pre-wrap;
+      color: #e2e8f0;
     }
-    .pass {
+    #tl-tests .pass {
       background: rgba(34, 197, 94, 0.1);
       border-color: #22c55e;
     }
-    .fail {
+    #tl-tests .fail {
       background: rgba(239, 68, 68, 0.1);
       border-color: #ef4444;
     }
   </style>
 </head>
-<body>
+<body id="tl-tests">
   <h2>Timeline Component Tests</h2>
   <div id="summary"></div>
   <div id="results"></div>
@@ -233,6 +239,17 @@
       expect(front).toBeTruthy();
       expect(front.querySelector('.ait-headline').textContent).toBe('Discourse on the Method');
       expect(el.querySelectorAll('.ait-card').length <= 2).toBeTruthy();
+      // the visible front card must NOT be stuck in the leave state (the real
+      // FIX-1 bug: a superseded transition left ait-leave on the reused card,
+      // whose opacity:0 / translateX(-24px) then wins over a class-less card)
+      expect(front.classList.contains('ait-leave')).toBe(false);
+      expect(front.classList.contains('ait-leave-prev')).toBe(false);
+      // ...and once its transition has settled, computed opacity is visible.
+      // (style.css is loaded here; skip if a transition is still pending — a
+      // backgrounded test tab pauses CSS transitions and would read 0.)
+      if (front.getAnimations().length === 0) {
+        expect(getComputedStyle(front).opacity !== '0').toBeTruthy();
+      }
       st.destroy();
     });
 
@@ -313,6 +330,37 @@
       slugify: s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),
       onCartClick(){}, onCartOptionClick(){}, onInsightClick(){}, onTextLinkClick(){},
     };
+
+    test('AITimeline nets zero window/document listeners across construct→setEvents→destroy', () => {
+      // NOTE: run fully synchronously (no await) — the shims below are global, so
+      // yielding to the microtask queue here would let sibling async tests build
+      // their own AITimeline/Minimap and inflate these counts. Spec §13.2 only
+      // needs construct→setEvents→destroy to be listener-neutral, which is sync.
+      const el = mount();
+      const orig = {
+        winAdd: window.addEventListener, winRem: window.removeEventListener,
+        docAdd: document.addEventListener, docRem: document.removeEventListener,
+      };
+      const net = {};
+      const bump = (scope, type, d) => { const k = scope + ':' + type; net[k] = (net[k] || 0) + d; };
+      try {
+        window.addEventListener = function (type, ...rest) { bump('win', type, 1); return orig.winAdd.call(this, type, ...rest); };
+        window.removeEventListener = function (type, ...rest) { bump('win', type, -1); return orig.winRem.call(this, type, ...rest); };
+        document.addEventListener = function (type, ...rest) { bump('doc', type, 1); return orig.docAdd.call(this, type, ...rest); };
+        document.removeEventListener = function (type, ...rest) { bump('doc', type, -1); return orig.docRem.call(this, type, ...rest); };
+
+        const t = new AITimeline(el, aiOpts);
+        t.setEvents(structuredClone(SAMPLE));
+        t.destroy();
+      } finally {
+        window.addEventListener = orig.winAdd;
+        window.removeEventListener = orig.winRem;
+        document.addEventListener = orig.docAdd;
+        document.removeEventListener = orig.docRem;
+      }
+      const leaked = Object.entries(net).filter(([, v]) => v > 0);
+      expect(leaked.length === 0 ? 'none' : JSON.stringify(leaked)).toBe('none');
+    });
 
     test('AITimeline.setEvents renders exactly one card', async () => {
       const el = mount();

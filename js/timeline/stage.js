@@ -50,6 +50,11 @@ export class Stage {
     // never more than 2 nodes: we only ever toggle `hidden` + transition classes
     outgoing.classList.remove('ait-enter', 'ait-enter-prev');
     incoming.hidden = false;
+    // a superseded transition (rapid nav / held →) clears its leave-classes only
+    // inside the gen-guarded done(); if it was superseded, those stay on the card
+    // we now reuse as incoming and it settles at opacity:0. Clear them (and any
+    // stale enter-classes, for symmetry) before every path incl. jump/initial/reduce.
+    incoming.classList.remove('ait-leave', 'ait-leave-prev', 'ait-enter', 'ait-enter-prev');
     if (reduce) {
       outgoing.hidden = true;
     } else {
@@ -191,7 +196,11 @@ export class Stage {
       const a = document.createElement('a');
       a.className = 'ait-linkcard'; a.href = media.url; a.target = '_blank'; a.rel = 'noopener';
       let host = ''; try { host = new URL(media.url).hostname.replace(/^www\./, ''); } catch {}
-      a.innerHTML = `<span class="ait-linkcard-host">${host}</span><span class="ait-linkcard-title">${media.caption || media.url}</span>`;
+      const hostSpan = document.createElement('span');
+      hostSpan.className = 'ait-linkcard-host'; hostSpan.textContent = host;
+      const titleSpan = document.createElement('span');
+      titleSpan.className = 'ait-linkcard-title'; titleSpan.textContent = media.caption || media.url;
+      a.append(hostSpan, titleSpan);
       wrap.appendChild(a);
     }
     if (media.caption || media.credit) {
