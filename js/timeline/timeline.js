@@ -17,6 +17,8 @@ function resolvePalette() {
     eraBandB: 'rgba(12,45,107,0.02)',
     yearLabel: v('--clr-text-muted', '#7c879e'),
     laneLabel: v('--clr-text-muted', '#7c879e'),
+    // per-group tints — match the Analytics dashboard's by_group palette
+    laneColors: { 'research': '#6366f1', 'industry': '#f59e0b', 'pop culture': '#ec4899' },
   };
 }
 

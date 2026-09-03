@@ -1,5 +1,3 @@
-const LANE_LABEL_ABBR = { research: 'R', industry: 'I', 'pop culture': 'P' };
-
 // Layout bands, measured up from the bottom of the strip.
 const OVERVIEW_H = 12;   // full-range strip with the draggable focus window
 const YEAR_H = 13;       // year tick labels
@@ -139,27 +137,38 @@ export class Minimap {
       }
     });
 
-    // 2. density per lane (only visible markers)
+    // 2. lane backgrounds + names (very faint per-group tint)
+    const laneColors = palette.laneColors || {};
+    ctx.font = '9px system-ui, sans-serif';
+    this.groups.forEach((g, gi) => {
+      const { y, h } = this._laneRect(gi);
+      const col = laneColors[g] || palette.density;
+      ctx.globalAlpha = 0.06; ctx.fillStyle = col;
+      ctx.fillRect(0, y, W, h);
+      // legibility backing for the name
+      const nw = ctx.measureText(g).width + 6;
+      ctx.globalAlpha = 0.7; ctx.fillStyle = '#fff';
+      ctx.fillRect(0, y + h / 2 - 6, nw, 12);
+      ctx.globalAlpha = 0.95; ctx.fillStyle = col;
+      ctx.fillText(g, 3, y + h / 2 + 3.5);
+    });
+    ctx.globalAlpha = 1;
+
+    // 3. density per lane (visible markers only), tinted by group
     ctx.lineWidth = 1;
-    ctx.strokeStyle = palette.density;
     for (let i = 0; i < this.scale.n; i++) {
       const f = this.scale.posOf(i);
       if (f < this.focus.f0 || f > this.focus.f1) continue;
-      const gi = Math.max(0, this.groups.indexOf(this.opts.groupOf(i)));
+      const g = this.opts.groupOf(i);
+      const gi = Math.max(0, this.groups.indexOf(g));
       const { y, h } = this._laneRect(gi);
       const x = Math.round(this._plotX(f)) + 0.5;
-      ctx.globalAlpha = i === Math.round(this.current) ? 0.9 : 0.32;
+      const active = i === Math.round(this.current);
+      ctx.strokeStyle = active ? palette.playhead : (laneColors[g] || palette.density);
+      ctx.globalAlpha = active ? 1 : 0.5;
       ctx.beginPath(); ctx.moveTo(x, y + 2); ctx.lineTo(x, y + h - 2); ctx.stroke();
     }
     ctx.globalAlpha = 1;
-
-    // 3. lane labels
-    ctx.fillStyle = palette.laneLabel;
-    ctx.font = '8px system-ui, sans-serif';
-    this.groups.forEach((g, gi) => {
-      const { y, h } = this._laneRect(gi);
-      ctx.fillText(LANE_LABEL_ABBR[g] || g[0].toUpperCase(), 3, y + h / 2 + 3);
-    });
 
     // 4. entry-headline labels — only where markers are far enough apart
     const nameY = lanesH + NAME_H - 4;
@@ -272,15 +281,15 @@ export class Minimap {
       this.canvas.setPointerCapture?.(e.pointerId);
       return;
     }
-    // detail band: playhead drag or jump-to-entry
+    // detail band: grab the playhead to scrub, otherwise grab anywhere to pan
+    // the view — a press that doesn't move falls through to jump-to-entry.
     const rawPx = this._plotX(this.scale.posOf(Math.round(this.current)));
     if (Math.abs(x - Math.max(this._laneLabelWidth, Math.min(this._w, rawPx))) <= 6) {
       this._drag = { mode: 'playhead', startX: x, startFocus: { ...this.focus } };
-      this.canvas.setPointerCapture?.(e.pointerId);
-      return;
+    } else {
+      this._drag = { mode: 'pan', startX: x, startFocus: { ...this.focus }, moved: false };
     }
-    const idx = Math.round(this.scale.indexAtFrac(this._fracAtX(x)));
-    this.opts.onScrub?.(idx);
+    this.canvas.setPointerCapture?.(e.pointerId);
   }
 
   _pointerMove(e) {
@@ -294,6 +303,17 @@ export class Minimap {
       this.opts.onScrub?.(Math.round(this.scale.indexAtFrac(this._fracAtX(x))));
       return;
     }
+    if (this._drag.mode === 'pan') {
+      const sf = this._drag.startFocus;
+      const w = sf.f1 - sf.f0;
+      const dfrac = ((x - this._drag.startX) / (this._plotW || 1)) * w;
+      if (Math.abs(x - this._drag.startX) > 3) this._drag.moved = true;
+      const win = this.scale.clampWindow({ f0: sf.f0 - dfrac, f1: sf.f1 - dfrac });
+      this.focus = win;
+      this._invalidate();
+      this.opts.onZoom?.(win);
+      return;
+    }
     const df = this._ovFracAtX(x) - this._ovFracAtX(this._drag.startX);
     let { f0, f1 } = this._drag.startFocus;
     if (this._drag.mode === 'body') { f0 += df; f1 += df; }
@@ -305,7 +325,14 @@ export class Minimap {
     this.opts.onZoom?.(win);
   }
 
-  _pointerUp() { this._drag = null; }
+  _pointerUp() {
+    const d = this._drag;
+    this._drag = null;
+    if (d && d.mode === 'pan' && !d.moved) {
+      // a click, not a drag → jump to the entry under the press
+      this.opts.onScrub?.(Math.round(this.scale.indexAtFrac(this._fracAtX(d.startX))));
+    }
+  }
 
   _hover(e) {
     if (this._drag) { this._hideTip(); return; }

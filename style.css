@@ -1323,7 +1323,7 @@ ol li {
 .ait-leave-prev { transform: translateX(24px); opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .ait-card { transition: none; } }
 
-.ait-media { flex: 0 0 44%; display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
+.ait-media { flex: 0 0 39%; display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
 .ait-media img { width: 100%; height: auto; max-height: 100%; object-fit: contain; object-position: top; }
 .ait-yt-facade { position: relative; width: 100%; aspect-ratio: 16/9; background-size: cover; background-position: center; border: 0; cursor: pointer; }
 .ait-yt-play { position: absolute; inset: 0; display: grid; place-items: center; font-size: 2.5rem; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,.5); }
@@ -1331,25 +1331,25 @@ ol li {
 .ait-linkcard { display: flex; flex-direction: column; gap: .2rem; padding: .8rem; border: 1px solid var(--clr-panel-border, #d0d7e4); border-radius: var(--radius-md, 8px); text-decoration: none; color: inherit; }
 .ait-linkcard-host { font-size: .7rem; color: var(--clr-text-muted, #7c879e); }
 .ait-media-caption {
-  max-width: 450px; font-size: .78rem; line-height: 1.4;
-  color: var(--clr-text-muted, #7c879e);
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  max-width: 450px; font-size: 11px; line-height: 1.25;
+  color: #666;
+  font-family: "PT Serif", Georgia, "Times New Roman", serif;
 }
 
 .ait-body {
-  position: relative; flex: 1 1 auto; min-width: 0; overflow-y: auto;
-  padding-top: 1rem;
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  position: relative; flex: 0 0 44%; min-width: 0; overflow-y: auto;
+  padding-top: 1rem; margin-right: auto;
+  font-family: "PT Serif", Georgia, "Times New Roman", serif;
 }
 .ait-headline {
-  max-width: 650px;
-  margin: 0 0 .8rem;
-  font-family: "Georgia", "Times New Roman", Times, serif;
-  font-weight: 700; font-size: 32px; line-height: 36px;
-  color: var(--clr-text, #0f172a);
+  margin: 0 0 5px;
+  font-family: "PT Sans Narrow", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700; font-size: 58px; line-height: 1;
+  color: #000;
 }
-.ait-text { max-width: 650px; font-size: 16px; line-height: 1.6; color: var(--clr-text, #0f172a); }
-.ait-text p { margin: 0 0 .9em; }
+.ait-text { font-size: 16px; line-height: 1.32; color: #737373; }
+.ait-text p, .ait-text ul, .ait-text ol { margin: 5px 0 10px; }
+.ait-text p:first-child { margin-top: 0; }
 .ait-text p:last-child { margin-bottom: 0; }
 .ait-text a:link, .ait-text a:visited { color: var(--clr-accent, #1baaff); }
 .ait-text a:hover { color: var(--clr-primary, #0c2d6b); }
