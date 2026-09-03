@@ -304,6 +304,92 @@
       mm.destroy();
     });
 
+    // ---- Task 5: AITimeline orchestrator tests ----
+    import { AITimeline } from '../js/timeline/timeline.js';
+
+    const aiOpts = {
+      colorForTopic: () => '#123', insightArticlesFor: () => [], sanitizeText: noopSan,
+      track: () => {}, reducedMotion: true,
+      slugify: s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),
+      onCartClick(){}, onCartOptionClick(){}, onInsightClick(){}, onTextLinkClick(){},
+    };
+
+    test('AITimeline.setEvents renders exactly one card', async () => {
+      const el = mount();
+      const t = new AITimeline(el, aiOpts);
+      t.setEvents(structuredClone(SAMPLE));
+      await Promise.resolve();
+      expect(el.querySelectorAll('.ait-card:not([hidden])').length).toBe(1);
+      t.destroy();
+    });
+
+    test('AITimeline defaults currentIndex to the newest event', () => {
+      const el = mount();
+      const t = new AITimeline(el, aiOpts);
+      t.setEvents(structuredClone(SAMPLE));
+      expect(t.getCurrentSlide().data.text.headline).toBe('GPT-4');
+      t.destroy();
+    });
+
+    test('AITimeline.goToId moves the current card and fires change', () => {
+      const el = mount();
+      const t = new AITimeline(el, aiOpts);
+      t.setEvents(structuredClone(SAMPLE));
+      let fired = null;
+      t.on('change', e => { fired = e; });
+      t.goToId('the-perceptron');
+      expect(t.getCurrentSlide().data.text.headline).toBe('The Perceptron');
+      expect(fired.unique_id).toBe('the-perceptron');
+    });
+
+    test('AITimeline.goToId with unknown slug is a no-op', () => {
+      const el = mount();
+      const t = new AITimeline(el, aiOpts);
+      t.setEvents(structuredClone(SAMPLE));
+      const before = t.getCurrentSlide().data.text.headline;
+      t.goToId('does-not-exist');
+      expect(t.getCurrentSlide().data.text.headline).toBe(before);
+      t.destroy();
+    });
+
+    test('AITimeline.setEvents(subset) rebuilds and clamps currentIndex', () => {
+      const el = mount();
+      const t = new AITimeline(el, aiOpts);
+      t.setEvents(structuredClone(SAMPLE));
+      const subset = { ...SAMPLE, events: SAMPLE.events.slice(0, 3) };
+      t.setEvents(structuredClone(subset));
+      expect(t.getCurrentSlide().data.text.headline).toBe('The Perceptron'); // newest of the 3
+      t.destroy();
+    });
+
+    test('AITimeline attaches unique_id to every event', () => {
+      const el = mount();
+      const t = new AITimeline(el, aiOpts);
+      t.setEvents(structuredClone(SAMPLE));
+      expect(t.getCurrentSlide().data.unique_id).toBe('gpt-4');
+      t.destroy();
+    });
+
+    test('AITimeline.destroy empties the mount and is idempotent', () => {
+      const el = mount();
+      const t = new AITimeline(el, aiOpts);
+      t.setEvents(structuredClone(SAMPLE));
+      t.destroy(); t.destroy();
+      expect(el.querySelector('.ait-card')).toBeFalsy();
+    });
+
+    test('AITimeline fires initial change on a microtask after setEvents', async () => {
+      const el = mount();
+      const t = new AITimeline(el, aiOpts);
+      let fired = null;
+      t.setEvents(structuredClone(SAMPLE));
+      t.on('change', e => { fired = e; });   // attached AFTER setEvents, like main.js
+      expect(fired).toBe(null);
+      await Promise.resolve();
+      expect(fired && fired.unique_id).toBe('gpt-4');
+      t.destroy();
+    });
+
     runAll().then(renderResults);
   </script>
 </body>
