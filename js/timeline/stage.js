@@ -91,15 +91,16 @@ export class Stage {
     const slug = event.unique_id;
     const articles = insightArticlesFor(slug) || [];
     const headline = event.text?.headline || '';
+    const isTitle = !!event.is_title;
     card.innerHTML = '';
-    card.className = 'ait-card' + (event.is_archived ? ' archived' : '');
+    card.className = 'ait-card' + (event.is_archived ? ' archived' : '') + (isTitle ? ' title' : '');
 
-    if (articles.length) {
+    if (!isTitle && articles.length) {
       const stripe = document.createElement('div');
       stripe.className = 'insight-ref-stripe';
       card.appendChild(stripe);
     }
-    if (event.is_archived) {
+    if (!isTitle && event.is_archived) {
       const wrap = document.createElement('div');
       wrap.className = 'archived-ribbon-wrap'; wrap.setAttribute('aria-hidden', 'true');
       const r = document.createElement('div');
@@ -110,7 +111,7 @@ export class Stage {
 
     // Corner overlays are children of the card (not .ait-body) so they pin to the
     // card edges instead of scrolling with the text.
-    if (event.topics?.length) {
+    if (!isTitle && event.topics?.length) {
       const topics = document.createElement('div');
       topics.className = 'ait-topics';
       [...event.topics].sort().forEach(t => {
@@ -130,7 +131,7 @@ export class Stage {
     const body = document.createElement('div');
     body.className = 'ait-body';
 
-    if (event.purchase_links?.length) {
+    if (!isTitle && event.purchase_links?.length) {
       const holder = document.createElement('div');
       holder.className = 'ait-cart';
       const btn = document.createElement('button');
@@ -150,7 +151,7 @@ export class Stage {
       card.appendChild(holder);
     }
 
-    const dateText = fmtDate(event.start_date);
+    const dateText = isTitle ? '' : fmtDate(event.start_date);
     if (dateText) {
       const dl = document.createElement('div');
       dl.className = 'ait-headline-date'; dl.textContent = dateText;
@@ -168,7 +169,7 @@ export class Stage {
     text.querySelectorAll('a').forEach(a => { a.rel = 'noopener'; });
     body.appendChild(text);
 
-    if (articles.length) {
+    if (!isTitle && articles.length) {
       const chips = document.createElement('div');
       chips.className = 'ait-chips';
       articles.forEach(a => {

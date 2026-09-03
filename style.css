@@ -1363,6 +1363,8 @@ ol li {
   font-weight: 700; font-size: 46px; line-height: 46px; text-transform: uppercase;
   color: #000;
 }
+/* the synthetic title slide uses the larger headline, like TimelineJS */
+.ait-card.title .ait-headline { font-size: 58px; line-height: 58px; }
 .ait-text { font-size: 16px; line-height: 1.3; color: #737373; }
 .ait-text p, .ait-text ul, .ait-text ol { margin: 5px 0 10px; }
 .ait-text p:last-child { margin-bottom: 0; }

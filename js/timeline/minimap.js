@@ -164,8 +164,9 @@ export class Minimap {
       const { y, h } = this._laneRect(gi);
       const x = Math.round(this._plotX(f)) + 0.5;
       const active = i === Math.round(this.current);
-      ctx.strokeStyle = active ? palette.playhead : (laneColors[g] || palette.density);
-      ctx.globalAlpha = active ? 1 : 0.5;
+      ctx.strokeStyle = active ? palette.playhead
+        : (palette.marker || laneColors[g] || palette.density);
+      ctx.globalAlpha = active ? 1 : 0.45;
       ctx.beginPath(); ctx.moveTo(x, y + 2); ctx.lineTo(x, y + h - 2); ctx.stroke();
     }
     ctx.globalAlpha = 1;

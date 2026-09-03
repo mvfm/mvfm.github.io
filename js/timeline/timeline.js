@@ -17,8 +17,11 @@ function resolvePalette() {
     eraBandB: 'rgba(12,45,107,0.02)',
     yearLabel: v('--clr-text-muted', '#7c879e'),
     laneLabel: v('--clr-text-muted', '#7c879e'),
-    // per-group tints — match the Analytics dashboard's by_group palette
+    // per-group tints for the lane background + label — from the Analytics
+    // dashboard's by_group palette
     laneColors: { 'research': '#6366f1', 'industry': '#f59e0b', 'pop culture': '#ec4899' },
+    // entry tick colour. Set to null to colour ticks by their group instead.
+    marker: '#111',
   };
 }
 
@@ -83,10 +86,15 @@ export class AITimeline {
 
   setEvents(data) {
     const prevSlug = this._events[this._current]?.unique_id;
-    const events = [...(data.events || [])]
+    const raw = [...(data.events || [])];
+    // the /timeline "title" block is a synthetic first slide (like TimelineJS's)
+    if (data.title && data.title.text) raw.unshift({ ...data.title, is_title: true });
+    const events = raw
       .map(e => ({ ...e, text: e.text || { text: '' } }))
       .map(e => ({ ...e, unique_id: this.opts.slugify(e.text.headline || '') }));
-    // stable sort by date
+    // the title slide has no date — pin it to the earliest event so it sorts first
+    if (events[0]?.is_title) events[0].start_date = { ...(events[1]?.start_date || { year: 0 }) };
+    // stable sort by date (equal dates keep array order → title stays first)
     events.sort((a, b) => parseDate(a.start_date) - parseDate(b.start_date));
     this._events = events;
     this._slugToIndex = new Map(events.map((e, i) => [e.unique_id, i]));
