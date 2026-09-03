@@ -15,6 +15,10 @@ export class Stage {
     this._cards = [this._makeCard(), this._makeCard()];
     this._cards.forEach(c => this.mount.appendChild(c));
     this._front = 0;
+    // rapid-nav coalescing: a single pending hide-timer + a generation token so a
+    // late transitionend / timeout from a superseded transition is a no-op
+    this._hideTimer = null;
+    this._gen = 0;
     // one delegated click handler for all overlay interactions
     this._onClick = (ev) => this._handleClick(ev);
     this.mount.addEventListener('click', this._onClick);
@@ -37,6 +41,11 @@ export class Stage {
     const outgoing = this._cards[this._front];
     this._renderInto(incoming, event);
 
+    // coalesce rapid nav: cancel any in-flight hide from a superseded transition
+    // and invalidate its callbacks (gen guard) before starting a new one
+    if (this._hideTimer) { clearTimeout(this._hideTimer); this._hideTimer = null; }
+    const gen = ++this._gen;
+
     const reduce = this.opts.reducedMotion || direction === 'initial' || direction === 'jump';
     // never more than 2 nodes: we only ever toggle `hidden` + transition classes
     outgoing.classList.remove('ait-enter', 'ait-enter-prev');
@@ -49,10 +58,16 @@ export class Stage {
       void incoming.offsetWidth;
       incoming.classList.remove('ait-enter', 'ait-enter-prev');
       outgoing.classList.add(direction === 'prev' ? 'ait-leave-prev' : 'ait-leave');
-      const done = () => { outgoing.hidden = true; outgoing.classList.remove('ait-leave', 'ait-leave-prev'); outgoing.removeEventListener('transitionend', done); };
+      const done = () => {
+        outgoing.removeEventListener('transitionend', done);
+        if (gen !== this._gen) return; // superseded by a later show() — no-op
+        this._hideTimer = null;
+        outgoing.hidden = true;
+        outgoing.classList.remove('ait-leave', 'ait-leave-prev');
+      };
       outgoing.addEventListener('transitionend', done);
       // safety: if no transitionend (interrupted), hide on next frame batch
-      setTimeout(done, 400);
+      this._hideTimer = setTimeout(done, 400);
     }
     this._front = 1 - this._front;
     this._live.textContent = event.text?.headline || '';
@@ -209,6 +224,8 @@ export class Stage {
   }
 
   destroy() {
+    if (this._hideTimer) { clearTimeout(this._hideTimer); this._hideTimer = null; }
+    this._gen++; // invalidate any pending transition callback
     this.mount.removeEventListener('click', this._onClick);
     this.mount.innerHTML = '';
     this.mount.classList.remove('ait-stage');

@@ -88,18 +88,19 @@
       return keysA.every(key => deepEqual(a[key], b[key]));
     }
 
-    // test() - run a test and record result
+    // test() - run a test and record result (sync or async fn); order preserved
+    const pending = [];
     function test(name, fn) {
-      let pass = true;
-      let error = null;
-      try {
-        fn();
-      } catch (e) {
-        pass = false;
-        error = e.message;
-      }
-      results.push({ name, pass, error });
+      const idx = results.length;
+      results.push({ name, pass: true, error: null });
+      pending.push(
+        Promise.resolve().then(fn).then(
+          () => {},
+          (e) => { results[idx] = { name, pass: false, error: (e && e.message) || String(e) }; }
+        )
+      );
     }
+    const runAll = () => Promise.all(pending);
 
     function renderResults() {
       const summaryEl = document.getElementById('summary');
@@ -219,13 +220,27 @@
       st.destroy();
     });
 
+    test('Stage.show coalesces rapid animated transitions without blanking the visible card', async () => {
+      const el = mount();
+      const st = new Stage(el, { ...baseOpts, reducedMotion: false });
+      st.show(withIds[0], 'initial');
+      st.show(withIds[1], 'next');
+      st.show(withIds[0], 'prev');
+      await new Promise(r => setTimeout(r, 500)); // past the 400ms hide-timer of every superseded transition
+      const front = [...el.querySelectorAll('.ait-card')].find(c => !c.hidden);
+      expect(front).toBeTruthy();
+      expect(front.querySelector('.ait-headline').textContent).toBe('Discourse on the Method');
+      expect(el.querySelectorAll('.ait-card').length <= 2).toBeTruthy();
+      st.destroy();
+    });
+
     test('Stage.destroy empties the mount', () => {
       const el = mount(); const st = new Stage(el, baseOpts);
       st.show(withIds[0], 'initial'); st.destroy();
       expect(el.children.length).toBe(0);
     });
 
-    renderResults();
+    runAll().then(renderResults);
   </script>
 </body>
 </html>
