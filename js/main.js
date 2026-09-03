@@ -37,6 +37,73 @@ let cartClickHandlerElement = null;
 let lastTimelineData = null;
 let _modalCreating = false;
 
+// --- TimelineJS lifecycle --------------------------------------------------
+// TimelineJS 3.9.1 has no public destroy(). During construction it attaches
+// anonymous listeners to window/document (resize + keydown always; hashchange
+// only when hash_bookmark is true) that cannot be removed by reference. We wrap
+// addEventListener for the synchronous duration of `new TL.Timeline(...)` —
+// TimelineJS runs _onDataLoaded() synchronously in the constructor once the
+// document is past "loading" — record what it registers, and remove it all on
+// route exit / re-init. Without this, every visit to /ai leaks another detached
+// instance that keeps reacting to resize/hashchange and never gets collected.
+let _tlLeakedListeners = [];
+let _tlCaptureActive = false;
+let _tlSlideObserver = null;
+
+const _origWinAdd = window.addEventListener.bind(window);
+const _origWinRemove = window.removeEventListener.bind(window);
+const _origDocAdd = document.addEventListener.bind(document);
+const _origDocRemove = document.removeEventListener.bind(document);
+
+const _startListenerCapture = () => {
+    if (_tlCaptureActive) return;
+    _tlCaptureActive = true;
+    window.addEventListener = function (type, fn, opts) {
+        if (_tlCaptureActive) _tlLeakedListeners.push({ target: window, type, fn, opts });
+        return _origWinAdd(type, fn, opts);
+    };
+    document.addEventListener = function (type, fn, opts) {
+        if (_tlCaptureActive) _tlLeakedListeners.push({ target: document, type, fn, opts });
+        return _origDocAdd(type, fn, opts);
+    };
+};
+
+const _stopListenerCapture = () => {
+    if (!_tlCaptureActive) return;
+    _tlCaptureActive = false;
+    window.addEventListener = _origWinAdd;
+    document.addEventListener = _origDocAdd;
+};
+
+const destroyTimeline = () => {
+    _stopListenerCapture();
+
+    for (const { target, type, fn, opts } of _tlLeakedListeners) {
+        try {
+            (target === window ? _origWinRemove : _origDocRemove)(type, fn, opts);
+        } catch { /* ignore */ }
+    }
+    _tlLeakedListeners = [];
+
+    if (_tlSlideObserver) {
+        try { _tlSlideObserver.disconnect(); } catch { /* ignore */ }
+        _tlSlideObserver = null;
+    }
+
+    const t = window.timeline;
+    if (t) {
+        try { t._storyslider?.animator?.stop?.(); } catch { /* ignore */ }
+        try { t._timenav?.animator?.stop?.(); } catch { /* ignore */ }
+        try { t._timenav?._timeaxis?.animator?.stop?.(); } catch { /* ignore */ }
+    }
+    window.timeline = null;
+    // Note: cartClickHandlerElement is intentionally NOT reset here. Its guard
+    // compares element identity — on router navigation #timeline-embed is a
+    // fresh element (handlers re-attach); on a search reload it is the same
+    // element (handlers already present, re-attach skipped). Nulling it would
+    // double-bind the delegated click handlers on a search reload.
+};
+
 const updateBellState = (data) => {
     const btn = document.getElementById('modal-bell-btn');
     const badge = document.getElementById('modal-bell-badge');
@@ -195,9 +262,14 @@ const aiRouteOnLoad = async () => {
     // NOTE: do not reset cartClickHandlerElement here — the check below compares
     // the actual element reference, so it naturally handles both router-navigation
     // (new element) and search reloads (same element, skip re-registration).
+    // Tear down any previous TimelineJS instance. On router navigation this is a
+    // no-op (onUnload already ran); on a search / topic-filter reload this call
+    // arrives here directly and is the only teardown point.
+    destroyTimeline();
+
     const embed = document.getElementById('timeline-embed');
     const urlParams = new URLSearchParams(window.location.search);
-    
+
     // 1. Initial State Restoration (URL takes precedence, then localStorage)
     let query = urlParams.get('q');
     let topicsParam = urlParams.get('topics');
@@ -442,13 +514,42 @@ const aiRouteOnLoad = async () => {
             setTimeout(() => {
                 if (data.events && data.events.length > 0) {
                     if (window.TL) {
-                        window.timeline = new TL.Timeline('timeline-embed', data, {
-                            theme_color: "#b94d97",
-                            initial_zoom: 2,
-                            hash_bookmark: true,
-                            timenav_position: "bottom",
-                            font: "default"
-                        });
+                        // Capture the anonymous window/document listeners TimelineJS
+                        // attaches during construction so destroyTimeline() can
+                        // remove them. _onDataLoaded() runs synchronously here
+                        // (document is past "loading"), so the capture window is
+                        // exactly this constructor call.
+                        _startListenerCapture();
+                        try {
+                            window.timeline = new TL.Timeline('timeline-embed', data, {
+                                theme_color: "#b94d97",
+                                initial_zoom: 2,
+                                // hash_bookmark stays false: the SPA router owns the
+                                // URL (writeHash / goToId below). Leaving it true
+                                // adds a second hashchange listener that re-drives
+                                // the whole slider on every router hash write, and
+                                // is one of the leaked listeners.
+                                hash_bookmark: false,
+                                timenav_position: "bottom",
+                                font: "default"
+                            });
+                        } finally {
+                            _stopListenerCapture();
+                        }
+
+                        // hash_bookmark is off, so replicate its one useful job:
+                        // jump to the deep-linked event on load. A single sync
+                        // goToId() right after construction doesn't stick (the
+                        // storyslider is still settling its initial transition),
+                        // so retry on a short backoff until current_id matches.
+                        const _hashSlug = (window.location.hash.match(/^#event-(.+)$/) || [])[1];
+                        if (_hashSlug) {
+                            [0, 150, 400, 900, 1600].forEach(delay => setTimeout(() => {
+                                const t = window.timeline;
+                                if (!t || t.current_id === _hashSlug) return;
+                                try { t.goToId(_hashSlug); } catch { /* unknown slug */ }
+                            }, delay));
+                        }
 
                         // RELOCATE LABELS: Move labels/cart to be children of .tl-slide to allow true corner pinning
                         const relocateContainer = (slide, selector) => {
@@ -460,20 +561,46 @@ const aiRouteOnLoad = async () => {
                             }
                         };
 
-                        const relocateLabels = () => {
-                            document.querySelectorAll('.tl-slide').forEach(slide => {
-                                relocateContainer(slide, '.topic-labels-container');
-                                relocateContainer(slide, '.purchase-links-container');
-                                relocateContainer(slide, '.insight-ref-stripe-container');
-                                relocateContainer(slide, '.insight-chips-container');
-                                relocateContainer(slide, '.archived-ribbon-container');
-                                if (slide.querySelector('.archived-ribbon-container[data-relocated="true"]')) {
-                                    slide.classList.add('archived');
-                                }
-                                // TimelineJS adds target="_blank" to all links it renders; undo for chips
-                                slide.querySelectorAll('.insight-ref-chip[target]').forEach(c => c.removeAttribute('target'));
-                            });
+                        // Relocate the injected containers for a single slide.
+                        const relocateSlide = (slide) => {
+                            relocateContainer(slide, '.topic-labels-container');
+                            relocateContainer(slide, '.purchase-links-container');
+                            relocateContainer(slide, '.insight-ref-stripe-container');
+                            relocateContainer(slide, '.insight-chips-container');
+                            relocateContainer(slide, '.archived-ribbon-container');
+                            if (slide.querySelector('.archived-ribbon-container[data-relocated="true"]')) {
+                                slide.classList.add('archived');
+                            }
+                            // TimelineJS adds target="_blank" to all links it renders; undo for chips
+                            slide.querySelectorAll('.insight-ref-chip[target]').forEach(c => c.removeAttribute('target'));
                         };
+
+                        const relocateLabels = () => {
+                            document.querySelectorAll('.tl-slide').forEach(relocateSlide);
+                        };
+
+                        // TimelineJS renders each slide's text (and therefore the
+                        // injected label/cart/stripe containers) lazily on first
+                        // navigation to it. Relocate only the slides whose subtree
+                        // just changed, instead of re-scanning all ~1000 on every
+                        // 'change'. relocateSlide is idempotent, so a slide seen
+                        // more than once is harmless.
+                        _tlSlideObserver = new MutationObserver((mutations) => {
+                            const touched = new Set();
+                            for (const m of mutations) {
+                                for (const node of m.addedNodes) {
+                                    if (node.nodeType !== 1) continue;
+                                    const slide = node.closest?.('.tl-slide');
+                                    if (slide) touched.add(slide);
+                                    node.querySelectorAll?.('.tl-slide').forEach(s => touched.add(s));
+                                }
+                            }
+                            touched.forEach(relocateSlide);
+                        });
+                        const _embedForObserver = document.getElementById('timeline-embed');
+                        if (_embedForObserver) {
+                            _tlSlideObserver.observe(_embedForObserver, { childList: true, subtree: true });
+                        }
 
                         // Cart icon click handler (event delegation — added once per element)
                         if (cartClickHandlerElement !== document.getElementById('timeline-embed')) {
@@ -552,20 +679,11 @@ const aiRouteOnLoad = async () => {
                         });
                         } // end cartClickHandlerAdded guard
 
-                        // Initial relocation attempts
-                        let allRelocated = false;
+                        // One pass over whatever slides TimelineJS mounted up
+                        // front; the MutationObserver handles every slide added
+                        // afterwards.
                         setTimeout(relocateLabels, 100);
-                        setTimeout(() => {
-                            relocateLabels();
-                            const remaining = document.querySelectorAll(
-                                '.topic-labels-container:not([data-relocated="true"]), ' +
-                                '.purchase-links-container:not([data-relocated="true"]), ' +
-                                '.insight-ref-stripe-container:not([data-relocated="true"]), ' +
-                                '.insight-chips-container:not([data-relocated="true"]), ' +
-                                '.archived-ribbon-container:not([data-relocated="true"])'
-                            );
-                            if (remaining.length === 0) allRelocated = true;
-                        }, 1000);
+                        setTimeout(relocateLabels, 600);
 
                         lastTimelineData = data;
                         updateBellState(data);
@@ -588,8 +706,6 @@ const aiRouteOnLoad = async () => {
                         };
 
                         window.timeline.on('change', (e) => {
-                            if (!allRelocated) setTimeout(relocateLabels, 50);
-
                             // Cancel any existing dwell timer
                             clearTimeout(dwellTimer);
 
@@ -973,7 +1089,8 @@ const routes = {
         description: 'From Turing\'s question to today\'s transformers: The pivotal moments that shaped modern AI, in an interactive timeline.',
         canonicalUrl: 'https://mvfm.digital/ai',
         template: 'tpl-ai',
-        onLoad: aiRouteOnLoad
+        onLoad: aiRouteOnLoad,
+        onUnload: destroyTimeline
     },
     insights: {
         title: 'Insights — Marcus Vinicius Freitas Margarites',

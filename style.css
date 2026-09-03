@@ -197,6 +197,8 @@ main {
 /* TimelineJS Theme Overrides */
 .tl-timeline {
     background: transparent !important;
+    /* Scope reflow/paint of the ~29k-node timeline subtree to itself. */
+    contain: content;
 }
 
 .tl-menubar,
@@ -221,6 +223,12 @@ main {
 /* Needed for absolutely-positioned insight stripe */
 .tl-slide {
     position: relative;
+    /* TimelineJS lays out every one of ~1000 slides whether on screen or not.
+       content-visibility lets the browser skip layout + paint for off-screen
+       slides. contain-intrinsic-size is a placeholder matching the configured
+       slide box (#timeline-embed is 600px tall; width tracks the panel). */
+    content-visibility: auto;
+    contain-intrinsic-size: 900px 600px;
 }
 
 /* Insight article stripe — injected into event text, relocated to .tl-slide root by JS */
@@ -395,7 +403,7 @@ main {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all var(--trans-fast);
+    transition: background var(--trans-fast), border-color var(--trans-fast), transform var(--trans-fast);
 }
 
 .icon-button:hover {
@@ -408,7 +416,7 @@ main {
     max-height: 0;
     overflow: hidden;
     opacity: 0;
-    transition: all var(--trans-med);
+    transition: max-height var(--trans-med), opacity var(--trans-med), margin-bottom var(--trans-med);
     margin-bottom: 0;
 }
 
@@ -443,7 +451,7 @@ main {
     font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--trans-fast);
+    transition: background-color var(--trans-fast), color var(--trans-fast), border-color var(--trans-fast), transform var(--trans-fast), box-shadow var(--trans-fast);
     border: 1px solid transparent;
     user-select: none;
     text-transform: lowercase;
@@ -564,7 +572,9 @@ main {
     text-transform: lowercase;
     color: white;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    /* No box-shadow: this pill renders several times per slide across ~1000
+       slides; the shadowed repaints were a measurable multiplier. text-shadow
+       alone keeps it legible on light media. */
 }
 
 /* Insight article chip — stacked below topic pills inside .topic-labels-container */
@@ -712,7 +722,7 @@ main {
     border-radius: 8px;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--trans-fast);
+    transition: background var(--trans-fast), color var(--trans-fast), border-color var(--trans-fast), transform var(--trans-fast), box-shadow var(--trans-fast);
     font-size: 0.9rem;
 }
 

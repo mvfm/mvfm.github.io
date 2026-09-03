@@ -5,6 +5,7 @@ export class Router {
         this.routes = routes;
         this.panel = document.getElementById('contentPanel');
         this.menuButtons = document.querySelectorAll('.menu button');
+        this.currentRoute = null;
 
         this.init();
     }
@@ -58,6 +59,8 @@ export class Router {
 
     async navigate(route, updateHistory = true) {
         const def = this.routes[route] || this.routes.home;
+        const prevDef = this.routes[this.currentRoute];
+        this.currentRoute = route;
 
         // Update browser state
         document.title = def.title;
@@ -87,6 +90,11 @@ export class Router {
         setTimeout(async () => {
             const template = document.getElementById(def.template);
             if (template) {
+                // Tear down the outgoing route (remove leaked listeners /
+                // observers) before its DOM is wiped.
+                if (prevDef && typeof prevDef.onUnload === 'function') {
+                    try { prevDef.onUnload(); } catch (e) { console.warn('route onUnload failed:', e); }
+                }
                 this.panel.innerHTML = '';
                 this.panel.appendChild(template.content.cloneNode(true));
 
