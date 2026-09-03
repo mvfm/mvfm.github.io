@@ -1,5 +1,11 @@
 const LANE_LABEL_ABBR = { research: 'R', industry: 'I', 'pop culture': 'P' };
 
+// Layout bands, measured up from the bottom of the strip.
+const OVERVIEW_H = 12;   // full-range strip with the draggable focus window
+const YEAR_H = 13;       // year tick labels
+const NAME_H = 15;       // entry-headline labels (only when markers are far enough apart)
+const LABEL_MIN_GAP = 108; // px between labelled markers
+
 export class Minimap {
   constructor(canvasEl, opts) {
     this.canvas = canvasEl;
@@ -10,33 +16,46 @@ export class Minimap {
     this.eras = opts.eras || [];
     this.palette = opts.palette;
     this.reducedMotion = opts.reducedMotion;
+    this.labelOf = opts.labelOf || (() => '');
     this.focus = { f0: 0, f1: 1 };
     this.current = 0;
     this._dpr = Math.min(2, window.devicePixelRatio || 1);
     this._raf = 0;
     this._destroyed = false;
-    this._drag = null;              // { mode:'body'|'edge0'|'edge1'|'playhead', startX, startF }
+    this._drag = null;
     this._laneLabelWidth = 16;
-    this._lastScrub = -Infinity;   // timestamp of last playhead-drag onScrub (throttle); -Inf = none yet
+    this._lastScrub = -Infinity;
+    this._hoverIdx = -1;
+
+    // hover tooltip — a plain DOM node next to the canvas
+    this._tip = document.createElement('div');
+    this._tip.className = 'ait-minimap-tip';
+    this._tip.hidden = true;
+    (this.canvas.parentElement || document.body).appendChild(this._tip);
 
     this._onPointerDown = e => this._pointerDown(e);
     this._onPointerMove = e => this._pointerMove(e);
     this._onPointerUp = e => this._pointerUp(e);
+    this._onHover = e => this._hover(e);
+    this._onLeave = () => this._hideTip();
     this._onWheel = e => this._wheel(e);
     this._onKey = e => this._key(e);
+    // draw() is skipped while the tab/pane is hidden; repaint when it returns
+    this._onVis = () => { if (!document.hidden) this._invalidate(); };
+    document.addEventListener('visibilitychange', this._onVis);
 
     this.canvas.addEventListener('pointerdown', this._onPointerDown);
     window.addEventListener('pointermove', this._onPointerMove);
     window.addEventListener('pointerup', this._onPointerUp);
+    this.canvas.addEventListener('pointermove', this._onHover);
+    this.canvas.addEventListener('pointerleave', this._onLeave);
     this.canvas.addEventListener('wheel', this._onWheel, { passive: false });
-    // slider wrapper for a11y (created by the orchestrator around the canvas;
-    // if present, wire arrow keys)
     this.slider = this.canvas.closest('[role="slider"]');
     if (this.slider) this.slider.addEventListener('keydown', this._onKey);
 
     this._ro = new ResizeObserver(() => this._resize());
     this._ro.observe(this.canvas);
-    this._resize();               // sets size + first draw
+    this._resize();
   }
 
   setScale(scale) { this.scale = scale; this.current = Math.min(this.current, scale.n - 1); this._invalidate(); }
@@ -60,47 +79,76 @@ export class Minimap {
 
   _invalidate() {
     if (this._destroyed || this._raf) return;
-    this._raf = requestAnimationFrame(() => { this._raf = 0; if (!document.hidden) this.draw(); });
+    // draw() is on-demand (called from setFocus/setCurrent/resize/interaction),
+    // not a loop, so paint even when the tab is hidden — skipping the first
+    // paint leaves a blank canvas until the user interacts.
+    this._raf = requestAnimationFrame(() => { this._raf = 0; if (!this._destroyed) this.draw(); });
   }
 
-  // ----- geometry helpers -----
-  _plotX(f) { return this._laneLabelWidth + f * (this._w - this._laneLabelWidth); }
-  _fracAtX(x) { return (x - this._laneLabelWidth) / (this._w - this._laneLabelWidth); }
+  // ----- geometry -----
+  get _plotW() { return this._w - this._laneLabelWidth; }
+  get _lanesH() { return this._h - OVERVIEW_H - YEAR_H - NAME_H; }
+  // detail transform: the focus window maps across the full plot width
+  _plotX(f) {
+    const { f0, f1 } = this.focus;
+    return this._laneLabelWidth + ((f - f0) / ((f1 - f0) || 1)) * this._plotW;
+  }
+  _fracAtX(x) {
+    const { f0, f1 } = this.focus;
+    return f0 + ((x - this._laneLabelWidth) / (this._plotW || 1)) * (f1 - f0);
+  }
+  // overview transform: the whole [0,1] range maps across the full plot width
+  _ovX(f) { return this._laneLabelWidth + f * this._plotW; }
+  _ovFracAtX(x) { return (x - this._laneLabelWidth) / (this._plotW || 1); }
   _laneRect(gi) {
-    const labelStrip = 14;
-    const usable = this._h - labelStrip;
-    const laneH = usable / this.groups.length;
-    return { y: gi * laneH, h: laneH - 1, labelStrip };
+    const laneH = this._lanesH / this.groups.length;
+    return { y: gi * laneH, h: laneH - 1 };
   }
 
   draw() {
     const { ctx, palette } = this;
+    const W = this._w, lanesH = this._lanesH;
+    if (!W || W < 24 || !this._h || !this.scale || !this.scale.n) return;
     ctx.save();
     ctx.scale(this._dpr, this._dpr);
-    ctx.clearRect(0, 0, this._w, this._h);
+    ctx.clearRect(0, 0, W, this._h);
 
-    // 1. era bands
     const dom = this.scale.domain;
-    const span = dom.t1 - dom.t0 || 1;
+    const tspan = dom.t1 - dom.t0 || 1;
+    const times = this.scale._times || [];
+    // global fraction -> approximate calendar year, via the two visible endpoints
+    const yearAtFrac = f => {
+      const i = Math.max(0, Math.min(this.scale.n - 1, Math.round(this.scale.indexAtFrac(f))));
+      return Math.floor(times[i] ?? dom.t0);
+    };
+
+    // 1. era bands (clipped to the detail viewport)
     this.eras.forEach((era, k) => {
-      const a = (parseFloat(era.start_date.year) - dom.t0) / span;
-      const bEnd = era.end_date ? parseFloat(era.end_date.year) : dom.t1;
-      const b = (bEnd - dom.t0) / span;
+      const ay = parseFloat(era.start_date.year);
+      const by = era.end_date ? parseFloat(era.end_date.year) : dom.t1;
+      // era boundaries are calendar years; place them by their global fraction
+      const af = clamp01((ay - dom.t0) / tspan), bf = clamp01((by - dom.t0) / tspan);
+      const x0 = this._plotX(af), x1 = this._plotX(bf);
+      if (x1 < this._laneLabelWidth || x0 > W) return;
       ctx.fillStyle = k % 2 ? palette.eraBandB : palette.eraBandA;
-      ctx.fillRect(this._plotX(Math.max(0, a)), 0, this._plotX(Math.min(1, b)) - this._plotX(Math.max(0, a)), this._h - 14);
-      ctx.fillStyle = palette.laneLabel;
-      ctx.font = '9px system-ui, sans-serif';
-      if (b - a > 0.12) ctx.fillText(era.text?.headline || '', this._plotX(Math.max(0, a)) + 3, 10);
+      ctx.fillRect(Math.max(this._laneLabelWidth, x0), 0, Math.min(W, x1) - Math.max(this._laneLabelWidth, x0), lanesH);
+      if (x1 - x0 > 90) {
+        ctx.fillStyle = palette.laneLabel;
+        ctx.font = '9px system-ui, sans-serif';
+        ctx.fillText(era.text?.headline || '', Math.max(this._laneLabelWidth + 3, x0 + 3), 10);
+      }
     });
 
-    // 2. density per lane
+    // 2. density per lane (only visible markers)
     ctx.lineWidth = 1;
+    ctx.strokeStyle = palette.density;
     for (let i = 0; i < this.scale.n; i++) {
+      const f = this.scale.posOf(i);
+      if (f < this.focus.f0 || f > this.focus.f1) continue;
       const gi = Math.max(0, this.groups.indexOf(this.opts.groupOf(i)));
       const { y, h } = this._laneRect(gi);
-      const x = Math.round(this._plotX(this.scale.posOf(i))) + 0.5;
-      ctx.strokeStyle = palette.density;
-      ctx.globalAlpha = 0.16;
+      const x = Math.round(this._plotX(f)) + 0.5;
+      ctx.globalAlpha = i === Math.round(this.current) ? 0.9 : 0.32;
       ctx.beginPath(); ctx.moveTo(x, y + 2); ctx.lineTo(x, y + h - 2); ctx.stroke();
     }
     ctx.globalAlpha = 1;
@@ -113,69 +161,126 @@ export class Minimap {
       ctx.fillText(LANE_LABEL_ABBR[g] || g[0].toUpperCase(), 3, y + h / 2 + 3);
     });
 
-    // 4. focus window
-    const x0 = this._plotX(this.focus.f0), x1 = this._plotX(this.focus.f1);
-    ctx.fillStyle = palette.focusWindow;
-    ctx.globalAlpha = 0.12;
-    ctx.fillRect(x0, 2, x1 - x0, this._h - 18);
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = palette.focusWindow;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(x0, 2, x1 - x0, this._h - 18);
+    // 4. entry-headline labels — only where markers are far enough apart
+    const nameY = lanesH + NAME_H - 4;
+    ctx.font = '10px system-ui, sans-serif';
+    ctx.fillStyle = palette.yearLabel;
+    let lastLabelX = -Infinity;
+    for (let i = 0; i < this.scale.n; i++) {
+      const f = this.scale.posOf(i);
+      if (f < this.focus.f0 || f > this.focus.f1) continue;
+      const x = this._plotX(f);
+      if (x - lastLabelX < LABEL_MIN_GAP) continue;
+      lastLabelX = x;
+      const txt = trunc(this.labelOf(i), 22);
+      if (txt) { ctx.fillText(txt, Math.min(x, W - ctx.measureText(txt).width - 2), nameY); }
+      // little stem
+      ctx.globalAlpha = 0.5;
+      ctx.strokeStyle = palette.yearLabel;
+      ctx.beginPath(); ctx.moveTo(x, lanesH); ctx.lineTo(x, lanesH + 4); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
 
-    // 5. playhead
+    // 5. year ticks
+    const yrRowY = lanesH + NAME_H + YEAR_H - 3;
+    ctx.fillStyle = palette.yearLabel;
+    ctx.font = '9px system-ui, sans-serif';
+    const y0 = yearAtFrac(this.focus.f0), y1 = yearAtFrac(this.focus.f1);
+    niceYears(y0, y1, 6).forEach(yr => {
+      const gf = clamp01((yr - dom.t0) / tspan);
+      const x = this._plotX(gf);
+      if (x < this._laneLabelWidth || x > W) return;
+      ctx.fillText(String(yr), Math.min(Math.max(this._laneLabelWidth, x - 10), W - 24), yrRowY);
+    });
+
+    // 6. playhead (detail)
     const px = this._plotX(this.scale.posOf(Math.round(this.current)));
     ctx.strokeStyle = palette.playhead;
     ctx.lineWidth = 2;
-    ctx.beginPath();
-    const clampedPx = Math.max(x0, Math.min(x1, px));
-    ctx.moveTo(clampedPx, 0); ctx.lineTo(clampedPx, this._h - 14); ctx.stroke();
-
-    // 5b. out-of-window chevron — pinned at the nearer edge when current is outside
-    if (px < x0 || px > x1) {
-      const my = (this._h - 14) / 2, s = 4;
+    const cpx = Math.max(this._laneLabelWidth, Math.min(W, px));
+    ctx.beginPath(); ctx.moveTo(cpx, 0); ctx.lineTo(cpx, lanesH); ctx.stroke();
+    if (px < this._laneLabelWidth || px > W) {
+      const my = lanesH / 2, s = 4;
       ctx.fillStyle = palette.playhead;
       ctx.beginPath();
-      if (px < x0) { ctx.moveTo(x0, my); ctx.lineTo(x0 + s, my - s); ctx.lineTo(x0 + s, my + s); }
-      else { ctx.moveTo(x1, my); ctx.lineTo(x1 - s, my - s); ctx.lineTo(x1 - s, my + s); }
+      if (px < this._laneLabelWidth) { ctx.moveTo(this._laneLabelWidth, my); ctx.lineTo(this._laneLabelWidth + s, my - s); ctx.lineTo(this._laneLabelWidth + s, my + s); }
+      else { ctx.moveTo(W, my); ctx.lineTo(W - s, my - s); ctx.lineTo(W - s, my + s); }
       ctx.closePath(); ctx.fill();
     }
 
-    // 6. year labels — up to 6 "nice" ticks across the domain
-    ctx.fillStyle = palette.yearLabel;
+    // 7. readout (top-right of the lanes area)
+    const inView = this.scale.entriesInWindow(this.focus);
+    const readout = `${y0}–${y1}  ·  ${inView} / ${this.scale.n}`;
     ctx.font = '9px system-ui, sans-serif';
-    const ticks = niceYears(dom.t0, dom.t1, 6);
-    ticks.forEach(yr => {
-      const f = (yr - dom.t0) / span;
-      ctx.fillText(String(yr), this._plotX(f) - 10, this._h - 3);
-    });
+    ctx.fillStyle = palette.yearLabel;
+    ctx.globalAlpha = 0.85;
+    ctx.fillText(readout, W - ctx.measureText(readout).width - 2, 10);
+    ctx.globalAlpha = 1;
+
+    // 8. overview strip (full range) with the draggable focus window
+    const ovY = this._h - OVERVIEW_H;
+    ctx.fillStyle = palette.eraBandA;
+    ctx.fillRect(this._laneLabelWidth, ovY, this._plotW, OVERVIEW_H);
+    ctx.strokeStyle = palette.density;
+    ctx.globalAlpha = 0.4;
+    const ovStep = Math.max(1, Math.ceil(this.scale.n / Math.max(1, this._plotW)));
+    for (let i = 0; i < this.scale.n; i += ovStep) {
+      const x = Math.round(this._ovX(this.scale.posOf(i))) + 0.5;
+      ctx.beginPath(); ctx.moveTo(x, ovY + 2); ctx.lineTo(x, ovY + OVERVIEW_H - 2); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    const ox0 = this._ovX(this.focus.f0), ox1 = this._ovX(this.focus.f1);
+    ctx.fillStyle = palette.focusWindow;
+    ctx.globalAlpha = 0.16;
+    ctx.fillRect(ox0, ovY, ox1 - ox0, OVERVIEW_H);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = palette.focusWindow;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(ox0 + 0.75, ovY + 0.75, (ox1 - ox0) - 1.5, OVERVIEW_H - 1.5);
+    // playhead tick on the overview
+    const opx = this._ovX(this.scale.posOf(Math.round(this.current)));
+    ctx.strokeStyle = palette.playhead;
+    ctx.beginPath(); ctx.moveTo(opx, ovY); ctx.lineTo(opx, ovY + OVERVIEW_H); ctx.stroke();
 
     ctx.restore();
   }
 
   // ----- interaction -----
-  _hitMode(x) {
-    const x0 = this._plotX(this.focus.f0), x1 = this._plotX(this.focus.f1);
-    const grab = 8;
+  _inOverview(y) { return y >= this._h - OVERVIEW_H - 3; }
+
+  _ovHitMode(x) {
+    const x0 = this._ovX(this.focus.f0), x1 = this._ovX(this.focus.f1), grab = 7;
     if (Math.abs(x - x0) <= grab) return 'edge0';
     if (Math.abs(x - x1) <= grab) return 'edge1';
-    const rawPx = this._plotX(this.scale.posOf(Math.round(this.current)));
-    const playPx = Math.max(x0, Math.min(x1, rawPx));   // clamped x, matching what's drawn
-    if (Math.abs(x - playPx) <= 6) return 'playhead';
     if (x > x0 && x < x1) return 'body';
-    return 'jump';
+    return 'ovjump';
   }
 
   _pointerDown(e) {
-    const x = e.offsetX;
-    const mode = this._hitMode(x);
-    if (mode === 'jump') {
-      const idx = Math.round(this.scale.indexAtFrac(this._fracAtX(x)));
-      this.opts.onScrub?.(idx);
+    const x = e.offsetX, y = e.offsetY;
+    if (this._inOverview(y)) {
+      const mode = this._ovHitMode(x);
+      if (mode === 'ovjump') {
+        // recenter the window on the clicked point
+        const w = this.focus.f1 - this.focus.f0;
+        const c = this._ovFracAtX(x);
+        const win = this.scale.clampWindow({ f0: c - w / 2, f1: c + w / 2 });
+        this.focus = win; this._invalidate(); this.opts.onZoom?.(win);
+        return;
+      }
+      this._drag = { mode, ov: true, startX: x, startFocus: { ...this.focus } };
+      this.canvas.setPointerCapture?.(e.pointerId);
       return;
     }
-    this._drag = { mode, startX: x, startFocus: { ...this.focus } };
-    this.canvas.setPointerCapture?.(e.pointerId);
+    // detail band: playhead drag or jump-to-entry
+    const rawPx = this._plotX(this.scale.posOf(Math.round(this.current)));
+    if (Math.abs(x - Math.max(this._laneLabelWidth, Math.min(this._w, rawPx))) <= 6) {
+      this._drag = { mode: 'playhead', startX: x, startFocus: { ...this.focus } };
+      this.canvas.setPointerCapture?.(e.pointerId);
+      return;
+    }
+    const idx = Math.round(this.scale.indexAtFrac(this._fracAtX(x)));
+    this.opts.onScrub?.(idx);
   }
 
   _pointerMove(e) {
@@ -184,12 +289,12 @@ export class Minimap {
     const x = e.clientX - rect.left;
     if (this._drag.mode === 'playhead') {
       const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
-      if (now - this._lastScrub < 60) return;   // throttle continuous scrub
+      if (now - this._lastScrub < 60) return;
       this._lastScrub = now;
       this.opts.onScrub?.(Math.round(this.scale.indexAtFrac(this._fracAtX(x))));
-      return;                                   // never move the focus window in this mode
+      return;
     }
-    const df = this._fracAtX(x) - this._fracAtX(this._drag.startX);
+    const df = this._ovFracAtX(x) - this._ovFracAtX(this._drag.startX);
     let { f0, f1 } = this._drag.startFocus;
     if (this._drag.mode === 'body') { f0 += df; f1 += df; }
     else if (this._drag.mode === 'edge0') { f0 += df; }
@@ -202,23 +307,58 @@ export class Minimap {
 
   _pointerUp() { this._drag = null; }
 
-  _wheel(e) {
-    e.preventDefault();
-    const rect = this.canvas.getBoundingClientRect();
-    const cursorF = this._fracAtX((e.clientX ?? (rect.left + this._w / 2)) - rect.left);
-    const factor = e.deltaY > 0 ? 1.15 : 1 / 1.15;   // down = zoom out
+  _hover(e) {
+    if (this._drag) { this._hideTip(); return; }
+    const x = e.offsetX, y = e.offsetY;
+    if (this._inOverview(y) || y > this._lanesH) { this._hideTip(); return; }
+    // nearest visible marker
+    let best = -1, bestDx = 7;
+    for (let i = 0; i < this.scale.n; i++) {
+      const f = this.scale.posOf(i);
+      if (f < this.focus.f0 || f > this.focus.f1) continue;
+      const dx = Math.abs(this._plotX(f) - x);
+      if (dx < bestDx) { bestDx = dx; best = i; }
+    }
+    if (best < 0) { this._hideTip(); return; }
+    if (best !== this._hoverIdx) {
+      this._hoverIdx = best;
+      const yr = Math.floor((this.scale._times || [])[best] ?? 0);
+      this._tip.textContent = `${yr}  ·  ${this.labelOf(best)}`;
+      this._tip.hidden = false;
+    }
+    this._tip.style.left = Math.round(x) + 'px';
+    this._tip.style.top = Math.round(this._lanesH + 2) + 'px';
+  }
+
+  _hideTip() { this._hoverIdx = -1; if (this._tip) this._tip.hidden = true; }
+
+  _zoomAbout(frac, factor) {
     let { f0, f1 } = this.focus;
-    f0 = cursorF + (f0 - cursorF) * factor;
-    f1 = cursorF + (f1 - cursorF) * factor;
+    f0 = frac + (f0 - frac) * factor;
+    f1 = frac + (f1 - frac) * factor;
     const win = this.scale.clampWindow({ f0, f1 });
     this.focus = win;
     this._invalidate();
     this.opts.onZoom?.(win);
   }
 
+  _wheel(e) {
+    e.preventDefault();
+    const rect = this.canvas.getBoundingClientRect();
+    const x = (e.clientX ?? (rect.left + this._w / 2)) - rect.left;
+    const y = (e.clientY ?? rect.top) - rect.top;
+    const frac = this._inOverview(y) ? this._ovFracAtX(x) : this._fracAtX(x);
+    this._zoomAbout(clamp01(frac), e.deltaY > 0 ? 1.15 : 1 / 1.15);
+  }
+
   _key(e) {
+    const mid = (this.focus.f0 + this.focus.f1) / 2;
     if (e.key === 'ArrowRight') { this.opts.onScrub?.(Math.min(this.scale.n - 1, Math.round(this.current) + 1)); e.preventDefault(); }
     else if (e.key === 'ArrowLeft') { this.opts.onScrub?.(Math.max(0, Math.round(this.current) - 1)); e.preventDefault(); }
+    else if (e.key === '+' || e.key === '=') { this._zoomAbout(mid, 1 / 1.4); e.preventDefault(); }
+    else if (e.key === '-' || e.key === '_') { this._zoomAbout(mid, 1.4); e.preventDefault(); }
+    else if (e.key === 'Home') { this.opts.onScrub?.(0); e.preventDefault(); }
+    else if (e.key === 'End') { this.opts.onScrub?.(this.scale.n - 1); e.preventDefault(); }
   }
 
   destroy() {
@@ -228,11 +368,18 @@ export class Minimap {
     this.canvas.removeEventListener('pointerdown', this._onPointerDown);
     window.removeEventListener('pointermove', this._onPointerMove);
     window.removeEventListener('pointerup', this._onPointerUp);
+    this.canvas.removeEventListener('pointermove', this._onHover);
+    this.canvas.removeEventListener('pointerleave', this._onLeave);
     this.canvas.removeEventListener('wheel', this._onWheel);
     if (this.slider) this.slider.removeEventListener('keydown', this._onKey);
+    document.removeEventListener('visibilitychange', this._onVis);
     this._ro.disconnect();
+    this._tip?.remove();
   }
 }
+
+function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+function trunc(s, n) { s = String(s || ''); return s.length > n ? s.slice(0, n - 1) + '…' : s; }
 
 function niceYears(t0, t1, count) {
   const span = t1 - t0;
@@ -242,5 +389,5 @@ function niceYears(t0, t1, count) {
   const step = [1, 2, 5, 10].map(m => m * mag).find(s => s >= raw) || 10 * mag;
   const out = [];
   for (let y = Math.ceil(t0 / step) * step; y <= t1; y += step) out.push(Math.round(y));
-  return out.length > 7 ? out.slice(0, 7) : out;   // spec: 4–7 ticks
+  return out.length > 7 ? out.slice(0, 7) : out;
 }

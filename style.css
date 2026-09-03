@@ -1397,8 +1397,15 @@ ol li {
   padding: 3px 0; transform: rotate(35deg);
 }
 
-.ait-minimap-slider { display: block; width: 100%; height: 92px; margin-top: .5rem; outline-offset: 2px; }
+.ait-minimap-slider { position: relative; display: block; width: 100%; height: 104px; margin-top: .5rem; outline-offset: 2px; }
 .ait-minimap { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+.ait-minimap-tip {
+  position: absolute; z-index: 20; transform: translateX(-50%);
+  background: var(--clr-primary, #0c2d6b); color: #fff;
+  font-size: 11px; line-height: 1.3; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  padding: 3px 7px; border-radius: 4px; white-space: nowrap; pointer-events: none;
+  box-shadow: 0 2px 8px rgba(12, 45, 107, .25); max-width: 340px; overflow: hidden; text-overflow: ellipsis;
+}
 
 .ait-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 

@@ -75,9 +75,22 @@ export function createScale(events, { alpha = ALPHA, eras = [] } = {}) {
   }
 
   const clampIdx = i => Math.max(0, Math.min(n - 1, i));
+  // Opens zoomed-in but not to a pinprick: ~40 entries either side of the
+  // target, and never narrower than 18% of the whole timeline so some
+  // surrounding history stays visible.
   function defaultWindow(centerIndex) {
     const c = clampIdx(Math.round(centerIndex));
-    return clampWindow({ f0: positions[clampIdx(c - 15)], f1: positions[clampIdx(c + 15)] });
+    let f0 = positions[clampIdx(c - 40)];
+    let f1 = positions[clampIdx(c + 40)];
+    const minW = 0.18;
+    if (f1 - f0 < minW) {
+      // keep the window minW wide and fully inside [0,1] even when the target
+      // sits at the very start/end of the timeline
+      const mid = Math.min(1 - minW / 2, Math.max(minW / 2, positions[c]));
+      f0 = mid - minW / 2;
+      f1 = mid + minW / 2;
+    }
+    return clampWindow({ f0, f1 });
   }
 
   function entriesInWindow({ f0, f1 }) {
