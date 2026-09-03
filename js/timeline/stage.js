@@ -1,7 +1,13 @@
 const YT_RE = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{6,})/;
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+  'August', 'September', 'October', 'November', 'December'];
 
 function ytId(url) { const m = url && url.match(YT_RE); return m ? m[1] : null; }
 function isImage(url) { return /\.(jpe?g|png|gif|webp|svg|avif)(\?|$)/i.test(url || ''); }
+function fmtDate(d) {
+  if (!d || d.year == null) return '';
+  return d.month ? `${MONTHS[d.month - 1]} ${d.year}` : String(d.year);
+}
 
 export class Stage {
   constructor(mountEl, opts) {
@@ -144,6 +150,13 @@ export class Stage {
       card.appendChild(holder);
     }
 
+    const dateText = fmtDate(event.start_date);
+    if (dateText) {
+      const dl = document.createElement('div');
+      dl.className = 'ait-headline-date'; dl.textContent = dateText;
+      body.appendChild(dl);
+    }
+
     const h = document.createElement('h2');
     h.className = 'ait-headline'; h.textContent = headline;
     body.appendChild(h);
@@ -241,7 +254,7 @@ export class Stage {
       btn.setAttribute('aria-label', `${dir === 'prev' ? 'Previous' : 'Next'}: ${info.headline}`);
       const icon = document.createElement('span');
       icon.className = 'ait-nav-icon'; icon.setAttribute('aria-hidden', 'true');
-      icon.textContent = dir === 'prev' ? '‹' : '›';
+      icon.textContent = dir === 'prev' ? '❮' : '❯';
       const title = document.createElement('span');
       title.className = 'ait-nav-title'; title.textContent = info.headline;
       const date = document.createElement('span');
