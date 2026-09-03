@@ -6,6 +6,7 @@ import { injectShell } from './shell.js';
 import { API_BASE_URL } from './config.js';
 import { getTopicColor, generateMnemonics, getTopicInitials } from './topics.js';
 import { findingsRouteOnLoad } from './findings.js';
+import { AITimeline } from './timeline/timeline.js';
 
 // Mirrors TimelineJS slugify() exactly — keep in sync with app/util.py
 function slugify(str) {
@@ -21,6 +22,21 @@ function slugify(str) {
     return str;
 }
 
+// Allowlist sanitiser for /timeline event body HTML (API only ever sends b/i/p/a/br).
+function sanitizeTimelineText(html) {
+  const tpl = document.createElement('template');
+  tpl.innerHTML = String(html || '');
+  const ALLOWED = new Set(['B', 'I', 'P', 'A', 'BR', 'EM', 'STRONG']);
+  tpl.content.querySelectorAll('*').forEach(node => {
+    if (!ALLOWED.has(node.tagName)) { node.replaceWith(...node.childNodes); return; }
+    [...node.attributes].forEach(attr => {
+      if (node.tagName === 'A' && (attr.name === 'href' || attr.name === 'target')) return;
+      node.removeAttribute(attr.name);
+    });
+  });
+  return tpl.innerHTML;
+}
+
 /**
  * App Configuration & Initialization
  */
@@ -33,75 +49,14 @@ const CONFIG = {
 // Global state for topics
 let allTopics = [];
 let selectedTopics = new Set();
-let cartClickHandlerElement = null;
 let lastTimelineData = null;
 let _modalCreating = false;
 
-// --- TimelineJS lifecycle --------------------------------------------------
-// TimelineJS 3.9.1 has no public destroy(). During construction it attaches
-// anonymous listeners to window/document (resize + keydown always; hashchange
-// only when hash_bookmark is true) that cannot be removed by reference. We wrap
-// addEventListener for the synchronous duration of `new TL.Timeline(...)` —
-// TimelineJS runs _onDataLoaded() synchronously in the constructor once the
-// document is past "loading" — record what it registers, and remove it all on
-// route exit / re-init. Without this, every visit to /ai leaks another detached
-// instance that keeps reacting to resize/hashchange and never gets collected.
-let _tlLeakedListeners = [];
-let _tlCaptureActive = false;
-let _tlSlideObserver = null;
-
-const _origWinAdd = window.addEventListener.bind(window);
-const _origWinRemove = window.removeEventListener.bind(window);
-const _origDocAdd = document.addEventListener.bind(document);
-const _origDocRemove = document.removeEventListener.bind(document);
-
-const _startListenerCapture = () => {
-    if (_tlCaptureActive) return;
-    _tlCaptureActive = true;
-    window.addEventListener = function (type, fn, opts) {
-        if (_tlCaptureActive) _tlLeakedListeners.push({ target: window, type, fn, opts });
-        return _origWinAdd(type, fn, opts);
-    };
-    document.addEventListener = function (type, fn, opts) {
-        if (_tlCaptureActive) _tlLeakedListeners.push({ target: document, type, fn, opts });
-        return _origDocAdd(type, fn, opts);
-    };
-};
-
-const _stopListenerCapture = () => {
-    if (!_tlCaptureActive) return;
-    _tlCaptureActive = false;
-    window.addEventListener = _origWinAdd;
-    document.addEventListener = _origDocAdd;
-};
-
+// --- AITimeline lifecycle ----------------------------------------------------
+// AITimeline owns all its own DOM and listeners; destroy() tears them down.
 const destroyTimeline = () => {
-    _stopListenerCapture();
-
-    for (const { target, type, fn, opts } of _tlLeakedListeners) {
-        try {
-            (target === window ? _origWinRemove : _origDocRemove)(type, fn, opts);
-        } catch { /* ignore */ }
-    }
-    _tlLeakedListeners = [];
-
-    if (_tlSlideObserver) {
-        try { _tlSlideObserver.disconnect(); } catch { /* ignore */ }
-        _tlSlideObserver = null;
-    }
-
-    const t = window.timeline;
-    if (t) {
-        try { t._storyslider?.animator?.stop?.(); } catch { /* ignore */ }
-        try { t._timenav?.animator?.stop?.(); } catch { /* ignore */ }
-        try { t._timenav?._timeaxis?.animator?.stop?.(); } catch { /* ignore */ }
-    }
+    window.timeline?.destroy?.();
     window.timeline = null;
-    // Note: cartClickHandlerElement is intentionally NOT reset here. Its guard
-    // compares element identity — on router navigation #timeline-embed is a
-    // fresh element (handlers re-attach); on a search reload it is the same
-    // element (handlers already present, re-attach skipped). Nulling it would
-    // double-bind the delegated click handlers on a search reload.
 };
 
 const updateBellState = (data) => {
@@ -256,13 +211,7 @@ const showTimelineModal = (data, { force = false } = {}) => {
 };
 
 const aiRouteOnLoad = async () => {
-    // The router replaces the entire panel innerHTML on each navigation, so the
-    // old #timeline-embed (and its listeners) is gone. Reset the guard so that
-    // handlers are re-attached to the freshly-created element.
-    // NOTE: do not reset cartClickHandlerElement here — the check below compares
-    // the actual element reference, so it naturally handles both router-navigation
-    // (new element) and search reloads (same element, skip re-registration).
-    // Tear down any previous TimelineJS instance. On router navigation this is a
+    // Tear down any previous timeline instance. On router navigation this is a
     // no-op (onUnload already ran); on a search / topic-filter reload this call
     // arrives here directly and is the only teardown point.
     destroyTimeline();
@@ -440,294 +389,79 @@ const aiRouteOnLoad = async () => {
                 generateMnemonics(allTopics);
             }
 
-            // Inject topic labels, purchase links, and insight article chips into event data
-            if (data.events) {
-                data.events.forEach(event => {
-                    if (!event.text) event.text = { text: "" };
-
-                    const eventSlug = event.unique_id || slugify(event.text?.headline || '');
-
-                    const referencingArticles = articlesByEvent.get(eventSlug) || [];
-
-                    // Insight stripe (relocated to .tl-slide left edge by relocateLabels)
-                    if (referencingArticles.length > 0) {
-                        const stripeHtml = `<div class="insight-ref-stripe-container"><div class="insight-ref-stripe"></div></div>`;
-                        event.text.text = stripeHtml + (event.text.text || "");
-                    }
-
-                    // Purchase links cart icon (unchanged)
-                    if (event.purchase_links && event.purchase_links.length > 0) {
-                        const linksHtml = event.purchase_links.map(l =>
-                            `<a class="purchase-link" href="${l.url}" target="_new">${l.label}</a>`
-                        ).join('');
-                        const cartHtml = `
-                            <div class="purchase-links-container">
-                                <button class="cart-btn" aria-label="Purchase links" title="Purchase links" data-event-id="${eventSlug}" data-event-title="${event.text?.headline || ''}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                         fill="none" stroke="currentColor" stroke-width="2"
-                                         stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-                                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-                                    </svg>
-                                </button>
-                                <div class="purchase-dropdown">${linksHtml}</div>
-                            </div>`;
-                        event.text.text = cartHtml + (event.text.text || "");
-                    }
-
-                    // Topic labels (top-right pill row, unchanged)
-                    const hasTopics = event.topics && event.topics.length > 0;
-                    if (hasTopics) {
-                        const topicPillsHtml = [...event.topics].sort().map(t => `
-                                    <div class="event-topic-label"
-                                         style="background-color: ${getTopicColor(t, allTopics)}"
-                                         title="${t}">
-                                        ${getTopicInitials(t)}
-                                    </div>`).join('');
-                        const labelsHtml = `<div class="topic-labels-container">${topicPillsHtml}</div>`;
-                        event.text.text = labelsHtml + (event.text.text || "");
-                    }
-
-                    // Insight article chips (bottom-right, separate container)
-                    if (referencingArticles.length > 0) {
-                        const chipsHtml = referencingArticles.map(a => `
-                                <a class="insight-ref-chip"
-                                   href="/insights/${a.slug}.html"
-                                   data-event-id="${eventSlug}"
-                                   data-event-title="${event.text?.headline || ''}"
-                                   data-article-slug="${a.slug}"
-                                   data-article-title="${a.title}">
-                                    ✦ ${a.title}
-                                </a>`).join('');
-                        event.text.text = `<div class="insight-chips-container">${chipsHtml}</div>` + (event.text.text || "");
-                    }
-
-                    // Archived ribbon (relocated to .tl-slide top-right by relocateLabels)
-                    if (event.is_archived) {
-                        const ribbonHtml = `<div class="archived-ribbon-container" aria-hidden="true"><div class="archived-ribbon">ARCHIVED</div></div>`;
-                        event.text.text = ribbonHtml + (event.text.text || "");
-                    }
-                });
-            }
-
-            // Success: Initialize TimelineJS or show empty message
+            // Success: Initialize the timeline or show empty message
             setTimeout(() => {
                 if (data.events && data.events.length > 0) {
-                    if (window.TL) {
-                        // Capture the anonymous window/document listeners TimelineJS
-                        // attaches during construction so destroyTimeline() can
-                        // remove them. _onDataLoaded() runs synchronously here
-                        // (document is past "loading"), so the capture window is
-                        // exactly this constructor call.
-                        _startListenerCapture();
-                        try {
-                            window.timeline = new TL.Timeline('timeline-embed', data, {
-                                theme_color: "#b94d97",
-                                initial_zoom: 2,
-                                // hash_bookmark stays false: the SPA router owns the
-                                // URL (writeHash / goToId below). Leaving it true
-                                // adds a second hashchange listener that re-drives
-                                // the whole slider on every router hash write, and
-                                // is one of the leaked listeners.
-                                hash_bookmark: false,
-                                timenav_position: "bottom",
-                                font: "default"
+                    window.timeline = new AITimeline(embed, {
+                        colorForTopic: t => getTopicColor(t, allTopics),
+                        insightArticlesFor: slug => articlesByEvent.get(slug) || [],
+                        sanitizeText: sanitizeTimelineText,
+                        track,
+                        reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+                        slugify,
+                        onCartClick: (ev) => {
+                            const btn = ev.target.closest('.cart-btn');
+                            track('timeline_purchase_click', {
+                                event_id: btn?.dataset.eventId, event_title: btn?.dataset.eventTitle,
                             });
-                        } finally {
-                            _stopListenerCapture();
-                        }
-
-                        // hash_bookmark is off, so replicate its one useful job:
-                        // jump to the deep-linked event on load. A single sync
-                        // goToId() right after construction doesn't stick (the
-                        // storyslider is still settling its initial transition),
-                        // so retry on a short backoff until current_id matches.
-                        const _hashSlug = (window.location.hash.match(/^#event-(.+)$/) || [])[1];
-                        if (_hashSlug) {
-                            [0, 150, 400, 900, 1600].forEach(delay => setTimeout(() => {
-                                const t = window.timeline;
-                                if (!t || t.current_id === _hashSlug) return;
-                                try { t.goToId(_hashSlug); } catch { /* unknown slug */ }
-                            }, delay));
-                        }
-
-                        // RELOCATE LABELS: Move labels/cart to be children of .tl-slide to allow true corner pinning
-                        const relocateContainer = (slide, selector) => {
-                            const el = slide.querySelector(`${selector}:not([data-relocated="true"])`);
-                            if (el && el.parentElement.classList.contains('tl-text-content')) {
-                                slide.prepend(el);
-                                el.setAttribute('data-relocated', 'true');
-                                requestAnimationFrame(() => { el.style.opacity = '1'; });
-                            }
-                        };
-
-                        // Relocate the injected containers for a single slide.
-                        const relocateSlide = (slide) => {
-                            relocateContainer(slide, '.topic-labels-container');
-                            relocateContainer(slide, '.purchase-links-container');
-                            relocateContainer(slide, '.insight-ref-stripe-container');
-                            relocateContainer(slide, '.insight-chips-container');
-                            relocateContainer(slide, '.archived-ribbon-container');
-                            if (slide.querySelector('.archived-ribbon-container[data-relocated="true"]')) {
-                                slide.classList.add('archived');
-                            }
-                            // TimelineJS adds target="_blank" to all links it renders; undo for chips
-                            slide.querySelectorAll('.insight-ref-chip[target]').forEach(c => c.removeAttribute('target'));
-                        };
-
-                        const relocateLabels = () => {
-                            document.querySelectorAll('.tl-slide').forEach(relocateSlide);
-                        };
-
-                        // TimelineJS renders each slide's text (and therefore the
-                        // injected label/cart/stripe containers) lazily on first
-                        // navigation to it. Relocate only the slides whose subtree
-                        // just changed, instead of re-scanning all ~1000 on every
-                        // 'change'. relocateSlide is idempotent, so a slide seen
-                        // more than once is harmless.
-                        _tlSlideObserver = new MutationObserver((mutations) => {
-                            const touched = new Set();
-                            for (const m of mutations) {
-                                for (const node of m.addedNodes) {
-                                    if (node.nodeType !== 1) continue;
-                                    const slide = node.closest?.('.tl-slide');
-                                    if (slide) touched.add(slide);
-                                    node.querySelectorAll?.('.tl-slide').forEach(s => touched.add(s));
-                                }
-                            }
-                            touched.forEach(relocateSlide);
-                        });
-                        const _embedForObserver = document.getElementById('timeline-embed');
-                        if (_embedForObserver) {
-                            _tlSlideObserver.observe(_embedForObserver, { childList: true, subtree: true });
-                        }
-
-                        // Cart icon click handler (event delegation — added once per element)
-                        if (cartClickHandlerElement !== document.getElementById('timeline-embed')) {
-                        cartClickHandlerElement = document.getElementById('timeline-embed');
-                        document.getElementById('timeline-embed').addEventListener('click', (e) => {
-                            const btn = e.target.closest('.cart-btn');
-                            if (!btn) {
-                                document.querySelectorAll('.purchase-dropdown.open')
-                                    .forEach(d => d.classList.remove('open'));
-                                return;
-                            }
-                            e.stopPropagation();
-
-                            // Track timeline_purchase_click
-                            const eventId = btn.getAttribute('data-event-id');
-                            const eventTitle = btn.getAttribute('data-event-title');
-                            track('timeline_purchase_click', { event_id: eventId, event_title: eventTitle });
-
-                            const dropdown = btn.nextElementSibling;
-                            const isOpen = dropdown.classList.contains('open');
-                            document.querySelectorAll('.purchase-dropdown.open')
-                                .forEach(d => d.classList.remove('open'));
-                            if (!isOpen) dropdown.classList.add('open');
-                        });
-
-                        // Purchase link click handler
-                        document.getElementById('timeline-embed').addEventListener('click', (e) => {
-                            const link = e.target.closest('.purchase-link');
-                            if (!link) return;
-
-                            // Find the cart button to get event_id and event_title
-                            const cartBtn = link.closest('.purchase-dropdown').previousElementSibling;
-                            const eventId = cartBtn.getAttribute('data-event-id');
-                            const eventTitle = cartBtn.getAttribute('data-event-title');
-                            const optionTitle = link.textContent;
-                            const optionUrl = link.href; // DOM property resolves relative URLs to absolute
-
-                            // Track timeline_purchase_option_click
+                        },
+                        onCartOptionClick: (link) => {
+                            const btn = link.closest('.ait-cart')?.querySelector('.cart-btn');
                             track('timeline_purchase_option_click', {
-                                event_id: eventId,
-                                event_title: eventTitle,
-                                option_title: optionTitle,
-                                option_url: optionUrl
+                                event_id: btn?.dataset.eventId, event_title: btn?.dataset.eventTitle,
+                                option_title: link.textContent, option_url: link.href,
                             });
-
-                            // Close open dropdowns
-                            document.querySelectorAll('.purchase-dropdown.open').forEach(d => d.classList.remove('open'));
-                        });
-
-                        // Insight chip click handler — track navigation to article
-                        document.getElementById('timeline-embed').addEventListener('click', (e) => {
-                            const chip = e.target.closest('.insight-ref-chip');
-                            if (!chip) return;
+                        },
+                        onInsightClick: (chip) => {
                             track('timeline_insight_click', {
-                                event_id:      chip.getAttribute('data-event-id'),
-                                event_title:   chip.getAttribute('data-event-title'),
-                                article_slug:  chip.getAttribute('data-article-slug'),
-                                article_title: chip.getAttribute('data-article-title')
+                                event_id: chip.dataset.eventId, event_title: chip.dataset.eventTitle,
+                                article_slug: chip.dataset.articleSlug, article_title: chip.dataset.articleTitle,
                             });
-                            // <a> tag navigates naturally — no preventDefault needed
-                        });
-
-                        // Body text link click handler — tracks source/paper links inside entry text
-                        document.getElementById('timeline-embed').addEventListener('click', (e) => {
-                            const link = e.target.closest('a');
-                            if (!link || !link.closest('.tl-text-content')) return;
-                            const currentSlide = window.timeline.getCurrentSlide?.();
-                            const eventId = String(currentSlide?.data?.unique_id || '');
-                            const eventTitle = currentSlide?.data?.text?.headline || '';
+                        },
+                        onTextLinkClick: (link) => {
+                            const cur = window.timeline.getCurrentSlide?.();
                             track('timeline_text_link_click', {
-                                event_id:   eventId,
-                                event_title: eventTitle,
-                                link_label: link.textContent.trim(),
-                                link_url:   link.href
+                                event_id: String(cur?.data?.unique_id || ''),
+                                event_title: cur?.data?.text?.headline || '',
+                                link_label: link.textContent.trim(), link_url: link.href,
                             });
-                        });
-                        } // end cartClickHandlerAdded guard
+                        },
+                    });
 
-                        // One pass over whatever slides TimelineJS mounted up
-                        // front; the MutationObserver handles every slide added
-                        // afterwards.
-                        setTimeout(relocateLabels, 100);
-                        setTimeout(relocateLabels, 600);
+                    window.timeline.setEvents(data);
 
-                        lastTimelineData = data;
-                        updateBellState(data);
-                        showTimelineModal(data);
-
-                        // Flag to prevent initial "change" events from overwriting the restored hash
-                        let isTimelineInitialized = false;
-
-                        // Dwell timer for timeline event view tracking
-                        let dwellTimer = null;
-
-                        let _writeHashTimer = null;
-                        const writeHash = (newId) => {
-                            clearTimeout(_writeHashTimer);
-                            _writeHashTimer = setTimeout(() => {
-                                const newHash = `#event-${newId}`;
-                                localStorage.setItem('timeline_hash', newHash);
-                                history.replaceState(null, '', newHash);
-                            }, 150);
-                        };
-
-                        window.timeline.on('change', (e) => {
-                            // Cancel any existing dwell timer
-                            clearTimeout(dwellTimer);
-
-                            // Start a new 500ms dwell timer
-                            dwellTimer = setTimeout(() => {
-                                const slide = window.timeline.getCurrentSlide?.();
-                                const eventId = String(e.unique_id || slide?.data?.unique_id || '');
-                                const eventTitle = e.text?.headline || slide?.data?.text?.headline || '';
-                                if (eventId) track('timeline_event_view', { event_id: eventId, event_title: eventTitle });
-                            }, 500);
-
-                            if (isTimelineInitialized) {
-                                const newId = e.unique_id || (window.timeline.getCurrentSlide()?.data?.unique_id);
-                                if (newId) writeHash(newId);
-                            }
-                        });
-
-                        // Enable persistence after a short delay to allow TimelineJS to "settle" on the bookmark
-                        setTimeout(() => {
-                            isTimelineInitialized = true;
-                        }, 1500);
+                    // Deep-link: jump to #event-<slug> on load. goToId is synchronous
+                    // and safe to call immediately; keep one microtask retry for the
+                    // case where the hash was set by a restore just above.
+                    const _hashSlug = (window.location.hash.match(/^#event-(.+)$/) || [])[1];
+                    if (_hashSlug) {
+                        window.timeline.goToId(_hashSlug);
+                        queueMicrotask(() => window.timeline?.goToId?.(_hashSlug));
                     }
+
+                    lastTimelineData = data;
+                    updateBellState(data);
+                    showTimelineModal(data);
+
+                    let isTimelineInitialized = false;
+                    let dwellTimer = null;
+                    let _writeHashTimer = null;
+                    const writeHash = (newId) => {
+                        clearTimeout(_writeHashTimer);
+                        _writeHashTimer = setTimeout(() => {
+                            const newHash = `#event-${newId}`;
+                            localStorage.setItem('timeline_hash', newHash);
+                            history.replaceState(null, '', newHash);
+                        }, 150);
+                    };
+                    window.timeline.on('change', (e) => {
+                        clearTimeout(dwellTimer);
+                        dwellTimer = setTimeout(() => {
+                            if (e.unique_id) track('timeline_event_view', { event_id: e.unique_id, event_title: e.text?.headline || '' });
+                        }, 500);
+                        if (isTimelineInitialized && e.unique_id) writeHash(e.unique_id);
+                    });
+                    setTimeout(() => { isTimelineInitialized = true; }, 1500);
                 } else {
                     // Handle empty results gracefully
                     if (embed) {
