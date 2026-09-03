@@ -81,10 +81,12 @@ export class Stage {
 
   _renderInto(card, event) {
     const { sanitizeText, colorForTopic, insightArticlesFor } = this.opts;
+    const initialsForTopic = this.opts.initialsForTopic || (t => t);
     const slug = event.unique_id;
     const articles = insightArticlesFor(slug) || [];
     const headline = event.text?.headline || '';
     card.innerHTML = '';
+    card.className = 'ait-card' + (event.is_archived ? ' archived' : '');
 
     if (articles.length) {
       const stripe = document.createElement('div');
@@ -92,9 +94,28 @@ export class Stage {
       card.appendChild(stripe);
     }
     if (event.is_archived) {
+      const wrap = document.createElement('div');
+      wrap.className = 'archived-ribbon-wrap'; wrap.setAttribute('aria-hidden', 'true');
       const r = document.createElement('div');
-      r.className = 'archived-ribbon'; r.setAttribute('aria-hidden', 'true'); r.textContent = 'ARCHIVED';
-      card.appendChild(r);
+      r.className = 'archived-ribbon'; r.textContent = 'ARCHIVED';
+      wrap.appendChild(r);
+      card.appendChild(wrap);
+    }
+
+    // Corner overlays are children of the card (not .ait-body) so they pin to the
+    // card edges instead of scrolling with the text.
+    if (event.topics?.length) {
+      const topics = document.createElement('div');
+      topics.className = 'ait-topics';
+      [...event.topics].sort().forEach(t => {
+        const pill = document.createElement('span');
+        pill.className = 'topic-pill';
+        pill.textContent = initialsForTopic(t);
+        pill.title = t;
+        pill.style.backgroundColor = colorForTopic(t);
+        topics.appendChild(pill);
+      });
+      card.appendChild(topics);
     }
 
     const media = this._buildMedia(event.media);
@@ -102,20 +123,6 @@ export class Stage {
 
     const body = document.createElement('div');
     body.className = 'ait-body';
-
-    if (event.topics?.length) {
-      const wrap = document.createElement('div');
-      wrap.className = 'ait-topics';
-      [...event.topics].sort().forEach(t => {
-        const pill = document.createElement('span');
-        pill.className = 'topic-pill';
-        pill.textContent = t;
-        pill.title = t;
-        pill.style.backgroundColor = colorForTopic(t);
-        wrap.appendChild(pill);
-      });
-      body.appendChild(wrap);
-    }
 
     if (event.purchase_links?.length) {
       const holder = document.createElement('div');
@@ -134,7 +141,7 @@ export class Stage {
         dd.appendChild(a);
       });
       holder.append(btn, dd);
-      body.appendChild(holder);
+      card.appendChild(holder);
     }
 
     const h = document.createElement('h2');
@@ -160,7 +167,7 @@ export class Stage {
         link.textContent = `✦ ${a.title}`;
         chips.appendChild(link);
       });
-      body.appendChild(chips);
+      card.appendChild(chips);
     }
 
     card.appendChild(body);

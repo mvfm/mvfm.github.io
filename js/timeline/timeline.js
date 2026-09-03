@@ -51,6 +51,7 @@ export class AITimeline {
     this._stage = new Stage(this._stageEl, {
       sanitizeText: opts.sanitizeText,
       colorForTopic: opts.colorForTopic,
+      initialsForTopic: opts.initialsForTopic,
       insightArticlesFor: opts.insightArticlesFor,
       reducedMotion: opts.reducedMotion,
       onTextLinkClick: opts.onTextLinkClick,

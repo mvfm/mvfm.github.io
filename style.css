@@ -1309,10 +1309,13 @@ ol li {
 .ait-stage { outline: none; }
 .ait-stage:focus-visible { outline: 2px solid var(--clr-accent); outline-offset: -2px; }
 .ait-card {
-  position: absolute; inset: 0; display: flex; gap: 1.25rem;
-  padding: 1.25rem; box-sizing: border-box; background: var(--clr-panel-bg, #fff);
+  position: absolute; inset: 0; display: flex; gap: 1.5rem;
+  padding: 1.25rem 1.5rem; box-sizing: border-box; overflow: hidden;
+  background: var(--clr-bg-main, #fff);
   transition: transform .18s ease, opacity .18s ease;
 }
+.ait-card.archived .ait-body,
+.ait-card.archived .ait-media { opacity: 0.72; }
 .ait-card[hidden] { display: none; }
 .ait-enter { transform: translateX(24px); opacity: 0; }
 .ait-enter-prev { transform: translateX(-24px); opacity: 0; }
@@ -1320,36 +1323,91 @@ ol li {
 .ait-leave-prev { transform: translateX(24px); opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .ait-card { transition: none; } }
 
-.ait-media { flex: 0 0 40%; display: flex; flex-direction: column; gap: .4rem; min-width: 0; }
-.ait-media img { width: 100%; height: auto; max-height: 100%; object-fit: contain; border-radius: var(--radius-md, 8px); }
-.ait-yt-facade { position: relative; width: 100%; aspect-ratio: 16/9; background-size: cover; background-position: center; border: 0; border-radius: var(--radius-md, 8px); cursor: pointer; }
+.ait-media { flex: 0 0 44%; display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
+.ait-media img { width: 100%; height: auto; max-height: 100%; object-fit: contain; object-position: top; }
+.ait-yt-facade { position: relative; width: 100%; aspect-ratio: 16/9; background-size: cover; background-position: center; border: 0; cursor: pointer; }
 .ait-yt-play { position: absolute; inset: 0; display: grid; place-items: center; font-size: 2.5rem; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,.5); }
-.ait-yt-frame { width: 100%; aspect-ratio: 16/9; border: 0; border-radius: var(--radius-md, 8px); }
+.ait-yt-frame { width: 100%; aspect-ratio: 16/9; border: 0; }
 .ait-linkcard { display: flex; flex-direction: column; gap: .2rem; padding: .8rem; border: 1px solid var(--clr-panel-border, #d0d7e4); border-radius: var(--radius-md, 8px); text-decoration: none; color: inherit; }
 .ait-linkcard-host { font-size: .7rem; color: var(--clr-text-muted, #7c879e); }
-.ait-media-caption { font-size: .7rem; color: var(--clr-text-muted, #7c879e); }
+.ait-media-caption {
+  max-width: 450px; font-size: .78rem; line-height: 1.4;
+  color: var(--clr-text-muted, #7c879e);
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
 
-.ait-body { position: relative; flex: 1 1 auto; min-width: 0; overflow-y: auto; }
-.ait-headline { margin: .2rem 0 .6rem; }
-.ait-text { line-height: 1.55; }
-.ait-topics { position: absolute; top: 0; right: 0; display: flex; flex-direction: column; gap: .25rem; }
-.ait-topics .topic-pill { font-size: .7rem; padding: .15rem .5rem; border-radius: var(--radius-full, 999px); color: #fff; }
-.ait-chips { margin-top: .8rem; display: flex; flex-wrap: wrap; gap: .4rem; }
-.insight-ref-stripe { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: linear-gradient(#7c3aed, #a21caf); }
-.archived-ribbon { position: absolute; top: .6rem; right: .6rem; background: #64748b; color: #fff; font-size: .65rem; font-weight: 700; letter-spacing: .05em; padding: .15rem .5rem; border-radius: 3px; }
-.ait-cart { position: absolute; bottom: 0; left: 0; }
+.ait-body {
+  position: relative; flex: 1 1 auto; min-width: 0; overflow-y: auto;
+  padding-top: 1rem;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+.ait-headline {
+  max-width: 650px;
+  margin: 0 0 .8rem;
+  font-family: "Georgia", "Times New Roman", Times, serif;
+  font-weight: 700; font-size: 32px; line-height: 36px;
+  color: var(--clr-text, #0f172a);
+}
+.ait-text { max-width: 650px; font-size: 16px; line-height: 1.6; color: var(--clr-text, #0f172a); }
+.ait-text p { margin: 0 0 .9em; }
+.ait-text p:last-child { margin-bottom: 0; }
+.ait-text a:link, .ait-text a:visited { color: var(--clr-accent, #1baaff); }
+.ait-text a:hover { color: var(--clr-primary, #0c2d6b); }
+
+/* Topic pills — square mnemonics pinned top-right, matching the old timeline */
+.ait-topics {
+  position: absolute; top: 1rem; right: 1rem;
+  display: flex; flex-direction: row; justify-content: flex-end;
+  gap: .4rem; z-index: 5; pointer-events: none;
+}
+.ait-topics .topic-pill {
+  pointer-events: auto; box-sizing: border-box;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 4px;
+  font-size: .7rem; font-weight: 700; text-transform: lowercase;
+  color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .2);
+}
+
+/* Purchase cart — just below the topic pills, top-right */
+.ait-cart { position: absolute; top: calc(1rem + 28px + .4rem); right: 1rem; z-index: 6; }
+
+/* Insight chips — bottom-right corner, stacked */
+.ait-chips {
+  position: absolute; bottom: 1.25rem; right: 1.25rem;
+  display: flex; flex-direction: column; align-items: flex-end;
+  gap: .3rem; z-index: 5;
+}
+
+.insight-ref-stripe {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 5px; z-index: 4;
+  background: linear-gradient(to bottom, #7c3aed, #a21caf);
+  border-radius: 6px 0 0 6px;
+}
+
+/* Archived ribbon — rotated red corner flag */
+.archived-ribbon-wrap {
+  position: absolute; top: 0; right: 0; width: 110px; height: 110px;
+  overflow: hidden; pointer-events: none; z-index: 10;
+}
+.archived-ribbon {
+  position: absolute; top: 18px; right: -24px; width: 100px;
+  text-align: center; background: #dc2626; color: #fff;
+  font-size: .6rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  padding: 3px 0; transform: rotate(35deg);
+}
 
 .ait-minimap-slider { display: block; width: 100%; height: 92px; margin-top: .5rem; outline-offset: 2px; }
 .ait-minimap { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
 
 .ait-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-/* narrow viewports: stack media above text instead of a ~161px text column */
+/* narrow viewports: stack media above text */
 @media (max-width: 640px) {
-  .ait-card { flex-direction: column; }
-  .ait-media { flex: 0 0 auto; max-height: 40%; }
-  /* keep the topic pills & cart in the scroll flow (they're absolute inside the
-     scrollable .ait-body, so they'd otherwise scroll away from the text) */
-  .ait-topics { position: static; flex-direction: row; flex-wrap: wrap; }
-  .ait-cart { position: relative; }
+  .ait-card { flex-direction: column; gap: 1rem; }
+  .ait-media { flex: 0 0 auto; max-height: 38%; }
+  .ait-topics { top: .5rem; right: .5rem; }
+  .ait-cart { top: calc(.5rem + 28px + .4rem); right: .5rem; }
+  .ait-chips { position: static; align-items: flex-start; margin-top: 1rem; }
+  .ait-headline { font-size: 26px; line-height: 30px; }
 }

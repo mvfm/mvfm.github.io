@@ -394,6 +394,7 @@ const aiRouteOnLoad = async () => {
                 if (data.events && data.events.length > 0) {
                     window.timeline = new AITimeline(embed, {
                         colorForTopic: t => getTopicColor(t, allTopics),
+                        initialsForTopic: t => getTopicInitials(t),
                         insightArticlesFor: slug => articlesByEvent.get(slug) || [],
                         sanitizeText: sanitizeTimelineText,
                         track,
