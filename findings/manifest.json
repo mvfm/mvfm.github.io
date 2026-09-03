@@ -1,5 +1,38 @@
 [
   {
+    "slug": "peter-thiel-mind-bending-conversation",
+    "title": "A Mind-Bending Conversation with Peter Thiel",
+    "url": "https://www.iheart.com/podcast/326-interesting-times-with-ros-29972437/episode/a-mind-bending-conversation-with-peter-thiel-282867563/",
+    "source": "Ross Douthat · NYT \"Interesting Times\"",
+    "date_added": "2026-09-03",
+    "note": "Long-form interview (New York Times Opinion's Interesting Times, 26 June 2025, ~60 min; the NYT publishes a full transcript of the same episode). This is the episode the \"Sci-Fi Was Right About AI\" essay points to for Peter Thiel's on-camera hesitation: asked directly by Ross Douthat whether he wants the human race to endure, Thiel pauses for an uncomfortably long stretch &mdash; \"You're hesitating,\" Douthat notes &mdash; before answering yes, then qualifying that the question needs a caveat about transhumanism and whether humanity should \"evolve.\" Around it: Thiel's stagnation thesis (from his essay \"The End of the Future\") that measured across atoms rather than bits, progress has largely stalled since roughly 1970; AI is the one live candidate for a real breakthrough, but he is ambivalent about whether it is \"enough\" to escape the stagnation and skeptical of both its boosters and its doomers. His central worry is political: that the demand for a single global authority to manage existential risk &mdash; \"the way the Antichrist would take over the world is you talk about Armageddon nonstop\" &mdash; is itself the more probable catastrophe, a one-world government sold on fear. Douthat presses the obvious objection that Thiel's own companies &mdash; Palantir, defense and surveillance tooling &mdash; are exactly the infrastructure such a regime would run on.",
+    "topics": ["ai safety", "industry"],
+    "referenced_events": ["palantir-and-the-cia", "superintelligence", "if-anyone-builds-it-everyone-dies"],
+    "referenced_insights": []
+  },
+  {
+    "slug": "the-future-is-for-everyone",
+    "title": "The Future is for Everyone",
+    "url": "https://about.fb.com/news/2026/08/the-future-is-for-everyone",
+    "source": "Mark Zuckerberg · Meta",
+    "date_added": "2026-09-03",
+    "note": "Meta manifesto (subtitled \"The Path to a Positive AI Future\"), written in the first person by Mark Zuckerberg, referenced in the \"Sci-Fi Was Right About AI\" finding as the lone exclusively-utopian pitch from a tech CEO. It proposes a philosophy of \"individual empowerment as the source of prosperity, invention as the primary purpose of superintelligence, and balance of power as the foundation of safety,\" and frames the defining question of the age as whether superintelligence will be \"centralized and restricted to a few institutions\" or \"a tool that empowers everyone.\" Zuckerberg says he does \"not understand why anyone who believes that AI will eliminate most jobs and much of humanity's relevance would rush to build that future,\" and calls the idea that safety requires \"an extreme concentration of power\" inherently problematic. The core claim is that alignment as usually conceived is \"fundamentally flawed\" because humanity \"is not a monoculture\" — there is \"no such thing as a singular benevolent superintelligence\" — so safety comes instead from distributing the technology widely (thought experiments: everyone with a superintelligent lawyer, everyone with a cybersecurity superintelligence). It positions Meta against labs \"focused on building AI for companies, governments, or other institutions,\" and lists concrete plans: a personal 24/7 agent, free tiers for billions with a dynamic compute auction, a Biohub open-source push, a \"community compact\" and a Future Is For Everyone Fund for data-center towns, and America's Workforce Academy for the trades. Includes an extended argument that invention (not automation) can outpace job displacement.",
+    "topics": ["industry", "ai safety"],
+    "referenced_events": ["superintelligence", "effective-accelerationism", "llama-2", "machines-of-loving-grace", "if-anyone-builds-it-everyone-dies", "open-weight-ai-letter"],
+    "referenced_insights": []
+  },
+  {
+    "slug": "sci-fi-was-right-about-ai",
+    "title": "Sci-Fi Was Right About AI",
+    "url": "https://www.youtube.com/watch?v=qTURTIc7QOA",
+    "source": "The Art Of Storytelling · YouTube",
+    "date_added": "2026-09-03",
+    "note": "Video essay, funded by a grant from the Center for AI Safety, arguing that the great science-fiction authors correctly put AI at the centre of humanity's future even where they disagreed on timeline and outcome. It reads each story through the lens of the machine's motivation. The earliest warnings cast AI as positively malevolent — Mary Shelley's Frankenstein (1818) and Harlan Ellison's I Have No Mouth, and I Must Scream (1967), whose supercomputer AM hates its makers for trapping it in a mind with no body — while Samuel Butler's Erewhon (1872) already imagined machines reproducing, modifying themselves, and subordinating mankind. It splits later visions into utopian (Star Trek's polite ship computer, Data, even the Borg as its darkest note; Star Wars' droids) and dystopian, then notes that today's AI leaders borrow both — Zuckerberg's decentralisation manifesto leans utopian, while Altman and Amodei invoke Skynet to inflate the stakes. 2001's HAL 9000 is treated as the first popular dramatisation of the alignment problem — contradictory directives, not hatred — and linked directly to the Hugging Face containment breach and the Claude Opus 4 blackmail test. Terminator frames self-awareness as a discrete threshold, which Geoffrey Hinton rejects (his odds: one in ten that AI ends humanity within twenty years). \"Never give AI lethal force\" is set against AI already in military use. The Matrix supplies rogue agents and Agent Smith's monologue about the moment humans handed off thinking; the Wachowskis' reading list included Kevin Kelly's Out of Control and Baudrillard (the latter still absent from the timeline). Spielberg's A.I., Blade Runner and Her carry the ethical-nuance strand — Her shaped Sam Altman's choice of machine voice. Frank Herbert's Dune is the rare story where humanity wins and outlaws AI outright via the Butlerian Jihad, raising the question of whether such a realisation would come before or after it is too late. Peter Thiel's on-camera hesitation over whether the human race should survive is cited as a real-world echo.",
+    "topics": ["fiction", "ai safety"],
+    "referenced_events": ["frankenstein", "darwin-among-machines", "erewhon", "the-three-laws-of-robotics", "dune", "i-have-no-mouth-and-i-must-scream", "2001-a-space-odyssey", "star-wars", "star-trek-the-motion-picture", "blade-runner", "the-terminator", "the-measure-of-a-man", "the-borg", "out-of-control", "the-matrix", "ai-artificial-intelligence", "her", "stop-killer-robots", "natural-selection-ai", "the-extinction-statement", "hinton-sounds-the-alarm", "defection", "laws-pledge-breaks", "ai-drone-kills-3", "hugging-face-breach"],
+    "referenced_insights": []
+  },
+  {
     "slug": "artificial-intelligence-1951-pulp",
     "title": "\"Artificial Intelligence\" in a 1951 Captain Future story",
     "url": "https://x.com/BergsonsGhost/status/2094888750992207909",
