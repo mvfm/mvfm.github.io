@@ -64,6 +64,20 @@ const TEMPLATES = {
         <div class="view-header">
             <h2>AI Timeline</h2>
             <div class="header-actions">
+                <button id="timeline-first" class="icon-button" title="Jump to the oldest entry">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="19 20 9 12 19 4"></polygon>
+                        <line x1="5" y1="19" x2="5" y2="5"></line>
+                    </svg>
+                </button>
+                <button id="timeline-last" class="icon-button" title="Jump to the latest entry">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="5 4 15 12 5 20"></polygon>
+                        <line x1="19" y1="5" x2="19" y2="19"></line>
+                    </svg>
+                </button>
                 <button id="search-toggle" class="icon-button" title="Search Timeline">
                     <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
                         stroke-linecap="round" stroke-linejoin="round">

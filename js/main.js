@@ -706,6 +706,24 @@ const initTimelineSearch = () => {
         }
     });
 
+    const firstBtn = document.getElementById('timeline-first');
+    if (firstBtn && !firstBtn.dataset.listenerAttached) {
+        firstBtn.dataset.listenerAttached = 'true';
+        firstBtn.addEventListener('click', () => {
+            window.timeline?.first?.();
+            track('timeline_jump_edge', { edge: 'first' });
+        });
+    }
+
+    const lastBtn = document.getElementById('timeline-last');
+    if (lastBtn && !lastBtn.dataset.listenerAttached) {
+        lastBtn.dataset.listenerAttached = 'true';
+        lastBtn.addEventListener('click', () => {
+            window.timeline?.last?.();
+            track('timeline_jump_edge', { edge: 'last' });
+        });
+    }
+
     const bellBtn = document.getElementById('modal-bell-btn');
     if (bellBtn && !bellBtn.dataset.listenerAttached) {
         bellBtn.dataset.listenerAttached = 'true';

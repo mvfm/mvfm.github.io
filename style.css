@@ -208,7 +208,10 @@ main {
 #timeline-embed {
     position: relative; /* contain the absolutely-positioned .ait-stage-host */
     width: 100%;
-    height: 600px;
+    /* 435 (card) + 8 (gap) + 117 (minimap) + 8 (breathing room below the strip,
+       clear of the rounded corner). Was 600px — a TimelineJS holdover that left
+       ~53px of dead grey below the overview strip. */
+    height: 568px;
     background: rgba(0, 0, 0, 0.03);
     border-radius: var(--radius-md);
     overflow: hidden;
@@ -1436,7 +1439,7 @@ ol li {
   padding: 3px 0; transform: rotate(35deg);
 }
 
-.ait-minimap-slider { position: relative; display: block; width: 100%; height: 104px; margin-top: .5rem; outline-offset: 2px; }
+.ait-minimap-slider { position: relative; display: block; width: 100%; height: 117px; margin-top: .5rem; outline-offset: 2px; }
 .ait-minimap { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
 .ait-minimap-tip {
   position: absolute; z-index: 20; transform: translateX(-50%);

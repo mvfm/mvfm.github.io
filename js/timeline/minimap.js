@@ -1,8 +1,62 @@
 // Layout bands, measured up from the bottom of the strip.
 const OVERVIEW_H = 12;   // full-range strip with the draggable focus window
-const YEAR_H = 13;       // year tick labels
+const YEAR_H = 13;       // time-axis tick labels
 const NAME_H = 15;       // entry-headline labels (only when markers are far enough apart)
 const LABEL_MIN_GAP = 108; // px between labelled markers
+const AXIS_LABEL_GAP = 34;  // px between time-axis tick labels
+
+const MON3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONF = ['January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'];
+
+// full, human date for the hover tooltip — "1956", "June 1956", or "12 June 1956"
+function fmtFullDate(d) {
+  if (!d) return '';
+  const y = Number(d.year);
+  if (!Number.isFinite(y)) return '';
+  const m = Number(d.month);
+  if (!Number.isFinite(m) || m < 1 || m > 12) return String(y);
+  const day = Number(d.day);
+  return Number.isFinite(day) && day >= 1
+    ? `${day} ${MONF[m - 1]} ${y}`
+    : `${MONF[m - 1]} ${y}`;
+}
+
+// Adaptive time axis: as the window narrows, step from years → months → days.
+// Times are decimal years in the scale's own model: year + (m-1)/12 + (day-1)/365.
+// Returns [{ tt, label, strong }] for the visible span [t0, t1].
+function axisTicks(t0, t1) {
+  const span = t1 - t0;
+  const out = [];
+  if (!(span > 0)) return out;
+
+  if (span > 8) {
+    niceYears(Math.floor(t0), Math.ceil(t1), 6).forEach(y => out.push({ tt: y, label: String(y), strong: true }));
+  } else if (span > 0.66) {
+    const step = [1, 2, 3, 6].find(s => (span * 12) / s <= 7) || 6;
+    for (let y = Math.floor(t0) - 1; y <= Math.ceil(t1) + 1; y++) {
+      for (let m = 1; m <= 12; m += 1) {
+        if ((m - 1) % step !== 0) continue;
+        const tt = y + (m - 1) / 12;
+        if (tt < t0 || tt > t1) continue;
+        out.push({ tt, label: m === 1 ? `${MON3[0]} ${y}` : MON3[m - 1], strong: m === 1 });
+      }
+    }
+  } else {
+    const step = [1, 2, 5, 10, 15].find(s => (span * 365) / s <= 7) || 15;
+    for (let y = Math.floor(t0) - 1; y <= Math.ceil(t1) + 1; y++) {
+      for (let m = 1; m <= 12; m += 1) {
+        for (let d = 1; d <= 31; d += 1) {
+          if ((d - 1) % step !== 0) continue;
+          const tt = y + (m - 1) / 12 + (d - 1) / 365;
+          if (tt < t0 || tt > t1) continue;
+          out.push({ tt, label: `${d} ${MON3[m - 1]}`, strong: d === 1 });
+        }
+      }
+    }
+  }
+  return out;
+}
 
 export class Minimap {
   constructor(canvasEl, opts) {
@@ -119,6 +173,26 @@ export class Minimap {
       const i = Math.max(0, Math.min(this.scale.n - 1, Math.round(this.scale.indexAtFrac(f))));
       return Math.floor(times[i] ?? dom.t0);
     };
+    // global fraction -> decimal time, interpolating the (warped) index axis
+    const timeAtFrac = f => {
+      if (!times.length) return dom.t0;
+      const fi = Math.max(0, Math.min(this.scale.n - 1, this.scale.indexAtFrac(f)));
+      const lo = Math.floor(fi), hi = Math.min(this.scale.n - 1, lo + 1);
+      const a = times[lo] ?? dom.t0, b = times[hi] ?? a;
+      return a + (fi - lo) * (b - a);
+    };
+    // decimal time -> global fraction, the inverse of the warp (binary search on times)
+    const fracAtTime = tt => {
+      const n = this.scale.n;
+      if (!n) return 0;
+      if (tt <= times[0]) return 0;
+      if (tt >= times[n - 1]) return 1;
+      let lo = 0, hi = n - 1;
+      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (times[m] <= tt) lo = m; else hi = m; }
+      const denom = (times[hi] - times[lo]) || 1;
+      const fi = lo + (tt - times[lo]) / denom;
+      return this.scale.posOf(lo) + (fi - lo) * (this.scale.posOf(hi) - this.scale.posOf(lo));
+    };
 
     // 1. era bands (clipped to the detail viewport)
     this.eras.forEach((era, k) => {
@@ -191,16 +265,21 @@ export class Minimap {
       ctx.globalAlpha = 1;
     }
 
-    // 5. year ticks
+    // 5. time axis — granularity adapts to the zoom (year → month → day)
     const yrRowY = lanesH + NAME_H + YEAR_H - 3;
+    const tw0 = timeAtFrac(this.focus.f0), tw1 = timeAtFrac(this.focus.f1);
+    const y0 = yearAtFrac(this.focus.f0), y1 = yearAtFrac(this.focus.f1);
     ctx.fillStyle = palette.yearLabel;
     ctx.font = '9px system-ui, sans-serif';
-    const y0 = yearAtFrac(this.focus.f0), y1 = yearAtFrac(this.focus.f1);
-    niceYears(y0, y1, 6).forEach(yr => {
-      const gf = clamp01((yr - dom.t0) / tspan);
-      const x = this._plotX(gf);
+    let lastTickX = -Infinity;
+    axisTicks(tw0, tw1).forEach(({ tt, label, strong }) => {
+      const x = this._plotX(fracAtTime(tt));
       if (x < this._laneLabelWidth || x > W) return;
-      ctx.fillText(String(yr), Math.min(Math.max(this._laneLabelWidth, x - 10), W - 24), yrRowY);
+      if (x - lastTickX < AXIS_LABEL_GAP) return;
+      lastTickX = x;
+      ctx.globalAlpha = strong ? 1 : 0.78;
+      ctx.fillText(label, Math.min(Math.max(this._laneLabelWidth, x - 10), W - ctx.measureText(label).width - 2), yrRowY);
+      ctx.globalAlpha = 1;
     });
 
     // 6. playhead (detail)
@@ -220,7 +299,7 @@ export class Minimap {
 
     // 7. readout (top-right of the lanes area)
     const inView = this.scale.entriesInWindow(this.focus);
-    const readout = `${y0}–${y1}  ·  ${inView} / ${this.scale.n}`;
+    const readout = `${y0 === y1 ? y0 : `${y0}–${y1}`}  ·  ${inView} / ${this.scale.n}`;
     ctx.font = '9px system-ui, sans-serif';
     ctx.fillStyle = palette.yearLabel;
     ctx.globalAlpha = 0.85;
@@ -350,8 +429,9 @@ export class Minimap {
     if (best < 0) { this._hideTip(); return; }
     if (best !== this._hoverIdx) {
       this._hoverIdx = best;
-      const yr = Math.floor((this.scale._times || [])[best] ?? 0);
-      this._tip.textContent = `${yr}  ·  ${this.labelOf(best)}`;
+      const dateText = fmtFullDate(this.opts.dateOf?.(best))
+        || String(Math.floor((this.scale._times || [])[best] ?? 0));
+      this._tip.textContent = `${dateText}  ·  ${this.labelOf(best)}`;
       this._tip.hidden = false;
     }
     this._tip.style.left = Math.round(x) + 'px';

@@ -110,6 +110,7 @@ export class AITimeline {
         scale: this._scale, groups: GROUPS, eras: data.eras || [],
         groupOf: i => this._events[i]?.group || GROUPS[0],
         labelOf: i => this._events[i]?.text?.headline || '',
+        dateOf: i => this._events[i]?.start_date || null,
         palette: resolvePalette(), reducedMotion: this.opts.reducedMotion,
         onZoom: win => this._onZoom(win),
         onScrub: idx => this.goToIndex(idx, 'jump'),
@@ -118,6 +119,7 @@ export class AITimeline {
       this._minimap.opts.groupOf = i => this._events[i]?.group || GROUPS[0];
       this._minimap.opts.labelOf = i => this._events[i]?.text?.headline || '';
       this._minimap.labelOf = this._minimap.opts.labelOf;
+      this._minimap.opts.dateOf = i => this._events[i]?.start_date || null;
       this._minimap.opts.eras = data.eras || [];
       this._minimap.eras = data.eras || [];
       this._minimap.opts.palette = resolvePalette();
@@ -138,6 +140,9 @@ export class AITimeline {
     if (!this._slugToIndex.has(slug)) return;
     this.goToIndex(this._slugToIndex.get(slug), 'jump');
   }
+
+  first() { this.goToIndex(0, 'jump'); }
+  last() { this.goToIndex(this._events.length - 1, 'jump'); }
 
   goToIndex(i, direction) {
     const n = this._events.length;
