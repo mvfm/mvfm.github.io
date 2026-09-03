@@ -284,6 +284,26 @@
       expect(true).toBeTruthy(); // no throw
     });
 
+    test('Minimap dragging the playhead scrubs (onScrub with an index)', () => {
+      const sc = createScale(withIds);
+      const c = mmMount();
+      let scrubbed = null;
+      const mm = new Minimap(c, { scale: sc, groups:['research','industry','pop culture'], eras:[], groupOf:i=>withIds[i].group, palette:PALETTE, reducedMotion:true, onZoom(){}, onScrub(i){ scrubbed = i; } });
+      mm.setFocus({ f0: 0, f1: 1 });   // full window so the playhead x is unclamped
+      mm.setCurrent(4);
+      const rect = c.getBoundingClientRect();
+      const px = mm._plotX(sc.posOf(4));            // where the playhead is drawn
+      const tx = mm._plotX(sc.posOf(7));            // drag target near the end
+      c.dispatchEvent(new PointerEvent('pointerdown', { offsetX: px, clientX: rect.left + px, clientY: rect.top + 20, pointerId: 1, bubbles: true }));
+      window.dispatchEvent(new PointerEvent('pointermove', { clientX: rect.left + tx, clientY: rect.top + 20, pointerId: 1, bubbles: true }));
+      window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, bubbles: true }));
+      expect(Number.isInteger(scrubbed)).toBeTruthy();
+      expect(scrubbed > 4).toBeTruthy();
+      // focus window must not have moved in playhead mode
+      expect(mm._debug().focus.f0 === 0 && mm._debug().focus.f1 === 1).toBeTruthy();
+      mm.destroy();
+    });
+
     runAll().then(renderResults);
   </script>
 </body>

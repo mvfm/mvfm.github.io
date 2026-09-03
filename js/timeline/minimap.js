@@ -9,6 +9,7 @@ export class Minimap {
     this.groups = opts.groups;
     this.eras = opts.eras || [];
     this.palette = opts.palette;
+    this.reducedMotion = opts.reducedMotion;
     this.focus = { f0: 0, f1: 1 };
     this.current = 0;
     this._dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -16,6 +17,7 @@ export class Minimap {
     this._destroyed = false;
     this._drag = null;              // { mode:'body'|'edge0'|'edge1'|'playhead', startX, startF }
     this._laneLabelWidth = 16;
+    this._lastScrub = -Infinity;   // timestamp of last playhead-drag onScrub (throttle); -Inf = none yet
 
     this._onPointerDown = e => this._pointerDown(e);
     this._onPointerMove = e => this._pointerMove(e);
@@ -129,6 +131,16 @@ export class Minimap {
     const clampedPx = Math.max(x0, Math.min(x1, px));
     ctx.moveTo(clampedPx, 0); ctx.lineTo(clampedPx, this._h - 14); ctx.stroke();
 
+    // 5b. out-of-window chevron — pinned at the nearer edge when current is outside
+    if (px < x0 || px > x1) {
+      const my = (this._h - 14) / 2, s = 4;
+      ctx.fillStyle = palette.playhead;
+      ctx.beginPath();
+      if (px < x0) { ctx.moveTo(x0, my); ctx.lineTo(x0 + s, my - s); ctx.lineTo(x0 + s, my + s); }
+      else { ctx.moveTo(x1, my); ctx.lineTo(x1 - s, my - s); ctx.lineTo(x1 - s, my + s); }
+      ctx.closePath(); ctx.fill();
+    }
+
     // 6. year labels — up to 6 "nice" ticks across the domain
     ctx.fillStyle = palette.yearLabel;
     ctx.font = '9px system-ui, sans-serif';
@@ -147,6 +159,9 @@ export class Minimap {
     const grab = 8;
     if (Math.abs(x - x0) <= grab) return 'edge0';
     if (Math.abs(x - x1) <= grab) return 'edge1';
+    const rawPx = this._plotX(this.scale.posOf(Math.round(this.current)));
+    const playPx = Math.max(x0, Math.min(x1, rawPx));   // clamped x, matching what's drawn
+    if (Math.abs(x - playPx) <= 6) return 'playhead';
     if (x > x0 && x < x1) return 'body';
     return 'jump';
   }
@@ -167,6 +182,13 @@ export class Minimap {
     if (!this._drag) return;
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
+    if (this._drag.mode === 'playhead') {
+      const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+      if (now - this._lastScrub < 60) return;   // throttle continuous scrub
+      this._lastScrub = now;
+      this.opts.onScrub?.(Math.round(this.scale.indexAtFrac(this._fracAtX(x))));
+      return;                                   // never move the focus window in this mode
+    }
     const df = this._fracAtX(x) - this._fracAtX(this._drag.startX);
     let { f0, f1 } = this._drag.startFocus;
     if (this._drag.mode === 'body') { f0 += df; f1 += df; }
@@ -220,5 +242,5 @@ function niceYears(t0, t1, count) {
   const step = [1, 2, 5, 10].map(m => m * mag).find(s => s >= raw) || 10 * mag;
   const out = [];
   for (let y = Math.ceil(t0 / step) * step; y <= t1; y += step) out.push(Math.round(y));
-  return out;
+  return out.length > 7 ? out.slice(0, 7) : out;   // spec: 4–7 ticks
 }
