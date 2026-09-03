@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ARTICLE_TITLE — Insights — mvfm.digital</title>
+    <meta name="description" content="ARTICLE_DESCRIPTION" />
+    <meta name="author" content="Marcus Vinicius Freitas Margarites" />
+    <link rel="canonical" href="https://mvfm.digital/insights/ARTICLE_SLUG" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://mvfm.digital/insights/ARTICLE_SLUG" />
+    <meta property="og:title" content="ARTICLE_TITLE — Insights — mvfm.digital" />
+    <meta property="og:description" content="ARTICLE_DESCRIPTION" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="ARTICLE_TITLE — Insights — mvfm.digital" />
+    <meta name="twitter:description" content="ARTICLE_DESCRIPTION" />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "ARTICLE_TITLE",
+      "description": "ARTICLE_DESCRIPTION",
+      "url": "https://mvfm.digital/insights/ARTICLE_SLUG",
+      "datePublished": "ARTICLE_DATE_ISO",
+      "author": {
+        "@type": "Person",
+        "name": "Marcus Vinicius Freitas Margarites",
+        "url": "https://mvfm.digital"
+      }
+    }
+    </script>
+
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="stylesheet" href="/style.css">
+
+    <!-- Start Single Page Apps for GitHub Pages -->
+    <script type="text/javascript">
+        (function (l) {
+            if (l.search[1] === 'p' && l.search[2] === '=') {
+                var decoded = l.search.slice(1).split('&').map(function (s) {
+                    return s.replace(/~and~/g, '&')
+                }).filter(function (s) {
+                    return s.slice(0, 2) === 'p='
+                })[0];
+                if (decoded !== undefined) {
+                    window.history.replaceState(null, null,
+                        l.pathname.slice(0, (l.pathname.slice(-1) === '/' ? -1 : undefined)) + decoded.slice(2) +
+                        l.hash
+                    );
+                }
+            }
+        }(window.location))
+    </script>
+    <!-- End Single Page Apps for GitHub Pages -->
+</head>
+
+<body>
+    <div class="app">
+        <div id="topBar">
+            <header>
+                <h1 class="brand"></h1>
+            </header>
+            <nav>
+                <div class="menu"></div>
+            </nav>
+        </div>
+        <main>
+            <canvas id="golCanvas" aria-hidden="true"></canvas>
+            <section id="contentPanel" class="panel" aria-live="polite" aria-atomic="true"></section>
+            <aside id="statsPanel" aria-live="polite" aria-atomic="true">
+                <div class="row"><span class="label">GEN</span>
+                    <div class="digits" id="genDigits"></div>
+                </div>
+                <div class="row"><span class="label">ALIVE</span>
+                    <div class="digits" id="aliveDigits"></div>
+                </div>
+                <div class="row"><span class="label">TOTAL</span>
+                    <div class="digits" id="totalDigits"></div>
+                </div>
+                <div class="row"><span class="label">OCC%</span>
+                    <div class="digits" id="occDigits"></div><span class="percent">%</span>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Article content -->
+    <template id="tpl-feature">
+        <article class="insight-article">
+            <header class="insight-article-header">
+                <h1>ARTICLE_TITLE</h1>
+                <p class="insight-article-meta">ARTICLE_DATE_DISPLAY</p><!-- e.g. "April 2026" -->
+            </header>
+
+            <div class="insight-article-body">
+
+                <!-- One-sentence hook displayed in larger type above the hero image -->
+                <p class="insight-standfirst">ARTICLE_STANDFIRST</p>
+
+                <!-- Hero image: place file in /img/insights/ARTICLE_SLUG-*.png -->
+                <figure class="insight-hero-image">
+                    <img src="/img/insights/ARTICLE_SLUG-hero.png" alt="HERO_IMAGE_ALT" loading="eager">
+                    <figcaption>HERO_IMAGE_CAPTION</figcaption>
+                </figure>
+
+                <!-- ─── CHAPTER BREAK ──────────────────────────────────────────── -->
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">I</span>
+                    CHAPTER_I_TITLE
+                </h2>
+
+                <!--
+                    TWO-COLUMN LAYOUT PATTERN
+                    ─────────────────────────
+                    Left column  → <aside class="insight-callout"> … </aside>
+                    Right column → <div class="insight-text"> … </div>
+
+                    Always pair them in this order. The callout is optional;
+                    a lone <div class="insight-text"> renders full-width.
+                -->
+
+                <!-- LEFT: short pull-quote that frames the section -->
+                <aside class="insight-callout">
+                    CALLOUT_TEXT
+                </aside>
+                <!-- RIGHT: body copy, optional h3, links, figures, explainers -->
+                <div class="insight-text">
+                    <h3>SECTION_HEADING</h3>
+                    <p>BODY_PARAGRAPH</p>
+                    <p>BODY_PARAGRAPH</p>
+
+                    <!-- Inline explainer box (optional, sits inside insight-text) -->
+                    <aside class="insight-explainer">
+                        <h4>EXPLAINER_HEADING</h4>
+                        <p>EXPLAINER_BODY</p>
+                    </aside>
+
+                    <!-- Inline SVG diagram (optional, sits inside insight-text) -->
+                    <!--
+                    <figure class="insight-diagram" role="img" aria-labelledby="DIAGRAM_ID-title DIAGRAM_ID-desc">
+                        <svg viewBox="0 0 760 245" xmlns="http://www.w3.org/2000/svg">
+                            <title id="DIAGRAM_ID-title">DIAGRAM_TITLE</title>
+                            <desc id="DIAGRAM_ID-desc">DIAGRAM_DESC</desc>
+                            …
+                        </svg>
+                        <figcaption>DIAGRAM_CAPTION</figcaption>
+                    </figure>
+                    -->
+
+                    <p>BODY_PARAGRAPH</p>
+                </div>
+
+                <!-- Additional callout + text sections follow the same pattern -->
+                <aside class="insight-callout">
+                    CALLOUT_TEXT
+                </aside>
+                <div class="insight-text">
+                    <h3>SECTION_HEADING</h3>
+                    <p>BODY_PARAGRAPH</p>
+                </div>
+
+                <!-- ─── CHAPTER BREAK ──────────────────────────────────────────── -->
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">II</span>
+                    CHAPTER_II_TITLE
+                </h2>
+
+                <aside class="insight-callout">
+                    CALLOUT_TEXT
+                </aside>
+                <div class="insight-text">
+                    <h3>SECTION_HEADING</h3>
+                    <p>BODY_PARAGRAPH</p>
+                </div>
+
+                <!-- Bottom separator + call-to-action -->
+                <hr class="insight-separator">
+                <p class="insight-cta">CTA_TEXT <a href="/ai?q=insights=ARTICLE_SLUG">Explore the timeline</a>.</p>
+
+            </div>
+        </article>
+    </template>
+
+    <script>window.__FEATURE_SLUG__ = 'ARTICLE_SLUG';</script>
+    <script type="module" src="/js/main.js"></script>
+
+    <!-- Fallback content for crawlers that don't execute JavaScript -->
+    <noscript>
+        <style>.app { display: none; }</style>
+        <main>
+            <nav>
+                <a href="https://mvfm.digital/">Home</a> |
+                <a href="https://mvfm.digital/resume">Resume</a> |
+                <a href="https://mvfm.digital/contact">Contact</a> |
+                <a href="https://mvfm.digital/ai">AI Timeline</a> |
+                <a href="https://mvfm.digital/insights">Insights</a>
+            </nav>
+            <article>
+                <h1>ARTICLE_TITLE</h1>
+                <p>ARTICLE_DESCRIPTION</p>
+                <p>By Marcus Vinicius Freitas Margarites — ARTICLE_DATE_DISPLAY</p>
+                <!-- Add a brief noscript summary of each chapter for crawlers -->
+                <h2>I — CHAPTER_I_TITLE</h2>
+                <p>NOSCRIPT_CHAPTER_I_SUMMARY</p>
+                <h2>II — CHAPTER_II_TITLE</h2>
+                <p>NOSCRIPT_CHAPTER_II_SUMMARY</p>
+            </article>
+        </main>
+    </noscript>
+</body>
+
+</html>

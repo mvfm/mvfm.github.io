@@ -194,60 +194,6 @@ main {
     transform: translateZ(0);
 }
 
-/* TimelineJS Theme Overrides */
-.tl-timeline {
-    background: transparent !important;
-    /* Scope reflow/paint of the ~29k-node timeline subtree to itself. */
-    contain: content;
-}
-
-.tl-menubar,
-.tl-timenav {
-    background-color: var(--clr-bg-main) !important;
-}
-
-.tl-marker-active .tl-marker-content {
-    background-color: var(--clr-primary) !important;
-    border-color: var(--clr-primary) !important;
-}
-
-.tl-marker:hover .tl-marker-content {
-    background-color: var(--clr-primary) !important;
-}
-
-.tl-slidenav-icon,
-.tl-slidenav-title {
-    color: var(--clr-primary) !important;
-}
-
-/* Needed for absolutely-positioned insight stripe */
-.tl-slide {
-    position: relative;
-    /* TimelineJS lays out every one of ~1000 slides whether on screen or not.
-       content-visibility lets the browser skip layout + paint for off-screen
-       slides. contain-intrinsic-size is a placeholder matching the configured
-       slide box (#timeline-embed is 600px tall; width tracks the panel). */
-    content-visibility: auto;
-    contain-intrinsic-size: 900px 600px;
-}
-
-/* Insight article stripe — injected into event text, relocated to .tl-slide root by JS */
-.insight-ref-stripe-container {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 5px;
-    pointer-events: none;
-    z-index: 5;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.tl-slide > .insight-ref-stripe-container {
-    opacity: 1;
-}
-
 .insight-ref-stripe {
     width: 5px;
     height: 100%;
@@ -255,53 +201,12 @@ main {
     border-radius: 6px 0 0 6px;
 }
 
-/* Archived entry ribbon — injected into event text, relocated to .tl-slide root by JS */
-.archived-ribbon-container {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 80px;
-    height: 80px;
-    overflow: clip;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.tl-slide > .archived-ribbon-container {
-    opacity: 1;
-    z-index: 1002;
-}
-
-.archived-ribbon {
-    position: absolute;
-    top: 16px;
-    right: -22px;
-    width: 90px;
-    text-align: center;
-    background: #dc2626;
-    color: white;
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    padding: 3px 0;
-    transform: rotate(35deg);
-}
-
-.tl-slide.archived {
-    opacity: 0.72;
-}
-
-.tl-headline-date {
-    color: var(--clr-primary) !important;
-}
-
 .timeline-wrapper {
     width: 100%;
 }
 
 #timeline-embed {
+    position: relative; /* contain the absolutely-positioned .ait-stage-host */
     width: 100%;
     height: 600px;
     background: rgba(0, 0, 0, 0.03);
@@ -462,122 +367,7 @@ main {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Event Card Topic Labels */
-.tl-text {
-    position: relative !important;
-    vertical-align: top !important;
-    padding-top: 1rem !important; /* Spacing at top */
-}
-
-/* Allow the text content to be full width so labels can hit the right edge */
-.tl-text .tl-text-content {
-    max-width: none !important;
-    padding: 0 !important;
-}
-
-/* Constrain only the actual readable content for better UX */
-.tl-text .tl-headline {
-    max-width: 650px !important;
-    margin-left: 0 !important;
-    margin-right: auto !important;
-    text-align: left !important;
-}
-
-.tl-text .tl-text-content p,
-.tl-text .tl-text-content ul,
-.tl-text .tl-text-content ol {
-    max-width: 650px !important;
-    margin-left: 0 !important;
-    margin-right: auto !important;
-}
-
-/* Override TimelineJS link colour with site accent blue */
-.tl-text .tl-text-content a {
-    color: var(--clr-accent, #1baaff) !important;
-}
-.tl-text .tl-text-content a:hover {
-    color: var(--clr-primary, #0c2d6b) !important;
-}
-
-/* Fix caption overflow and ensure it wraps within media area */
-.tl-media .tl-caption {
-    max-width: 450px !important;
-    white-space: normal !important;
-    margin-left: 0 !important;
-    margin-right: auto !important;
-    text-align: left !important;
-    overflow-wrap: break-word !important;
-}
-
-/* Base style for labels, we'll move them in the DOM via JS */
-.topic-labels-container {
-    position: absolute; /* Relative to text area initially */
-    top: 0;
-    right: 0;
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.4rem;
-    z-index: 1000;
-    pointer-events: none;
-    opacity: 0; /* Hidden until relocated by JS to avoid jitter */
-    transition: opacity 0.3s ease;
-}
-
-/* When labels are moved to be child of .tl-slide in JS */
-.tl-slide > .topic-labels-container {
-    position: sticky;
-    top: 1.5rem;
-    z-index: 1000;
-    display: flex;
-    justify-content: flex-end;
-    width: auto;
-    height: 0; /* Don't take up vertical space */
-    overflow: visible; /* Allow pills to be seen */
-    margin: 0;
-    padding-right: 1rem;
-    pointer-events: none; /* Allow interaction with text behind */
-}
-
-/* Insight chip container — anchored to bottom-right of slide */
-.insight-chips-container {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.3rem;
-    z-index: 1000;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.tl-slide > .insight-chips-container {
-    bottom: 1.5rem;
-    right: 1.25rem;
-    opacity: 1;
-}
-
-.event-topic-label {
-    pointer-events: auto; /* Ensure pills are still clickable */
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: lowercase;
-    color: white;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-    /* No box-shadow: this pill renders several times per slide across ~1000
-       slides; the shadowed repaints were a measurable multiplier. text-shadow
-       alone keeps it legible on light media. */
-}
-
-/* Insight article chip — stacked below topic pills inside .topic-labels-container */
+/* Insight article chip — stacked below the topic pills on an event card */
 .insight-ref-chip,
 .insight-ref-chip:link,
 .insight-ref-chip:visited {
@@ -605,26 +395,6 @@ main {
 }
 
 /* Purchase links cart icon */
-.purchase-links-container {
-    position: absolute;
-    top: 0;
-    right: 0;
-    z-index: 1001;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.tl-slide > .purchase-links-container {
-    position: sticky;
-    top: 3.5rem;
-    height: 0;
-    overflow: visible;
-    display: flex;
-    justify-content: flex-end;
-    padding-right: 1rem;
-    pointer-events: none;
-}
-
 .cart-btn {
     pointer-events: auto;
     position: relative;
@@ -872,16 +642,6 @@ ol li {
     border-top-color: var(--clr-accent) !important;
     border-radius: 50% !important;
     animation: spin 0.8s linear infinite !important;
-}
-
-/* Hide TimelineJS default loader when our branded loader is present */
-.spinner-container+.tl-timeline .tl-loader,
-#timeline-embed:has(.spinner-container) .tl-loader,
-#timeline-embed .tl-loader {
-    display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
 }
 
 /* Bell button wrapper (positions the badge dot) */
@@ -1541,3 +1301,44 @@ ol li {
         transform: translateY(100%); }
     .findings-detail.show { transform: translateY(0); }
 }
+
+/* ===== AI timeline component ===== */
+:root { --timeline-focus: var(--clr-accent); }
+
+.ait-stage-host { position: relative; height: 460px; overflow: hidden; }
+.ait-stage { position: absolute; inset: 0; outline: none; }
+.ait-card {
+  position: absolute; inset: 0; display: flex; gap: 1.25rem;
+  padding: 1.25rem; box-sizing: border-box; background: var(--clr-panel-bg, #fff);
+  transition: transform .18s ease, opacity .18s ease;
+}
+.ait-card[hidden] { display: none; }
+.ait-enter { transform: translateX(24px); opacity: 0; }
+.ait-enter-prev { transform: translateX(-24px); opacity: 0; }
+.ait-leave { transform: translateX(-24px); opacity: 0; }
+.ait-leave-prev { transform: translateX(24px); opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .ait-card { transition: none; } }
+
+.ait-media { flex: 0 0 40%; display: flex; flex-direction: column; gap: .4rem; min-width: 0; }
+.ait-media img { width: 100%; height: auto; max-height: 100%; object-fit: contain; border-radius: var(--radius-md, 8px); }
+.ait-yt-facade { position: relative; width: 100%; aspect-ratio: 16/9; background-size: cover; background-position: center; border: 0; border-radius: var(--radius-md, 8px); cursor: pointer; }
+.ait-yt-play { position: absolute; inset: 0; display: grid; place-items: center; font-size: 2.5rem; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,.5); }
+.ait-yt-frame { width: 100%; aspect-ratio: 16/9; border: 0; border-radius: var(--radius-md, 8px); }
+.ait-linkcard { display: flex; flex-direction: column; gap: .2rem; padding: .8rem; border: 1px solid var(--clr-panel-border, #d0d7e4); border-radius: var(--radius-md, 8px); text-decoration: none; color: inherit; }
+.ait-linkcard-host { font-size: .7rem; color: var(--clr-text-muted, #7c879e); }
+.ait-media-caption { font-size: .7rem; color: var(--clr-text-muted, #7c879e); }
+
+.ait-body { position: relative; flex: 1 1 auto; min-width: 0; overflow-y: auto; }
+.ait-headline { margin: .2rem 0 .6rem; }
+.ait-text { line-height: 1.55; }
+.ait-topics { position: absolute; top: 0; right: 0; display: flex; flex-direction: column; gap: .25rem; }
+.ait-topics .topic-pill { font-size: .7rem; padding: .15rem .5rem; border-radius: var(--radius-full, 999px); color: #fff; }
+.ait-chips { margin-top: .8rem; display: flex; flex-wrap: wrap; gap: .4rem; }
+.insight-ref-stripe { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: linear-gradient(#7c3aed, #a21caf); }
+.archived-ribbon { position: absolute; top: .6rem; right: .6rem; background: #64748b; color: #fff; font-size: .65rem; font-weight: 700; letter-spacing: .05em; padding: .15rem .5rem; border-radius: 3px; }
+.ait-cart { position: absolute; bottom: 0; left: 0; }
+
+.ait-minimap-slider { display: block; width: 100%; height: 92px; margin-top: .5rem; outline-offset: 2px; }
+.ait-minimap { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+
+.ait-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
