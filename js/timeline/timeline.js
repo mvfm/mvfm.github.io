@@ -127,7 +127,7 @@ export class AITimeline {
     const n = this._events.length;
     if (!n) return;
     const next = Math.max(0, Math.min(n - 1, Math.round(i)));
-    if (next === this._current && direction !== 'initial') { /* still refresh minimap */ }
+    if (next === this._current && direction !== 'initial') return;
     this._current = next;
     this._stage.show(this._events[next], direction);
     // window-follow: keep the playhead inside the focus window

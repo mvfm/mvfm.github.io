@@ -378,6 +378,20 @@
       expect(el.querySelector('.ait-card')).toBeFalsy();
     });
 
+    test('AITimeline no-op goToId (current slug) emits no change', async () => {
+      const el = mount();
+      const t = new AITimeline(el, aiOpts);
+      t.setEvents(structuredClone(SAMPLE));
+      await Promise.resolve();
+      const currentSlug = t.getCurrentSlide().data.unique_id;
+      let count = 0;
+      t.on('change', () => { count++; });
+      t.goToId(currentSlug);
+      expect(count).toBe(0);
+      expect(t.getCurrentSlide().data.unique_id).toBe(currentSlug);
+      t.destroy();
+    });
+
     test('AITimeline fires initial change on a microtask after setEvents', async () => {
       const el = mount();
       const t = new AITimeline(el, aiOpts);
