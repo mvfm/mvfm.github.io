@@ -1,7 +1,7 @@
 // ── Config ────────────────────────────────────────────────────────────────────
 const _isLocal = window.location.hostname === 'localhost' ||
                  window.location.hostname === '127.0.0.1';
-export const ENDPOINT = (_isLocal ? 'http://localhost:8080' : 'https://mvfm.pythonanywhere.com') + '/api/beacon';
+export const ENDPOINT = (_isLocal ? 'http://localhost:8080' : 'https://mvfm.pythonanywhere.com') + '/api/v2/beacon';
 const FLUSH_INTERVAL_MS = 5000;
 const MAX_PENDING = 50;
 const MAX_RETRY_ATTEMPTS = 5;

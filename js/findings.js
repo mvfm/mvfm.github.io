@@ -1,6 +1,6 @@
 import { track } from './analytics.js';
 import { getTopicColor, generateMnemonics, getTopicInitials } from './topics.js';
-import { API_BASE_URL } from './config.js';
+import { API_V2 } from './config.js';
 import { buildGraphModel, filterFindings, deriveEventLabel } from './findings-model.js';
 
 const NEUTRAL_TOPIC = 'var(--clr-text-muted)';
@@ -84,7 +84,7 @@ export async function findingsRouteOnLoad() {
     {
         const ctrl = new AbortController();
         const timeoutId = setTimeout(() => ctrl.abort(), 15000);
-        fetch(`${API_BASE_URL}/timeline`, { signal: ctrl.signal })
+        fetch(`${API_V2}/timeline`, { signal: ctrl.signal })
             .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
             .then(data => {
                 if (!Array.isArray(data.topics) || !data.topics.length) return;

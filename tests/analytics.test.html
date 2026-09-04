@@ -126,8 +126,8 @@
         expect(id1 === id2).toBeFalsy();
       });
 
-      await test('ENDPOINT contains /api/beacon', async () => {
-        expect(ENDPOINT.endsWith('/api/beacon')).toBeTruthy();
+      await test('ENDPOINT contains /api/v2/beacon', async () => {
+        expect(ENDPOINT.endsWith('/api/v2/beacon')).toBeTruthy();
       });
 
       await test('track() enqueues an event with correct shape', async () => {

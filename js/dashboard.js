@@ -211,7 +211,7 @@ async function loadTraffic() {
   showSkeleton(kpis);
 
   try {
-    const d = await apiFetch('/api/analytics/traffic');
+    const d = await apiFetch('/api/v2/analytics/traffic');
 
     kpis.innerHTML =
       kpiCard('Sessions',          d.sessions.toLocaleString(),              deltaBadge(d.sessions_delta_pct)) +
@@ -268,7 +268,7 @@ async function loadBehavior() {
   showSkeleton(kpis);
 
   try {
-    const d = await apiFetch('/api/analytics/sessions/behavior');
+    const d = await apiFetch('/api/v2/analytics/sessions/behavior');
 
     kpis.innerHTML =
       kpiCard('Median Duration',    fmtDuration(d.median_duration_s),          deltaBadge(d.median_duration_delta_s, 's')) +
@@ -318,7 +318,7 @@ const REFERRER_COLORS = ['#6366f1','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4
 
 async function loadGeo() {
   try {
-    const d = await apiFetch('/api/analytics/geo');
+    const d = await apiFetch('/api/v2/analytics/geo');
 
     const outerData   = d.countries.map(c => c.sessions);
     const outerColors = d.countries.map((_, i) => GEO_COLORS[i % GEO_COLORS.length]);
@@ -388,7 +388,7 @@ async function loadGeo() {
 async function loadReferrers() {
   const errEl = document.getElementById('referrers-error');
   try {
-    const d = await apiFetch('/api/analytics/referrers');
+    const d = await apiFetch('/api/v2/analytics/referrers');
     _referrersRaw = d;
 
     const labels = d.referrers.map(r => r.referrer);
@@ -422,7 +422,7 @@ async function loadReferrers() {
 async function loadUserAgents() {
   const errEl = document.getElementById('user-agents-error');
   try {
-    const d = await apiFetch('/api/analytics/device-types');
+    const d = await apiFetch('/api/v2/analytics/device-types');
 
     if (!d.total_sessions) {
       if (_charts['chart-user-agents']) {
@@ -470,7 +470,7 @@ async function loadTimeline() {
   const kpis = document.getElementById('timeline-kpis');
   showSkeleton(kpis);
   try {
-    const d = await apiFetch('/api/analytics/timeline');
+    const d = await apiFetch('/api/v2/analytics/timeline');
 
     kpis.innerHTML =
       kpiCard('Searches',      d.total_searches.toLocaleString(),         '') +
@@ -566,7 +566,7 @@ async function loadFunnel() {
   const tbody = document.querySelector('#purchase-table tbody');
   wrap.innerHTML = '<div class="skeleton skeleton-block"></div>';
   try {
-    const d = await apiFetch('/api/analytics/funnel');
+    const d = await apiFetch('/api/v2/analytics/funnel');
     _funnelRaw = d;
     const maxVal = d.event_views || 1;
 
@@ -602,7 +602,7 @@ async function loadRecentSessions(limit = 10) {
   const tbody = document.getElementById('sessions-tbody');
   tbody.innerHTML = '<tr><td colspan="8" class="skeleton" style="height:60px"></td></tr>';
   try {
-    const d = await apiFetch('/api/analytics/sessions/recent', { limit });
+    const d = await apiFetch('/api/v2/analytics/sessions/recent', { limit });
 
     tbody.innerHTML = d.sessions.map(s => {
       const isBounce = s.is_bounce;
@@ -732,7 +732,7 @@ async function openSessionModal(sessionId) {
   modal.classList.add('open');
 
   try {
-    const url = `${API_BASE}/api/analytics/sessions/${sessionId}`;
+    const url = `${API_BASE}/api/v2/analytics/sessions/${sessionId}`;
     const res = await fetch(url, { headers: { 'Authorization': `Bearer ${TOKEN}` } });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const d = await res.json();
@@ -930,7 +930,7 @@ async function loadContentStats() {
 
   try {
     // Intentionally not using apiFetch/buildUrl — this endpoint is date-range-independent
-    const res = await fetch(API_BASE + '/api/content/stats', {
+    const res = await fetch(API_BASE + '/api/v2/content/stats', {
       headers: { 'Authorization': `Bearer ${TOKEN}` },
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1039,7 +1039,7 @@ async function fetchAndRenderEntry(slug) {
   tableWrap.innerHTML = '';
 
   try {
-    const d = await apiFetch(`/api/analytics/timeline/entries/${encodeURIComponent(slug)}`);
+    const d = await apiFetch(`/api/v2/analytics/timeline/entries/${encodeURIComponent(slug)}`);
     const perDay = fillDates(d.entry_views_per_day ?? d.views_per_day ?? []);
 
     document.getElementById('entry-modal-title').textContent = d.entry_title || slug;

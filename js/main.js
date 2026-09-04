@@ -3,7 +3,7 @@ import { Router } from './router.js';
 import { initUI } from './ui.js';
 import { track } from './analytics.js';
 import { injectShell } from './shell.js';
-import { API_BASE_URL } from './config.js';
+import { API_V2 } from './config.js';
 import { getTopicColor, generateMnemonics, getTopicInitials } from './topics.js';
 import { findingsRouteOnLoad } from './findings.js';
 import { AITimeline } from './timeline/timeline.js';
@@ -41,7 +41,7 @@ function sanitizeTimelineText(html) {
  * App Configuration & Initialization
  */
 const CONFIG = {
-    API_BASE_URL,
+    API_V2,
     MAX_RETRIES: 3,
     RETRY_DELAY_MS: 2000
 };
@@ -329,7 +329,7 @@ const aiRouteOnLoad = async () => {
                 await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY_MS));
             }
 
-            const queryUrl = new URL(`${CONFIG.API_BASE_URL}/timeline`);
+            const queryUrl = new URL(`${CONFIG.API_V2}/timeline`);
             if (query) {
                 queryUrl.searchParams.append('q', query);
             }
@@ -514,7 +514,7 @@ const aiRouteOnLoad = async () => {
                             <h3 style="margin-top:0">Failed to load timeline</h3>
                             <p>${errorMsg}</p>
                             <p style="font-size: 0.85rem; opacity: 0.8;">
-                                URL: <code>${CONFIG.API_BASE_URL}/timeline</code><br>
+                                URL: <code>${CONFIG.API_V2}/timeline</code><br>
                                 ${error.name}: Ensure the AIAPI is reachable.
                             </p>
                             <button onclick="location.reload()" style="background: transparent; border: 1px solid #ff6b6b; color: #ff6b6b; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; margin-top: 1rem;">Retry Page</button>
@@ -794,7 +794,7 @@ const resumeRouteOnLoad = async () => {
     const container = document.getElementById('resume-quip');
     if (!container) return;
     try {
-        const response = await fetch(`${CONFIG.API_BASE_URL}/quip`);
+        const response = await fetch(`${CONFIG.API_V2}/quip`);
         if (!response.ok) return;
         const data = await response.json();
         if (!data.text) return;
