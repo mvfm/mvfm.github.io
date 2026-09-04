@@ -117,7 +117,11 @@ export class Router {
     updateMenu(activeRoute) {
         const displayRoute = activeRoute === 'insights-article' ? 'insights' : activeRoute;
         this.menuButtons.forEach(btn => {
-            btn.setAttribute('aria-current', btn.dataset.route === displayRoute ? 'page' : 'false');
+            const isActive = btn.dataset.route === displayRoute;
+            btn.setAttribute('aria-current', isActive ? 'page' : 'false');
+            // on mobile the nav scrolls horizontally instead of wrapping (see
+            // style.css .menu) — keep the active pill from landing off-screen
+            if (isActive) btn.scrollIntoView({ inline: 'nearest', block: 'nearest' });
         });
     }
 

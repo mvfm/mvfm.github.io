@@ -146,6 +146,28 @@ nav {
     border-color: var(--clr-primary);
 }
 
+/* Mobile: 6 pills no longer fit one row, and wrapping to a 2nd row doubles the
+   nav's height. Scroll sideways in a single row instead — router.js scrolls
+   the active pill into view so it's never left off-screen after a reload. */
+@media (max-width: 640px) {
+    .menu {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        -webkit-mask-image: linear-gradient(to right, transparent, black 12px, black calc(100% - 12px), transparent);
+        mask-image: linear-gradient(to right, transparent, black 12px, black calc(100% - 12px), transparent);
+    }
+
+    .menu::-webkit-scrollbar {
+        display: none;
+    }
+
+    .menu button {
+        flex: 0 0 auto;
+    }
+}
+
 /* Better handling for notebook screens (1080p @ 150% = 720p effective) */
 @media (max-height: 750px) {
     :root {
