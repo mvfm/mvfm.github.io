@@ -1441,10 +1441,47 @@ main {
 
 /* narrow viewports: stack media above text */
 @media (max-width: 640px) {
-  .ait-card { flex-direction: column; gap: 1rem; }
-  .ait-media { flex: 0 0 auto; max-height: 38%; }
+  /* let the embed grow with the stacked card + minimap instead of clipping it
+     at the desktop 568px (min-height covers the loading-spinner state) */
+  #timeline-embed { height: auto; min-height: 540px; }
+  /* the card is position:absolute inset:0, so the host still needs an explicit
+     height — make it viewport-relative so tall entries mostly fit without an
+     inner scroll */
+  .ait-stage-host { height: 62vh; min-height: 430px; }
+
+  /* full-width single column: the desktop 50/50 split is gone; the ~30px side
+     padding is the mobile stand-in for the 100px nav-arrow gutters */
+  .ait-card { flex-direction: column; gap: 1rem; padding: 0 30px; }
+  /* size the media wrapper to its (capped) image — a percentage max-height here
+     let the image overflow the wrapper and paint over the body text below */
+  .ait-media { flex: 0 0 auto; max-height: none; }
+  .ait-media img { max-height: 200px; }
+  .ait-body { flex: 0 0 auto; padding: 12px 2px 0; }
+
   .ait-topics { top: .5rem; right: .5rem; }
   .ait-cart { top: calc(.5rem + 28px + .4rem); right: .5rem; }
-  .ait-chips { position: static; align-items: flex-start; margin-top: 1rem; }
+  /* chips are appended to the card *before* .ait-body in the DOM (harmless when
+     absolute on desktop); once in flow they must sit after the text */
+  .ait-chips { position: static; order: 1; align-items: flex-start; margin-top: 1rem; }
   .ait-headline { font-size: 32px; line-height: 34px; }
+  .ait-card.title .ait-headline { font-size: 40px; line-height: 42px; }
+
+  /* icon-only chevrons hugging the card edges; the labels needed the 100px
+     gutter that no longer exists, and the minimap is the primary scrubber here */
+  .ait-nav-prev, .ait-nav-next {
+    top: 50%; transform: translateY(-50%);
+    width: 28px; height: 34px; align-items: center; justify-content: center;
+    background: rgba(255, 255, 255, .82); border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .18);
+  }
+  .ait-nav-prev { left: 1px; }
+  .ait-nav-next { right: 1px; }
+  .ait-nav-title, .ait-nav-date { display: none; }
+  .ait-nav-icon { font-size: 22px; }
+
+  /* the fixed GoL stats HUD is bottom-right decoration sized for desktop; at
+     phone widths it scales up over the full-width timeline card. Hide it only
+     while the AI route is mounted — #timeline-embed is unique to that route and
+     #statsPanel lives outside #contentPanel, so scope via :has(). */
+  .app:has(#timeline-embed) #statsPanel { display: none; }
 }
