@@ -1,5 +1,16 @@
 [
   {
+    "slug": "nvidia-hugging-face-easter-egg",
+    "title": "NVIDIA's $12.93B Hugging Face Deal Has an Easter Egg",
+    "url": "https://x.com/etnshow/status/2095526554365247839",
+    "source": "etn. · X",
+    "date_added": "2026-09-04",
+    "note": "A one-line post noting that the headline price of Nvidia's acquisition of Hugging Face &mdash; $12,930,300,000 &mdash; encodes a joke: the digits 129303 are the decimal codepoint for U+1F917, the &#129303; (hugging face) emoji.",
+    "topics": ["industry"],
+    "referenced_events": ["nvidia-buys-hugging-face"],
+    "referenced_insights": []
+  },
+  {
     "slug": "peter-thiel-mind-bending-conversation",
     "title": "A Mind-Bending Conversation with Peter Thiel",
     "url": "https://www.iheart.com/podcast/326-interesting-times-with-ros-29972437/episode/a-mind-bending-conversation-with-peter-thiel-282867563/",
