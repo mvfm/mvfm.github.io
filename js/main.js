@@ -51,10 +51,13 @@ let allTopics = [];
 let selectedTopics = new Set();
 let lastTimelineData = null;
 let _modalCreating = false;
+let cleanupTimelineTimers = null;
 
 // --- AITimeline lifecycle ----------------------------------------------------
 // AITimeline owns all its own DOM and listeners; destroy() tears them down.
 const destroyTimeline = () => {
+    cleanupTimelineTimers?.();
+    cleanupTimelineTimers = null;
     window.timeline?.destroy?.();
     window.timeline = null;
 };
@@ -224,6 +227,7 @@ const aiRouteOnLoad = async () => {
     let topicsParam = urlParams.get('topics');
     let slugsParam = urlParams.get('slugs');
     let currentHash = window.location.hash;
+    const hasExplicitFilters = ['q', 'topics', 'slugs'].some(key => urlParams.has(key));
 
     // Resolve insights=<term> in query param (e.g. from article CTA links)
     const insightsMatch = query && query.match(/(?:^|\s)insights=(\S+)/i);
@@ -269,10 +273,11 @@ const aiRouteOnLoad = async () => {
         }
     }
 
-    // Restore hash if missing from URL
-    if (!currentHash) {
+    // Only resume a saved position on a plain visit, not a new search link.
+    if (!currentHash && !hasExplicitFilters) {
         const savedHash = localStorage.getItem('timeline_hash');
         if (savedHash) {
+            currentHash = savedHash;
             newUrl.hash = savedHash;
             needsUrlUpdate = true;
         }
@@ -431,22 +436,26 @@ const aiRouteOnLoad = async () => {
 
                     window.timeline.setEvents(data);
 
-                    // Deep-link: jump to #event-<slug> on load. goToId is synchronous
-                    // and safe to call immediately; keep one microtask retry for the
-                    // case where the hash was set by a restore just above.
-                    const _hashSlug = (window.location.hash.match(/^#event-(.+)$/) || [])[1];
+                    // Use backend result order, before the component's chronological
+                    // sort. Explicit or restored entry links take precedence.
+                    if (query || topicsParam || slugsParam) {
+                        window.timeline.goToId(slugify(data.events[0].text?.headline || ''));
+                    }
+                    const _hashSlug = (currentHash.match(/^#event-(.+)$/) || [])[1];
                     if (_hashSlug) {
                         window.timeline.goToId(_hashSlug);
-                        queueMicrotask(() => window.timeline?.goToId?.(_hashSlug));
                     }
 
                     lastTimelineData = data;
                     updateBellState(data);
                     showTimelineModal(data);
 
-                    let isTimelineInitialized = false;
                     let dwellTimer = null;
                     let _writeHashTimer = null;
+                    cleanupTimelineTimers = () => {
+                        clearTimeout(dwellTimer);
+                        clearTimeout(_writeHashTimer);
+                    };
                     const writeHash = (newId) => {
                         clearTimeout(_writeHashTimer);
                         _writeHashTimer = setTimeout(() => {
@@ -460,9 +469,8 @@ const aiRouteOnLoad = async () => {
                         dwellTimer = setTimeout(() => {
                             if (e.unique_id) track('timeline_event_view', { event_id: e.unique_id, event_title: e.text?.headline || '' });
                         }, 500);
-                        if (isTimelineInitialized && e.unique_id) writeHash(e.unique_id);
+                        if (e.unique_id) writeHash(e.unique_id);
                     });
-                    setTimeout(() => { isTimelineInitialized = true; }, 1500);
                 } else {
                     // Handle empty results gracefully
                     if (embed) {
