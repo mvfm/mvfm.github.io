@@ -5,7 +5,7 @@ import { track } from './analytics.js';
 import { injectShell } from './shell.js';
 import { API_V2 } from './config.js';
 import { getTopicColor, generateMnemonics, getTopicInitials } from './topics.js';
-import { findingsRouteOnLoad } from './findings.js';
+import { findingsRouteOnLoad, findingsRouteOnUnload } from './findings.js';
 import { AITimeline } from './timeline/timeline.js';
 
 // Mirrors TimelineJS slugify() exactly — keep in sync with app/util.py
@@ -422,6 +422,12 @@ const aiRouteOnLoad = async () => {
                             track('timeline_insight_click', {
                                 event_id: chip.dataset.eventId, event_title: chip.dataset.eventTitle,
                                 article_slug: chip.dataset.articleSlug, article_title: chip.dataset.articleTitle,
+                            });
+                        },
+                        onFindingClick: (chip) => {
+                            track('timeline_finding_click', {
+                                event_id: chip.dataset.eventId, event_title: chip.dataset.eventTitle,
+                                finding_slug: chip.dataset.findingSlug, finding_title: chip.dataset.findingTitle,
                             });
                         },
                         onTextLinkClick: (link) => {
@@ -865,7 +871,8 @@ const routes = {
         description: 'A curated web of links on AI, its history, and its open problems — with a graph connecting them to the timeline and to Insights.',
         canonicalUrl: 'https://mvfm.digital/findings',
         template: 'tpl-findings',
-        onLoad: findingsRouteOnLoad
+        onLoad: findingsRouteOnLoad,
+        onUnload: findingsRouteOnUnload
     },
     'insights-article': {
         get title() { return document.title || 'Insights — mvfm.digital'; },

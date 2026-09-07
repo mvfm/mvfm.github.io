@@ -153,8 +153,8 @@
         expect(deriveEventLabel('some-other-event', ov)).toBe('Some Other Event');
       });
 
-      await test('deriveEventLabel: shipped overrides map is empty', async () => {
-        expect(Object.keys(TOPIC_LABEL_OVERRIDES).length).toBe(0);
+      await test('deriveEventLabel: existing acronym override is preserved', async () => {
+        expect(deriveEventLabel('ai-gets-its-name')).toBe('AI Gets Its Name');
       });
 
       await test('deriveEventLabel: empty/garbage input → empty string', async () => {
@@ -165,9 +165,9 @@
       // Task 3: buildGraphModel tests
       const F = [
         { slug: 'a', title: 'A', topics: ['ai safety', 'industry'],
-          referenced_events: ['hugging-face-breach'], referenced_insights: ['shortcut'] },
+          referenced_events: [{ id: 1, slug: 'hugging-face-breach', title: 'Hugging Face Breach' }], referenced_insights: ['shortcut'] },
         { slug: 'b', title: 'B', topics: ['industry'],
-          referenced_events: ['hugging-face-breach', 'sandbox-escape'], referenced_insights: [] },
+          referenced_events: [{ id: 1, slug: 'hugging-face-breach', title: 'Hugging Face Breach' }, { id: 2, slug: 'sandbox-escape', title: 'Sandbox Escape' }], referenced_insights: [] },
       ];
       const INS = [{ slug: 'shortcut', title: 'Shortcut' }];
 
@@ -185,10 +185,16 @@
         expect(nodes.filter(n => n.type === 'insight').map(n => n.ref)).toEqual(['shortcut']);
       });
 
-      await test('buildGraphModel: insight label from manifest, event label derived', async () => {
+      await test('buildGraphModel: insight label from manifest, event label from API', async () => {
         const { nodes } = buildGraphModel(F, INS);
         expect(nodes.find(n => n.id === 'insight:shortcut').label).toBe('Shortcut');
         expect(nodes.find(n => n.id === 'event:hugging-face-breach').label).toBe('Hugging Face Breach');
+      });
+
+      await test('buildGraphModel: event acronym/title comes verbatim from API', async () => {
+        const { nodes } = buildGraphModel([{ slug: 'x', title: 'X', referenced_events:
+          [{ id: 3, slug: 'gpt-4', title: 'GPT-4' }] }], []);
+        expect(nodes.find(n => n.id === 'event:gpt-4').label).toBe('GPT-4');
       });
 
       await test('buildGraphModel: edge count = sum of topics+events+insights', async () => {

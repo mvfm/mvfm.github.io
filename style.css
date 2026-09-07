@@ -388,7 +388,10 @@ main {
 /* Insight article chip — stacked below the topic pills on an event card */
 .insight-ref-chip,
 .insight-ref-chip:link,
-.insight-ref-chip:visited {
+.insight-ref-chip:visited,
+.finding-ref-chip,
+.finding-ref-chip:link,
+.finding-ref-chip:visited {
     display: flex;
     align-items: center;
     gap: 0.3rem;
@@ -411,6 +414,20 @@ main {
     background: #ede9fe;
     color: #6b21a8 !important;
 }
+
+/* Findings use the same compact pill shape, with a teal accent. */
+.finding-ref-chip,
+.finding-ref-chip:link,
+.finding-ref-chip:visited {
+    display: block;
+    background: #ccfbf1;
+    border-color: #14b8a6;
+    color: #0f766e !important;
+    max-width: min(420px, calc(100vw - 5rem));
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.finding-ref-chip:hover { background: #99f6e4; color: #115e59 !important; }
 
 /* Purchase links cart icon */
 .cart-btn {
@@ -1424,12 +1441,20 @@ main {
 /* Purchase cart — just below the topic pills, top-right */
 .ait-cart { position: absolute; top: calc(1rem + 28px + .4rem); right: 1rem; z-index: 6; }
 
-/* Insight chips — bottom-right corner, stacked */
+/* Insights retain their original bottom-right stack. */
 .ait-chips {
   position: absolute; bottom: 1.25rem; right: 1.25rem;
   display: flex; flex-direction: column; align-items: flex-end;
   gap: .3rem; z-index: 5;
 }
+
+/* Findings sit below the media on the left, clear of the text column. */
+.ait-finding-chips {
+  position: absolute; bottom: 1.25rem; left: 1.25rem;
+  display: flex; flex-direction: column; align-items: flex-start;
+  max-width: calc(50% - 2.5rem); gap: .3rem; z-index: 5;
+}
+.ait-finding-chips .finding-ref-chip { box-sizing: border-box; width: fit-content; max-width: min(420px, calc(100vw - 5rem), 100%); }
 
 .insight-ref-stripe {
   position: absolute; left: 0; top: 0; bottom: 0; width: 5px; z-index: 4;
@@ -1494,6 +1519,7 @@ main {
   /* chips are appended to the card *before* .ait-body in the DOM (harmless when
      absolute on desktop); once in flow they must sit after the text */
   .ait-chips { position: static; order: 1; align-items: flex-start; margin-top: 1rem; }
+  .ait-finding-chips { position: static; max-width: 100%; align-self: flex-start; }
   .ait-headline { font-size: 32px; line-height: 34px; }
   .ait-card.title .ait-headline { font-size: 40px; line-height: 42px; }
 

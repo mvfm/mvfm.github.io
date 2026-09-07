@@ -96,6 +96,7 @@ export class Stage {
     const initialsForTopic = this.opts.initialsForTopic || (t => t);
     const slug = event.unique_id;
     const articles = insightArticlesFor(slug) || [];
+    const findings = event.related_findings || [];
     const headline = event.text?.headline || '';
     const isTitle = !!event.is_title;
     card.innerHTML = '';
@@ -185,6 +186,22 @@ export class Stage {
         link.dataset.eventId = slug; link.dataset.eventTitle = headline;
         link.dataset.articleSlug = a.slug; link.dataset.articleTitle = a.title;
         link.textContent = `✦ ${a.title}`;
+        chips.appendChild(link);
+      });
+      card.appendChild(chips);
+    }
+
+    if (!isTitle && findings.length) {
+      const chips = document.createElement('div');
+      chips.className = 'ait-finding-chips';
+      findings.forEach(f => {
+        const link = document.createElement('a');
+        link.className = 'finding-ref-chip';
+        link.href = `/findings#${encodeURIComponent(f.slug)}`;
+        link.textContent = `◈ ${f.title}`;
+        link.title = f.source ? `${f.title} — ${f.source}` : f.title;
+        link.dataset.eventId = slug; link.dataset.eventTitle = headline;
+        link.dataset.findingSlug = f.slug; link.dataset.findingTitle = f.title;
         chips.appendChild(link);
       });
       card.appendChild(chips);
@@ -286,6 +303,8 @@ export class Stage {
     }
     const opt = ev.target.closest('.purchase-link');
     if (opt) { this.opts.onCartOptionClick?.(opt, ev); this.mount.querySelectorAll('.purchase-dropdown.open').forEach(d => d.classList.remove('open')); return; }
+    const finding = ev.target.closest('.finding-ref-chip');
+    if (finding) { this.opts.onFindingClick?.(finding, ev); return; }
     const chip = ev.target.closest('.insight-ref-chip');
     if (chip) { this.opts.onInsightClick?.(chip, ev); return; }
     const link = ev.target.closest('.ait-text a');

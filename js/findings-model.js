@@ -1,9 +1,8 @@
 // Pure helpers for the Findings section. No DOM, no canvas.
 
-// Human labels for timeline-event slugs whose un-slugified form is wrong
-// (acronyms, internal capitalisation). Starts empty; add one line per
-// acronym-y event as it is first referenced by a finding, e.g.:
-//   'gpt-4': 'GPT-4', 'openai': 'OpenAI', 'rag': 'RAG', 'nlp': 'NLP'
+// Legacy label overrides retained for callers of deriveEventLabel.
+// Event nodes now use API titles directly; readable slug labels are only
+// needed when optional static Insight titles are unavailable.
 export const TOPIC_LABEL_OVERRIDES = {
     'ai-gets-its-name': 'AI Gets Its Name',
 };
@@ -38,8 +37,8 @@ export function buildGraphModel(findings, insights) {
             edges.push({ source: fid, target: id });
         }
         for (const ev of (f.referenced_events || [])) {
-            const id = `event:${ev}`;
-            addNode(id, 'event', deriveEventLabel(ev), ev);
+            const id = `event:${ev.slug}`;
+            addNode(id, 'event', ev.title, ev.slug);
             edges.push({ source: fid, target: id });
         }
         for (const ins of (f.referenced_insights || [])) {

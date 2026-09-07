@@ -321,6 +321,14 @@ export class FindingsGraph {
         }, { passive: true });
     }
 
+    // Update optional labels without disturbing the settled layout or selection.
+    setLabels(labels) {
+        for (const node of this.nodes) {
+            if (labels.has(node.id)) node.label = labels.get(node.id);
+        }
+        this.requestDraw();
+    }
+
     setFilter({ matchedFindingSlugs = null } = {}) {
         this.filterSet = matchedFindingSlugs;
         if (matchedFindingSlugs) {

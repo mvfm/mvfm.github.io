@@ -144,6 +144,34 @@
     };
     function mount() { const el = document.createElement('div'); document.body.appendChild(el); return el; }
 
+    test('Stage renders API Findings backlinks, tracks clicks, and clears stale links', () => {
+      const el = mount(); let clicked = null;
+      const st = new Stage(el, { ...baseOpts,
+        insightArticlesFor: () => [{ slug: 'forwardpropagation', title: 'Forward Propagation' }],
+        onFindingClick: (link, ev) => {
+        ev.preventDefault(); clicked = link.dataset;
+      } });
+      st.show({ ...withIds[1], related_findings: [{ id: 42, slug: 'mccarthy',
+        title: 'McCarthy <oral history>', source: 'IEEE' }] }, 'initial');
+      const link = el.querySelector('.finding-ref-chip');
+      expect(link.getAttribute('href')).toBe('/findings#mccarthy');
+      expect(link.textContent).toBe('◈ McCarthy <oral history>');
+      expect(link.closest('.ait-body')).toBeFalsy();
+      expect(getComputedStyle(link.parentElement).position).toBe('absolute');
+      expect(link.parentElement.className).toBe('ait-finding-chips');
+      expect(el.querySelector('.insight-ref-chip').parentElement.className).toBe('ait-chips');
+      expect(getComputedStyle(link.parentElement).left).toBe('20px');
+      expect(getComputedStyle(el.querySelector('.insight-ref-chip').parentElement).right).toBe('20px');
+      expect(getComputedStyle(link).borderRadius).toBe(getComputedStyle(el.querySelector('.insight-ref-chip')).borderRadius);
+      expect(link.querySelector('oral')).toBeFalsy();
+      link.click();
+      expect(clicked.findingSlug).toBe('mccarthy');
+      expect(clicked.eventId).toBe(withIds[1].unique_id);
+      st.show(withIds[2], 'initial');
+      expect(el.querySelector('article:not([hidden]) .finding-ref-chip')).toBeFalsy();
+      st.destroy(); el.remove();
+    });
+
     test('Stage.show renders headline + text', () => {
       const el = mount();
       const st = new Stage(el, baseOpts);

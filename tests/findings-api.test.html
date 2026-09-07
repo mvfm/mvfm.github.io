@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Findings API Integration Tests</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    body { padding: 1rem; }
+    #results { font: 13px monospace; white-space: pre-wrap; }
+    .pass { color: #15803d; } .fail { color: #b91c1c; }
+    #contentPanel { position: relative; margin: 2rem auto; max-width: 1100px; }
+  </style>
+</head>
+<body>
+  <h2>Findings API Integration Tests</h2>
+  <p id="summary">Running…</p>
+  <div id="results"></div>
+  <div id="contentPanel"></div>
+  <div id="timeline-preview" class="ait-stage-host"></div>
+  <script type="module">
+    import { injectShell } from '../js/shell.js';
+    import { findingsRouteOnLoad, findingsRouteOnUnload, selectFinding, _state } from '../js/findings.js';
+    import { fetchFindings, sourceUrl } from '../js/findings-api.js';
+    import { _reset, _getPendingQueue } from '../js/analytics.js';
+    import { Stage } from '../js/timeline/stage.js';
+
+    // Fixtures never reach a backend, including analytics emitted by the UI.
+    navigator.sendBeacon = () => true;
+    const finding = {
+      id: 42, slug: 'mccarthy', title: 'Oral History: John McCarthy',
+      url: 'https://example.com/oral-history', source: 'IEEE History Center',
+      date_added: '2026-09-01', updated_at: '2026-09-07T15:30:00Z',
+      note: 'How AI got its name. A source connecting historical accounts with the timeline.',
+      topics: ['foundations'],
+      referenced_events: [{ id: 123, slug: 'ai-gets-its-name', title: 'AI Gets Its Name' }],
+      referenced_insights: ['forwardpropagation'],
+    };
+    const second = { ...finding, id: 41, slug: 'second', title: 'Another source',
+      topics: ['fiction'], referenced_events: [], referenced_insights: [] };
+    const collection = { findings: [finding, second], topics: ['fiction', 'foundations', 'industry'], total: 2 };
+    const response = (body, status = 200) => new Response(JSON.stringify(body), { status });
+    let requests = [];
+    function mock(handler = null) {
+      requests = [];
+      window.fetch = async (url, opts = {}) => {
+        url = String(url);
+        if (url.endsWith('/beacon')) return response({});
+        requests.push(url);
+        if (handler) {
+          const result = handler(url, opts);
+          if (result !== undefined) return result;
+        }
+        if (url.endsWith('/api/v2/findings')) return response(collection);
+        if (url.endsWith('/insights/manifest.json')) return response([{ slug: 'forwardpropagation', title: 'Forward Propagation' }]);
+        if (url.endsWith('/api/v2/findings/missing')) return response({ detail: 'Finding not found' }, 404);
+        if (url.endsWith('/api/v2/findings/detail-only')) return response({ finding: { ...finding, slug: 'detail-only' } });
+        throw new Error(`Unexpected request: ${url}`);
+      };
+    }
+    injectShell();
+    const panel = document.getElementById('contentPanel');
+    function mount(hash = '') {
+      findingsRouteOnUnload();
+      _reset();
+      history.replaceState(null, '', location.pathname + hash);
+      panel.replaceChildren(document.getElementById('tpl-findings').content.cloneNode(true));
+    }
+    function assert(value, message) { if (!value) throw new Error(message); }
+    async function until(check) {
+      for (let i = 0; i < 100; i++) {
+        if (check()) return;
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+      throw new Error('Expected UI state did not arrive');
+    }
+    let passed = 0, failed = 0;
+    async function test(name, fn) {
+      try { await fn(); passed++; append(name, true); }
+      catch (err) { failed++; append(`${name}: ${err.message}`, false); }
+      finally { findingsRouteOnUnload(); _reset(); }
+    }
+    function append(text, ok) {
+      const p = document.createElement('p'); p.className = ok ? 'pass' : 'fail';
+      p.textContent = `${ok ? '✓' : '✗'} ${text}`; document.getElementById('results').appendChild(p);
+    }
+
+    await test('API collection renders graph, real event titles, shared topics, and deep link', async () => {
+      mock(); mount('#mccarthy'); await findingsRouteOnLoad();
+      assert(panel.querySelectorAll('.finding-row').length === 2, 'Missing rows');
+      assert(_state.findings[0].id === 42, 'API order changed');
+      assert(_state.allTopics.includes('industry'), 'Global vocabulary lost');
+      assert(panel.querySelector('.finding-chip[href="/ai#event-ai-gets-its-name"]').textContent.includes('AI Gets Its Name'), 'Wrong title or event URL');
+      assert(!_state.model.nodes.some(n => n.id.includes('[object Object]')), 'Object used as graph ID');
+      assert(!requests.some(url => url.includes('/timeline') || url.includes('/findings/manifest')), 'Legacy request remains');
+      await until(() => _state.graph.nodes.some(n => n.label === 'Forward Propagation'));
+    });
+    await test('Search and topic filters retain current semantics', async () => {
+      mock(); mount(); await findingsRouteOnLoad();
+      const input = panel.querySelector('#findings-search-input');
+      input.value = 'IEEE'; input.dispatchEvent(new Event('input'));
+      assert(panel.querySelectorAll('.finding-row').length === 2, 'Source search failed');
+      panel.querySelectorAll('#findings-topic-filters .topic-pill')[0].click();
+      assert(panel.querySelectorAll('.finding-row').length === 1, 'Topic filter failed');
+      assert(_state.graph.filterSet.size === 1, 'Graph filter not updated');
+    });
+    await test('Optional Insights failure does not prevent Findings rendering', async () => {
+      mock(url => url.includes('/insights/') ? response({}, 503) : undefined);
+      mount('#mccarthy'); await findingsRouteOnLoad();
+      assert(panel.querySelector('#findings-detail h3').textContent === finding.title, 'Finding blocked');
+    });
+    await test('Missing collection entry resolves through detail endpoint', async () => {
+      mock(); mount('#detail-only'); await findingsRouteOnLoad();
+      assert(panel.querySelector('#findings-detail h3').textContent === finding.title, 'Detail did not resolve');
+      assert(requests.some(url => url.endsWith('/findings/detail-only')), 'Detail endpoint not used');
+    });
+    await test('Unknown deep link gives visible 404; hash changes open and close details', async () => {
+      mock(); mount('#missing'); await findingsRouteOnLoad();
+      assert(panel.querySelector('#findings-detail').textContent.includes('Finding not found'), 'No 404 message');
+      history.replaceState(null, '', '#second'); window.dispatchEvent(new HashChangeEvent('hashchange'));
+      assert(panel.querySelector('#findings-detail h3').textContent === second.title, 'Hash selection failed');
+      history.replaceState(null, '', location.pathname); window.dispatchEvent(new HashChangeEvent('hashchange'));
+      assert(panel.querySelector('#findings-detail').hidden, 'Hash clear did not close');
+    });
+    await test('API failure is distinct from empty state and offers retry', async () => {
+      mock(url => url.endsWith('/api/v2/findings') ? response({}, 503) : undefined);
+      mount(); await findingsRouteOnLoad();
+      assert(panel.querySelector('.findings-retry'), 'No retry');
+      mock(); panel.querySelector('.findings-retry').click();
+      await until(() => panel.querySelectorAll('.finding-row').length === 2);
+    });
+    await test('Empty collection does not silently fall back to the manifest', async () => {
+      mock(url => url.endsWith('/api/v2/findings') ? response({ findings: [], topics: [], total: 0 }) : undefined);
+      mount(); await findingsRouteOnLoad();
+      assert(panel.textContent.includes('Nothing here yet'), 'Wrong empty state');
+      assert(!requests.some(url => url.includes('manifest')), 'Manifest fallback');
+    });
+    await test('Malformed contract is rejected instead of displaying partial data', async () => {
+      mock(url => url.endsWith('/api/v2/findings') ? response({ ...collection, total: 100 }) : undefined);
+      let rejected = false; try { await fetchFindings(); } catch { rejected = true; }
+      assert(rejected, 'Truncated collection accepted');
+      mock(url => url.endsWith('/api/v2/findings') ? response({ ...collection,
+        findings: [{ ...finding, referenced_events: ['old-slug'] }], total: 1 }) : undefined);
+      rejected = false; try { await fetchFindings(); } catch { rejected = true; }
+      assert(rejected, 'Legacy string reference accepted');
+    });
+    await test('Unload aborts requests and prevents late rendering', async () => {
+      let resolve, signal;
+      mock((url, opts) => url.endsWith('/api/v2/findings') ? new Promise(r => { resolve = r; signal = opts.signal; }) : undefined);
+      mount(); const pending = findingsRouteOnLoad(); findingsRouteOnUnload();
+      panel.textContent = 'Other route'; resolve(response(collection)); await pending;
+      assert(signal.aborted, 'Request not aborted');
+      assert(panel.textContent === 'Other route', 'Stale rendering');
+    });
+    await test('Selecting another finding cancels an outstanding detail request', async () => {
+      let resolve, signal;
+      mock((url, opts) => url.endsWith('/findings/slow') ? new Promise(r => { resolve = r; signal = opts.signal; }) : undefined);
+      mount(); await findingsRouteOnLoad();
+      history.replaceState(null, '', '#slow'); window.dispatchEvent(new HashChangeEvent('hashchange'));
+      selectFinding('second');
+      resolve(response({ finding: { ...finding, slug: 'slow' } }));
+      await new Promise(r => setTimeout(r, 0));
+      assert(signal.aborted, 'Detail request not cancelled');
+      assert(panel.querySelector('#findings-detail h3').textContent === second.title, 'Late detail replaced selection');
+    });
+    await test('Repeated route entry cleans document/hash listeners', async () => {
+      mock(); mount(); await findingsRouteOnLoad();
+      mount(); await findingsRouteOnLoad(); _reset();
+      history.replaceState(null, '', '#mccarthy'); window.dispatchEvent(new HashChangeEvent('hashchange'));
+      assert(_getPendingQueue().filter(e => e.event === 'finding_view').length === 1, 'Duplicate view listeners');
+      findingsRouteOnUnload();
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      assert(location.hash === '#mccarthy', 'Unloaded key listener changed URL');
+    });
+    await test('Unsafe source URL and HTML-like titles remain inert', async () => {
+      mock(); mount(); await findingsRouteOnLoad();
+      selectFinding('mccarthy', { finding: { ...finding, title: '<img src=x onerror=alert(1)>', url: 'javascript:alert(1)' } });
+      assert(!panel.querySelector('#findings-detail img'), 'HTML rendered');
+      assert(!panel.querySelector('.findings-visit'), 'Unsafe URL rendered');
+      assert(sourceUrl('data:text/html,test') === null, 'Unsafe scheme accepted');
+    });
+    await test('Mobile timeline keeps many Findings links reachable without horizontal overflow', async () => {
+      const frame = document.createElement('iframe');
+      frame.title = 'Mobile timeline test'; frame.style.cssText = 'width:390px;height:844px;border:0';
+      frame.srcdoc = `<!doctype html><html><head><link rel="stylesheet" href="/style.css"></head>
+        <body><div id="stage" class="ait-stage-host"></div><script type="module">
+        import { Stage } from '/js/timeline/stage.js';
+        const stage = new Stage(document.getElementById('stage'), {
+          sanitizeText: s => s, colorForTopic: () => '#333', reducedMotion: true,
+          insightArticlesFor: () => [{slug:'forwardpropagation',title:'Forward Propagation'}]
+        });
+        stage.show({unique_id:'ai-gets-its-name',start_date:{year:1955},
+          text:{headline:'AI Gets Its Name',text:'A timeline entry with many sources.'},
+          related_findings:Array.from({length:20},(_,i)=>({id:i,slug:'source-'+i,
+            title:'An extended oral history source about artificial intelligence '+i,source:'IEEE'}))
+        },'initial');
+        document.body.dataset.ready = 'true';
+        <\/script>`;
+      document.body.appendChild(frame);
+      try {
+        await until(() => frame.contentDocument?.body?.dataset.ready);
+        const doc = frame.contentDocument;
+        const card = doc.querySelector('article:not([hidden])');
+        assert(frame.contentWindow.innerWidth === 390, 'Wrong test viewport');
+        assert(card.scrollWidth <= card.clientWidth + 1, 'Horizontal overflow');
+        assert(doc.querySelectorAll('.finding-ref-chip').length === 20, 'Missing references');
+        card.scrollTop = card.scrollHeight;
+        const last = doc.querySelector('.finding-ref-chip:last-child').getBoundingClientRect();
+        const bounds = card.getBoundingClientRect();
+        assert(last.bottom <= bounds.bottom + 1 && last.top >= bounds.top, 'Last references unreachable');
+      } finally { frame.remove(); }
+    });
+
+    document.getElementById('summary').textContent = `${passed} passed, ${failed} failed`;
+    // Leave a real template + graph preview, entirely backed by the same fixture.
+    mock(); mount('#mccarthy'); await findingsRouteOnLoad(); _reset();
+    const stage = new Stage(document.getElementById('timeline-preview'), {
+      sanitizeText: s => s, colorForTopic: () => '#b45422', reducedMotion: true,
+      insightArticlesFor: () => [{ slug: 'forwardpropagation', title: 'Forward Propagation' }],
+    });
+    stage.show({ unique_id: 'ai-gets-its-name', start_date: { year: 1955 },
+      text: { headline: 'AI Gets Its Name', text: '<p>Fixture preview: related sources appear below the timeline text.</p>' },
+      related_findings: Array.from({length: 8}, (_, i) => ({ ...finding, slug: `source-${i}`, title: `${i + 1}. ${finding.title}` })),
+    }, 'initial');
+  </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 import { track } from './analytics.js';
 import { getTopicColor, generateMnemonics, getTopicInitials } from './topics.js';
-import { API_V2 } from './config.js';
+import { fetchFindings, fetchFinding, sourceUrl } from './findings-api.js';
 import { buildGraphModel, filterFindings, deriveEventLabel } from './findings-model.js';
 
 const NEUTRAL_TOPIC = 'var(--clr-text-muted)';
@@ -29,84 +29,86 @@ const fmtDate = (d) => {
 
 const state = {
     findings: [], insights: [], model: { nodes: [], edges: [] },
-    allTopics: [],                 // full sorted list once /timeline answers (Task 12)
+    allTopics: [],                 // shared vocabulary returned by /findings
     topicsInUse: [],               // union of finding topics, always available
     selectedTopics: new Set(),
     query: '',
-    graph: null,                   // FindingsGraph instance (Task 11)
+    graph: null,                   // FindingsGraph instance
 };
 
 let _filterTimer = null;
+let _routeController = null;
+let _detailController = null;
+
+export function findingsRouteOnUnload() {
+    _routeController?.abort();
+    _routeController = null;
+    _detailController?.abort();
+    _detailController = null;
+    clearTimeout(_filterTimer);
+    state.graph?.destroy();
+    state.graph = null;
+}
 
 export async function findingsRouteOnLoad() {
+    findingsRouteOnUnload();
     const rows = document.getElementById('findings-rows');
     if (!rows) return;
+    const ctrl = _routeController = new AbortController();
+    const { signal } = ctrl;
 
     // Filter state is module-level but the template is re-injected fresh on every
     // /findings load — reset so a stale query/topic set can't silently filter the list.
     state.query = '';
     state.selectedTopics.clear();
+    state.findings = [];
+    state.insights = [];
+    state.allTopics = [];
+    state.topicsInUse = [];
+    state.model = { nodes: [], edges: [] };
+    rows.innerHTML = '<li class="loading-text">Loading findings…</li>';
     document.getElementById('contentPanel')?.classList.remove('findings-empty');
+    const panel = document.getElementById('findings-detail');
+    if (panel) { panel.hidden = true; panel.classList.remove('show'); }
+    renderTopicPills();
+    wireDetailDismiss(signal);
+    window.addEventListener('hashchange', () => syncDetailHash(signal), { signal });
 
     try {
-        const [fRes, iRes] = await Promise.all([
-            fetch('/findings/manifest.json'),
-            fetch('/insights/manifest.json').catch(() => null),
-        ]);
-        if (!fRes.ok) throw new Error(`HTTP ${fRes.status}`);
-        state.findings = await fRes.json();
-        state.insights = iRes && iRes.ok ? await iRes.json() : [];
+        const data = await fetchFindings(signal);
+        if (signal.aborted) return;
+        state.findings = data.findings;
+        state.allTopics = data.topics;
+        generateMnemonics(state.allTopics);
     } catch (err) {
-        console.error('[findings] failed to load manifest:', err);
-        rows.innerHTML = '<li class="loading-text" style="color:#ff6b6b">Failed to load findings.</li>';
+        if (signal.aborted) return;
+        console.error('[findings] failed to load:', err);
+        rows.innerHTML = '<li class="loading-text">Failed to load findings. <button type="button" class="findings-retry">Retry</button></li>';
+        rows.querySelector('.findings-retry').addEventListener('click', findingsRouteOnLoad, { signal });
         document.getElementById('contentPanel')?.classList.add('findings-empty');
+        await syncDetailHash(signal);
         return;
     }
 
     if (!state.findings.length) {
         rows.innerHTML = '<li class="loading-text">Nothing here yet.</li>';
         document.getElementById('contentPanel')?.classList.add('findings-empty');
+        await syncDetailHash(signal);
         return;
     }
 
-    state.findings.sort((a, b) => (b.date_added || '').localeCompare(a.date_added || ''));
+    // Preserve the API's newest-first ordering, including its ID tie-breaker.
     state.model = buildGraphModel(state.findings, state.insights);
     state.topicsInUse = [...new Set(state.findings.flatMap(f => f.topics || []))].sort();
 
+    wireFilterUI(signal);
     renderTopicPills();
     applyFilter();          // initial full render
-    wireFilterUI();
-    wireDetailDismiss();
-
-    // Task 12: non-blocking /timeline fetch purely for topic colours.
-    // Runs AFTER the list + graph render; never awaited, never gates the UI.
-    // On failure everything stays neutral and the tab remains fully usable.
-    {
-        const ctrl = new AbortController();
-        const timeoutId = setTimeout(() => ctrl.abort(), 15000);
-        fetch(`${API_V2}/timeline`, { signal: ctrl.signal })
-            .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
-            .then(data => {
-                if (!Array.isArray(data.topics) || !data.topics.length) return;
-                state.allTopics = data.topics;          // verbatim; getTopicColor sorts internally
-                generateMnemonics(state.allTopics);     // same acronyms the AI timeline uses
-                renderTopicPills();                     // recolour topic pills
-                renderLegend();                         // one coloured swatch per topic
-                applyFilter();                          // re-render rows → recoloured topic dots
-                state.graph?.requestDraw();             // late-bound topicColor repaints topic nodes
-            })
-            .catch(err => {
-                console.warn('[findings] topic colours unavailable:', err.message);
-            })
-            .finally(() => clearTimeout(timeoutId));
-    }
-
-    state.graph?.destroy?.();
-    state.graph = null;
 
     const canvas = document.getElementById('findings-canvas');
     if (canvas) {
         const { FindingsGraph } = await import('./findings-graph.js');
+        if (signal.aborted) return;
         state.graph = new FindingsGraph(canvas, state.model, {
             palette: GRAPH_PALETTE,
             topicColor: (label) => state.allTopics.length ? getTopicColor(label, state.allTopics) : null,
@@ -123,7 +125,7 @@ export async function findingsRouteOnLoad() {
             onNavigate: (type, ref) => {
                 track('findings_graph_node_click', { node_type: type, id: ref });
                 track('findings_graph_nav', { node_type: type, slug: ref });
-                location.href = type === 'event' ? `/ai#event-${ref}` : `/insights/${ref}.html`;
+                location.href = type === 'event' ? `/ai#event-${encodeURIComponent(ref)}` : `/insights/${encodeURIComponent(ref)}.html`;
             },
         });
 
@@ -133,7 +135,7 @@ export async function findingsRouteOnLoad() {
             if (z === 'in') state.graph.zoomBy(1.2);
             else if (z === 'out') state.graph.zoomBy(1 / 1.2);
             else if (z === 'reset') state.graph.resetView();
-        });
+        }, { signal });
 
         renderLegend();
     }
@@ -148,12 +150,72 @@ export async function findingsRouteOnLoad() {
         // Graph box was display:none — its canvas backing store is stale. Re-measure
         // before the first paint so the map isn't blurry until the next resize.
         if (showingMap) requestAnimationFrame(() => { state.graph?.resize?.(); state.graph?.requestDraw(); });
-    });
+    }, { signal });
 
-    const hashSlug = decodeURIComponent(location.hash.replace(/^#/, ''));
-    if (hashSlug && state.findings.some(f => f.slug === hashSlug)) {
-        selectFinding(hashSlug);
+    // Insights are optional enrichment. Their failure cannot block Findings.
+    if (!signal.aborted) void loadInsightTitles(signal);
+    await syncDetailHash(signal);
+}
+
+async function loadInsightTitles(signal) {
+    const ctrl = new AbortController();
+    const abort = () => ctrl.abort();
+    signal.addEventListener('abort', abort, { once: true });
+    const timer = setTimeout(abort, 15000);
+    try {
+        const res = await fetch('/insights/manifest.json', { signal: ctrl.signal });
+        if (!res.ok) return;
+        const insights = await res.json();
+        if (signal.aborted || !Array.isArray(insights)) return;
+        state.insights = insights;
+        const titles = new Map(insights.map(a => [a.slug, a.title]));
+        for (const node of state.model.nodes) {
+            if (node.type === 'insight') node.label = titles.get(node.ref) || node.label;
+        }
+        state.graph?.setLabels(new Map(state.model.nodes.map(n => [n.id, n.label])));
+        document.querySelectorAll('#findings-detail [data-insight-slug]').forEach(link => {
+            const title = titles.get(link.dataset.insightSlug);
+            if (title) link.textContent = `✦ ${title}`;
+        });
+    } catch { /* Optional titles retain their readable slug fallback. */ }
+    finally {
+        clearTimeout(timer);
+        signal.removeEventListener('abort', abort);
     }
+}
+
+async function syncDetailHash(signal) {
+    if (signal.aborted) return;
+    _detailController?.abort();
+    let slug;
+    try { slug = decodeURIComponent(location.hash.slice(1)); }
+    catch { showDetailMessage('Finding not found.'); return; }
+    if (!slug) { closeDetail(); return; }
+    if (state.findings.some(f => f.slug === slug)) {
+        selectFinding(slug);
+        return;
+    }
+    const ctrl = _detailController = new AbortController();
+    const abort = () => ctrl.abort();
+    signal.addEventListener('abort', abort, { once: true });
+    showDetailMessage('Loading finding…');
+    try {
+        const finding = await fetchFinding(slug, ctrl.signal);
+        if (!signal.aborted && !ctrl.signal.aborted) selectFinding(slug, { finding });
+    } catch (err) {
+        if (!signal.aborted && !ctrl.signal.aborted) {
+            showDetailMessage(err.status === 404 ? 'Finding not found.' : 'Failed to load finding. Please try again.');
+        }
+    } finally { signal.removeEventListener('abort', abort); }
+}
+
+function showDetailMessage(message) {
+    const panel = document.getElementById('findings-detail');
+    if (!panel) return;
+    panel.innerHTML = `<button class="findings-detail-close" aria-label="Close">&#x2715;</button><p role="status">${esc(message)}</p>`;
+    panel.hidden = false;
+    panel.classList.add('show');
+    panel.querySelector('button').addEventListener('click', closeDetail);
 }
 
 function currentColorList() {
@@ -219,7 +281,7 @@ function renderLegend() {
     ];
 
     // Topic nodes are coloured per-topic (matching the AI tab), so give each its
-    // own swatch. Before /timeline answers we can't colour them — one placeholder.
+    // own swatch using the shared API vocabulary.
     const topics = state.topicsInUse || [];
     if (topics.length && state.allTopics.length) {
         for (const t of topics) parts.push(swatch(getTopicColor(t, state.allTopics, true), t));
@@ -247,7 +309,7 @@ function rowHtml(f) {
     </li>`;
 }
 
-function wireFilterUI() {
+function wireFilterUI(signal) {
     const toggle = document.getElementById('findings-search-toggle');
     const bar = document.getElementById('findings-filter');
     const input = document.getElementById('findings-search-input');
@@ -257,7 +319,7 @@ function wireFilterUI() {
     toggle.addEventListener('click', () => {
         bar.classList.toggle('show');
         if (bar.classList.contains('show')) input.focus();
-    });
+    }, { signal });
     input.addEventListener('input', () => {
         state.query = input.value;
         clearTimeout(_filterTimer);
@@ -269,15 +331,16 @@ function wireFilterUI() {
             });
         }, 400);
         applyFilter();
-    });
+    }, { signal });
     clear.addEventListener('click', () => {
         state.query = ''; input.value = ''; state.selectedTopics.clear();
         renderTopicPills(); applyFilter();
-    });
+    }, { signal });
 }
 
-function selectFinding(slug, { fromGraph = false } = {}) {
-    const f = state.findings.find(x => x.slug === slug);
+function selectFinding(slug, { fromGraph = false, finding = null } = {}) {
+    _detailController?.abort();
+    const f = finding || state.findings.find(x => x.slug === slug);
     const panel = document.getElementById('findings-detail');
     if (!f || !panel) return;
 
@@ -294,12 +357,13 @@ function selectFinding(slug, { fromGraph = false } = {}) {
 
     const insightChips = (f.referenced_insights || []).map(s => {
         const title = (state.insights.find(a => a.slug === s) || {}).title || deriveEventLabel(s);
-        return `<a class="finding-chip" href="/insights/${esc(s)}.html">✦ ${esc(title)}</a>`;
+        return `<a class="finding-chip" data-insight-slug="${esc(s)}" href="/insights/${esc(encodeURIComponent(s))}.html">✦ ${esc(title)}</a>`;
     }).join('');
 
-    const eventChips = (f.referenced_events || []).map(s =>
-        `<a class="finding-chip" href="/ai#event-${esc(s)}">⧉ ${esc(deriveEventLabel(s))}</a>`
+    const eventChips = (f.referenced_events || []).map(e =>
+        `<a class="finding-chip" href="/ai#event-${esc(encodeURIComponent(e.slug))}">⧉ ${esc(e.title)}</a>`
     ).join('');
+    const url = sourceUrl(f.url);
 
     panel.innerHTML = `
         <button class="findings-detail-close" aria-label="Close">&#x2715;</button>
@@ -309,22 +373,23 @@ function selectFinding(slug, { fromGraph = false } = {}) {
         ${topicPills ? `<div class="findings-detail-topics">${topicPills}</div>` : ''}
         ${insightChips ? `<div class="findings-detail-chiprow">${insightChips}</div>` : ''}
         ${eventChips ? `<div class="findings-detail-chiprow">${eventChips}</div>` : ''}
-        <a class="btn-primary findings-visit" href="${esc(f.url)}" target="_blank" rel="noopener">Visit Source ↗</a>`;
+        ${url ? `<a class="btn-primary findings-visit" href="${esc(url)}" target="_blank" rel="noopener">Visit Source ↗</a>` : ''}`;
     panel.hidden = false;
     panel.classList.add('show');
 
     panel.querySelector('.findings-detail-close').addEventListener('click', closeDetail);
-    panel.querySelector('.findings-visit').addEventListener('click', () => {
+    panel.querySelector('.findings-visit')?.addEventListener('click', () => {
         track('finding_source_visit', { slug: f.slug, url: f.url });
     });
 
-    if (location.hash !== `#${slug}`) history.replaceState(null, '', `#${slug}`);
+    if (location.hash !== `#${encodeURIComponent(slug)}`) history.replaceState(history.state, '', `#${encodeURIComponent(slug)}`);
     track('finding_view', { slug: f.slug });
 
     if (!fromGraph) state.graph?.focus?.(`finding:${slug}`);
 }
 
 function closeDetail() {
+    _detailController?.abort();
     const panel = document.getElementById('findings-detail');
     if (!panel) return;
     panel.classList.remove('show');
@@ -334,16 +399,16 @@ function closeDetail() {
 }
 
 // Esc + click-outside dismiss — attach once per route load.
-function wireDetailDismiss() {
+function wireDetailDismiss(signal) {
     const onKey = (e) => { if (e.key === 'Escape') closeDetail(); };
-    document.addEventListener('keydown', onKey);
+    document.addEventListener('keydown', onKey, { signal });
     document.addEventListener('click', (e) => {
         const panel = document.getElementById('findings-detail');
         if (!panel || panel.hidden) return;
         if (panel.contains(e.target)) return;
         if (e.target.closest('.finding-row') || e.target.closest('#findings-canvas')) return;
         closeDetail();
-    });
+    }, { signal });
 }
 
 export { state as _state };

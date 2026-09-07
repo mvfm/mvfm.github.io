@@ -63,6 +63,7 @@ export class AITimeline {
       onCartClick: opts.onCartClick,
       onCartOptionClick: opts.onCartOptionClick,
       onInsightClick: opts.onInsightClick,
+      onFindingClick: opts.onFindingClick,
       getNeighbours: () => this._neighbours(),
       onNav: (dir) => this.goToIndex(this._current + (dir === 'prev' ? -1 : 1), dir),
     });
