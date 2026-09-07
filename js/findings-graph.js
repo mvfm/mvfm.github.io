@@ -6,13 +6,13 @@
 // centering, alpha-cooled), and pointer interaction — hover highlight, node
 // drag (pins via fx/fy), empty-space pan, wheel zoom-to-cursor, click →
 // opts callbacks, and minimal one-finger touch pan. Public control surface:
-// setFilter({ matchedFindingSlugs }), focus(nodeId), zoomBy(f), resetView().
+// setFilter({ matchedFindingSlugs }), zoomBy(f), resetView().
 
 const TYPE_STYLE = {
-    finding: { r: 6,  fill: '#8b5cf6' },
-    topic:   { r: 9,  fill: '#64748b' },   // overridden per-topic by opts.topicColor
-    event:   { r: 11, fill: '#f59e0b' },
-    insight: { r: 9,  fill: '#ec4899' },
+    finding: { r: 9, fill: '#0d9488' },
+    topic:   { r: 11, fill: '#64748b' },   // overridden per-topic by opts.topicColor
+    event:   { r: 5, fill: '#d97706' },
+    insight: { r: 7, fill: '#9333ea' },
 };
 
 // Light-theme defaults (the site is light-only). opts.palette overrides per key.
@@ -57,7 +57,10 @@ export class FindingsGraph {
             .map(e => ({ a: this.index.get(e.source), b: this.index.get(e.target) }))
             .filter(e => e.a && e.b);
         this.degree = new Map(this.nodes.map(n => [n.id, 0]));
+        this.neighbours = new Map(this.nodes.map(n => [n.id, new Set()]));
         for (const e of this.edges) {
+            this.neighbours.get(e.a.id).add(e.b.id);
+            this.neighbours.get(e.b.id).add(e.a.id);
             this.degree.set(e.a.id, this.degree.get(e.a.id) + 1);
             this.degree.set(e.b.id, this.degree.get(e.b.id) + 1);
         }
@@ -67,11 +70,15 @@ export class FindingsGraph {
             (e.a.type === 'topic' || e.b.type === 'topic') ? SIM.lenTopic : SIM.lenOther]));
 
         this.view = { x: 0, y: 0, k: 1 };     // pan x/y (world units), zoom k
+        this._autoFit = true;
         this.filterSet = null;                 // Set<slug> or null
         this.visibleNonFinding = null;         // Set<nodeId> of non-finding nodes still tied to a visible finding
         this.hoverId = null;
         this._raf = null;
         this._drawScheduled = false;
+        this._cameraFrame = null;
+        this._cameraTarget = null;
+        this._visible = false;
 
         this._ro = new ResizeObserver(() => this._resize());
         this._ro.observe(canvas);
@@ -88,12 +95,18 @@ export class FindingsGraph {
     _resize() {
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         const w = this.canvas.clientWidth, h = this.canvas.clientHeight;
-        if (w <= 0 || h <= 0) return;
+        if (w <= 0 || h <= 0) { this._visible = false; this._stop(); return; }
+        const opening = !this._visible;
+        this._visible = true;
         this.canvas.width = Math.floor(w * dpr);
         this.canvas.height = Math.floor(h * dpr);
         this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         this.W = w; this.H = h;
+        if (this._autoFit) this._fit();
         this.requestDraw();
+        // Let the simulation play in view, instead of settling behind the List.
+        if (opening) this.alpha = Math.max(this.alpha, .4);
+        this._kick();
     }
 
     // world → screen
@@ -111,17 +124,18 @@ export class FindingsGraph {
             const c = this.opts.topicColor(n.ref);
             if (c) return c;
         }
-        return TYPE_STYLE[n.type].fill;
+        return this.P[n.type] || TYPE_STYLE[n.type].fill;
     }
 
     _nodeRadius(n) {
         const base = TYPE_STYLE[n.type].r;
-        return base + Math.min(4, (this.degree.get(n.id) || 0) * 0.5);
+        return base + Math.min(3, (this.degree.get(n.id) || 0) * 0.3);
     }
 
     _draw() {
         const ctx = this.ctx;
         if (!this.W || !this.H) return;
+        if (this._autoFit && !this._cameraTarget) this._fit();
         ctx.clearRect(0, 0, this.W, this.H);
 
         const dim = (id) => this.hoverId && id !== this.hoverId && !this._isNeighbor(id) ? 0.15 : 1;
@@ -134,10 +148,11 @@ export class FindingsGraph {
         };
 
         // edges
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = this.P.edge;
         for (const e of this.edges) {
-            ctx.globalAlpha = Math.min(dim(e.a.id), dim(e.b.id)) * Math.min(faded(e.a), faded(e.b));
+            const active = e.a.id === this.hoverId || e.b.id === this.hoverId;
+            ctx.lineWidth = active ? 1.7 : .8;
+            ctx.strokeStyle = active ? this._nodeFill(this.index.get(this.hoverId)) : this.P.edge;
+            ctx.globalAlpha = (active ? .85 : .3) * Math.min(dim(e.a.id), dim(e.b.id)) * Math.min(faded(e.a), faded(e.b));
             ctx.beginPath();
             ctx.moveTo(this._sx(e.a.x), this._sy(e.a.y));
             ctx.lineTo(this._sx(e.b.x), this._sy(e.b.y));
@@ -148,33 +163,57 @@ export class FindingsGraph {
         for (const n of this.nodes) {
             const a = dim(n.id) * faded(n);
             ctx.globalAlpha = a;
-            ctx.fillStyle = this._nodeFill(n);
-            const r = this._nodeRadius(n) * Math.sqrt(this.view.k);
-            ctx.beginPath();
-            ctx.arc(this._sx(n.x), this._sy(n.y), r, 0, Math.PI * 2);
-            ctx.fill();
-            const showLabel = n.type !== 'finding' || this.view.k > 1.4 || this.hoverId === n.id;
-            if (showLabel && n.label) {
-                ctx.globalAlpha = a;
-                ctx.fillStyle = this.P.label;
-                ctx.font = '11px system-ui, sans-serif';
-                ctx.fillText(n.label, this._sx(n.x) + r + 3, this._sy(n.y) + 3);
+            const color = this._nodeFill(n);
+            ctx.fillStyle = n.type === 'topic' ? '#fff' : color;
+            const r = this._nodeRadius(n) * Math.sqrt(Math.max(.65, this.view.k));
+            const x = this._sx(n.x), y = this._sy(n.y);
+            if (n.id === this.hoverId) {
+                ctx.globalAlpha = .12;
+                ctx.fillStyle = color;
+                ctx.beginPath(); ctx.arc(x, y, r + 7, 0, Math.PI * 2); ctx.fill();
+                ctx.globalAlpha = a; ctx.fillStyle = n.type === 'topic' ? '#fff' : color;
             }
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = n.type === 'topic' ? color : '#fff';
+            ctx.lineWidth = n.type === 'topic' ? 2.5 : 1.8; ctx.stroke();
+        }
+        // Place important labels first and skip collisions rather than printing
+        // every title over its neighbours. Hover always reveals a full title.
+        const rank = n => n.id === this.hoverId ? -1 : ({ topic: 0, finding: 1, insight: 2, event: 3 }[n.type]);
+        const occupied = [];
+        for (const n of [...this.nodes].sort((a, b) => rank(a) - rank(b))) {
+            const active = n.id === this.hoverId;
+            if (!n.label || faded(n) < 1 || (this.hoverId && !active && !this._isNeighbor(n.id))) continue;
+            if (n.type === 'event' && !active && !this.hoverId && this.view.k < 1.2) continue;
+            ctx.font = `${n.type === 'topic' || active ? 600 : 500} 11px system-ui, sans-serif`;
+            let label = n.label;
+            const limit = active ? Math.min(340, this.W - 40) : (this.W < 500 ? 116 : 168);
+            while (ctx.measureText(label).width > limit && label.length > 1) label = label.slice(0, -1);
+            if (label !== n.label) label = label.slice(0, -1).trimEnd() + '…';
+            const width = ctx.measureText(label).width + 12;
+            const x = Math.max(8, Math.min(this.W - width - 8, this._sx(n.x) + this._nodeRadius(n) + 5));
+            const y = this._sy(n.y) - 11;
+            if (y < 64 || y + 22 > this.H - 90) continue;
+            const box = { x, y, w: width, h: 22 };
+            if (!active && occupied.some(b => x < b.x + b.w + 3 && x + width + 3 > b.x && y < b.y + b.h + 3 && y + 25 > b.y)) continue;
+            occupied.push(box);
+            ctx.globalAlpha = active ? 1 : .94;
+            ctx.fillStyle = active ? '#e2e8f0' : '#ffffff';
+            ctx.beginPath(); ctx.roundRect(x, y, width, 22, 6); ctx.fill();
+            ctx.fillStyle = this.P.label; ctx.fillText(label, x + 6, y + 15);
         }
         ctx.globalAlpha = 1;
     }
 
     _isNeighbor(id) {
         if (!this.hoverId) return false;
-        for (const e of this.edges) {
-            if (e.a.id === this.hoverId && e.b.id === id) return true;
-            if (e.b.id === this.hoverId && e.a.id === id) return true;
-        }
-        return false;
+        return this.neighbours.get(this.hoverId)?.has(id) || false;
     }
 
     _kick() {
-        if (REDUCED || this._raf) return;
+        if (REDUCED || this._raf || !this._visible || document.hidden) return;
         const loop = () => {
             if (!document.body.contains(this.canvas)) { this.destroy(); return; }
             this._tick();
@@ -187,7 +226,33 @@ export class FindingsGraph {
         };
         this._raf = requestAnimationFrame(loop);
     }
-    _stop() { if (this._raf) { cancelAnimationFrame(this._raf); this._raf = null; } }
+    _stop() {
+        if (this._raf) { cancelAnimationFrame(this._raf); this._raf = null; }
+        this._cancelCamera();
+    }
+
+    _cancelCamera() {
+        if (this._cameraFrame) cancelAnimationFrame(this._cameraFrame);
+        this._cameraFrame = null;
+        this._cameraTarget = null;
+    }
+
+    _animateView(target) {
+        this._cancelCamera();
+        if (REDUCED || !this._visible) { this.view = target; this.requestDraw(); return; }
+        const start = { ...this.view }, began = performance.now();
+        this._cameraTarget = target;
+        const step = now => {
+            const t = Math.min(1, (now - began) / 260);
+            const ease = 1 - (1 - t) ** 3;
+            this.view = { x: start.x + (target.x - start.x) * ease,
+                y: start.y + (target.y - start.y) * ease, k: start.k + (target.k - start.k) * ease };
+            this.requestDraw();
+            if (t < 1) this._cameraFrame = requestAnimationFrame(step);
+            else { this._cameraFrame = null; this._cameraTarget = null; }
+        };
+        this._cameraFrame = requestAnimationFrame(step);
+    }
 
     _reheat(a = 0.4) { this.alpha = Math.max(this.alpha, a); this._kick(); }
 
@@ -232,7 +297,7 @@ export class FindingsGraph {
         for (const n of this.nodes) {
             const dx = px - this._sx(n.x), dy = py - this._sy(n.y);
             const d = Math.hypot(dx, dy);
-            const r = this._nodeRadius(n) * Math.sqrt(this.view.k) + 4;
+            const r = Math.max(12, this._nodeRadius(n) * Math.sqrt(Math.max(.65, this.view.k)) + 4);
             if (d < r && d < bestD) { best = n; bestD = d; }
         }
         return best;
@@ -251,6 +316,7 @@ export class FindingsGraph {
                 dragNode.fy = (py - this.H / 2) / k + this.view.y;
                 moved = true;
                 this._reheat(0.3);
+                if (REDUCED) { this._tick(); this.requestDraw(); }
                 return;
             }
             if (panning) {
@@ -262,11 +328,16 @@ export class FindingsGraph {
                 return;
             }
             const hit = this._pick(px, py);
+            c.title = hit ? `${hit.label} · ${this.degree.get(hit.id)} connections` : '';
             const id = hit ? hit.id : null;
             if (id !== this.hoverId) { this.hoverId = id; c.style.cursor = hit ? 'pointer' : 'default'; this.requestDraw(); }
         });
 
+        c.addEventListener('mouseleave', () => { this.hoverId = null; c.title = ''; this.requestDraw(); });
+
         c.addEventListener('mousedown', (e) => {
+            this._cancelCamera();
+            this._autoFit = false;
             const rect = c.getBoundingClientRect();
             const px = e.clientX - rect.left, py = e.clientY - rect.top;
             const hit = this._pick(px, py);
@@ -296,23 +367,26 @@ export class FindingsGraph {
         });
 
         c.addEventListener('wheel', (e) => {
+            this._autoFit = false;
             e.preventDefault();
             const rect = c.getBoundingClientRect();
             const px = e.clientX - rect.left, py = e.clientY - rect.top;
-            const wx = (px - this.W / 2) / this.view.k + this.view.x;
-            const wy = (py - this.H / 2) / this.view.k + this.view.y;
+            const base = this._cameraTarget || this.view;
+            const wx = (px - this.W / 2) / base.k + base.x;
+            const wy = (py - this.H / 2) / base.k + base.y;
             const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
-            this.view.k = Math.max(0.3, Math.min(4, this.view.k * factor));
-            this.view.x = wx - (px - this.W / 2) / this.view.k;
-            this.view.y = wy - (py - this.H / 2) / this.view.k;
-            this.requestDraw();
+            const k = Math.max(0.1, Math.min(4, base.k * factor));
+            this._animateView({ k, x: wx - (px - this.W / 2) / k, y: wy - (py - this.H / 2) / k });
         }, { passive: false });
 
         // minimal touch: one finger = pan, tap falls through to synthetic click
         let t0 = null;
-        c.addEventListener('touchstart', (e) => { if (e.touches.length === 1) t0 = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }, { passive: true });
+        c.addEventListener('touchstart', (e) => { moved = false; if (e.touches.length === 1) t0 = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }, { passive: true });
         c.addEventListener('touchmove', (e) => {
+            this._cancelCamera();
+            this._autoFit = false;
             if (e.touches.length !== 1 || !t0) return;
+            moved = true;
             const t = e.touches[0];
             this.view.x -= (t.clientX - t0.x) / this.view.k;
             this.view.y -= (t.clientY - t0.y) / this.view.k;
@@ -349,16 +423,26 @@ export class FindingsGraph {
     // Force a backing-store re-measure (e.g. after display:none → visible on mobile).
     resize() { this._resize(); }
 
-    focus(nodeId) {
-        const n = this.index.get(nodeId);
-        if (!n) return;
-        this.view.x = n.x; this.view.y = n.y;
-        this.view.k = Math.max(this.view.k, 1.5);
-        this.requestDraw();
+    _fit() {
+        if (!this.W || !this.H || !this.nodes.length) return;
+        const xs = this.nodes.map(n => n.x), ys = this.nodes.map(n => n.y);
+        const loX = Math.min(...xs), hiX = Math.max(...xs), loY = Math.min(...ys), hiY = Math.max(...ys);
+        this.view = { x: (loX + hiX) / 2, y: (loY + hiY) / 2 - 10,
+            k: Math.max(.1, Math.min(1.35, (this.W - 90) / Math.max(1, hiX - loX), (this.H - 200) / Math.max(1, hiY - loY))) };
     }
-
-    zoomBy(f) { this.view.k = Math.max(0.3, Math.min(4, this.view.k * f)); this.requestDraw(); }
-    resetView() { this.view = { x: 0, y: 0, k: 1 }; this.requestDraw(); }
+    zoomBy(f) {
+        this._autoFit = false;
+        const base = this._cameraTarget || this.view;
+        this._animateView({ ...base, k: Math.max(.1, Math.min(4, base.k * f)) });
+    }
+    resetView() {
+        this._autoFit = true;
+        const start = { ...this.view };
+        this._fit();
+        const target = this.view;
+        this.view = start;
+        this._animateView(target);
+    }
 
     destroy() {
         this._stop();

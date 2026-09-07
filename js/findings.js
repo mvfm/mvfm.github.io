@@ -9,11 +9,11 @@ const NEUTRAL_TOPIC = 'var(--clr-text-muted)';
 // in findings-graph.js (keep the four node hexes in sync with that map).
 const GRAPH_PALETTE = {
     label: '#334155',                  // slate, readable on white (cf. --clr-text #0f172a)
-    edge:  'rgba(100,116,139,0.55)',   // mid grey, reads on white
-    finding: '#8b5cf6',
+    edge:  '#94a3b8',
+    finding: '#0d9488',
     topic:   '#64748b',
-    event:   '#f59e0b',
-    insight: '#ec4899',
+    event:   '#d97706',
+    insight: '#9333ea',
 };
 
 const esc = (s) => String(s ?? '')
@@ -34,11 +34,14 @@ const state = {
     selectedTopics: new Set(),
     query: '',
     graph: null,                   // FindingsGraph instance
+    view: 'list', selectedSlug: null,
 };
 
 let _filterTimer = null;
 let _routeController = null;
 let _detailController = null;
+let _returnView = 'list';
+let _returnScroll = 0;
 
 export function findingsRouteOnUnload() {
     _routeController?.abort();
@@ -60,6 +63,16 @@ export async function findingsRouteOnLoad() {
     // Filter state is module-level but the template is re-injected fresh on every
     // /findings load — reset so a stale query/topic set can't silently filter the list.
     state.query = '';
+    state.view = 'list'; state.selectedSlug = null;
+    _returnView = 'list';
+    document.querySelector('.findings-split')?.classList.remove('show-map', 'has-detail');
+    document.querySelectorAll('[data-findings-view]').forEach(btn => {
+        btn.setAttribute('aria-pressed', String(btn.dataset.findingsView === 'list'));
+        btn.addEventListener('click', () => {
+            closeDetail();
+            setView(btn.dataset.findingsView);
+        }, { signal });
+    });
     state.selectedTopics.clear();
     state.findings = [];
     state.insights = [];
@@ -69,7 +82,7 @@ export async function findingsRouteOnLoad() {
     rows.innerHTML = '<li class="loading-text">Loading findings…</li>';
     document.getElementById('contentPanel')?.classList.remove('findings-empty');
     const panel = document.getElementById('findings-detail');
-    if (panel) { panel.hidden = true; panel.classList.remove('show'); }
+    if (panel) panel.hidden = true;
     renderTopicPills();
     wireDetailDismiss(signal);
     window.addEventListener('hashchange', () => syncDetailHash(signal), { signal });
@@ -99,6 +112,8 @@ export async function findingsRouteOnLoad() {
 
     // Preserve the API's newest-first ordering, including its ID tie-breaker.
     state.model = buildGraphModel(state.findings, state.insights);
+    const mapCount = document.getElementById('findings-map-count');
+    if (mapCount) mapCount.textContent = `${state.findings.length} findings · ${state.model.edges.length} connections`;
     state.topicsInUse = [...new Set(state.findings.flatMap(f => f.topics || []))].sort();
 
     wireFilterUI(signal);
@@ -140,21 +155,35 @@ export async function findingsRouteOnLoad() {
         renderLegend();
     }
 
-    // Mobile: #findings-map-toggle swaps the list ⇄ graph on narrow viewports.
-    const mapToggle = document.getElementById('findings-map-toggle');
-    const split = document.querySelector('.findings-split');
-    mapToggle?.addEventListener('click', () => {
-        const showingMap = split.classList.toggle('show-map');
-        mapToggle.textContent = showingMap ? 'List' : 'Map';
-        track('findings_map_toggle', { to: showingMap ? 'map' : 'list' });
-        // Graph box was display:none — its canvas backing store is stale. Re-measure
-        // before the first paint so the map isn't blurry until the next resize.
-        if (showingMap) requestAnimationFrame(() => { state.graph?.resize?.(); state.graph?.requestDraw(); });
-    }, { signal });
-
     // Insights are optional enrichment. Their failure cannot block Findings.
     if (!signal.aborted) void loadInsightTitles(signal);
     await syncDetailHash(signal);
+}
+
+function setView(view) {
+    if (state.view === view) return;
+    state.view = view;
+    document.querySelector('.findings-split')?.classList.toggle('show-map', view === 'map');
+    document.querySelectorAll('[data-findings-view]').forEach(btn =>
+        btn.setAttribute('aria-pressed', String(btn.dataset.findingsView === view)));
+    track('findings_map_toggle', { to: view });
+    // ResizeObserver updates the canvas after its previously hidden box appears.
+    if (view === 'map') state.graph?.requestDraw();
+}
+
+function openDetailPanel(panel) {
+    if (!document.querySelector('.findings-split')?.classList.contains('has-detail')) {
+        _returnScroll = window.scrollY;
+        _returnView = state.view;
+    }
+    setView('list');
+    document.querySelector('.findings-split')?.classList.add('has-detail');
+    panel.hidden = false;
+    panel.scrollTop = 0;
+    const heading = panel.querySelector('h3, [role="status"]');
+    heading?.setAttribute('tabindex', '-1');
+    heading?.focus({ preventScroll: true });
+    if (window.matchMedia('(max-width: 760px)').matches) panel.scrollIntoView({ block: 'start' });
 }
 
 async function loadInsightTitles(signal) {
@@ -212,9 +241,8 @@ async function syncDetailHash(signal) {
 function showDetailMessage(message) {
     const panel = document.getElementById('findings-detail');
     if (!panel) return;
-    panel.innerHTML = `<button class="findings-detail-close" aria-label="Close">&#x2715;</button><p role="status">${esc(message)}</p>`;
-    panel.hidden = false;
-    panel.classList.add('show');
+    panel.innerHTML = `<button class="findings-detail-close" type="button">← Back to Findings</button><p role="status">${esc(message)}</p>`;
+    openDetailPanel(panel);
     panel.querySelector('button').addEventListener('click', closeDetail);
 }
 
@@ -260,7 +288,8 @@ export function applyFilter() {
         : '<li class="loading-text">No findings match.</li>';
 
     rows.querySelectorAll('.finding-row').forEach(li => {
-        li.addEventListener('click', () => selectFinding(li.dataset.slug));
+        li.querySelector('button').addEventListener('click', () => selectFinding(li.dataset.slug));
+        li.classList.toggle('active', li.dataset.slug === state.selectedSlug);
     });
 
     state.graph?.setFilter({ matchedFindingSlugs: matchedSlugs });
@@ -280,13 +309,8 @@ function renderLegend() {
         swatch(GRAPH_PALETTE.insight, 'Insight'),
     ];
 
-    // Topic nodes are coloured per-topic (matching the AI tab), so give each its
-    // own swatch using the shared API vocabulary.
-    const topics = state.topicsInUse || [];
-    if (topics.length && state.allTopics.length) {
-        for (const t of topics) parts.push(swatch(getTopicColor(t, state.allTopics, true), t));
-    } else if (topics.length) {
-        parts.push(swatch(GRAPH_PALETTE.topic, 'Topics'));
+    for (const topic of state.topicsInUse) {
+        parts.push(swatch(state.allTopics.length ? getTopicColor(topic, state.allTopics, true) : GRAPH_PALETTE.topic, topic));
     }
 
     el.innerHTML = parts.join('');
@@ -298,14 +322,15 @@ function rowHtml(f) {
         return `<span class="finding-dot" style="background:${c}" title="${esc(t)}"></span>`;
     }).join('');
     const refs = [];
-    if ((f.referenced_insights || []).length) refs.push(`✦${f.referenced_insights.length}`);
-    if ((f.referenced_events || []).length) refs.push(`⧉${f.referenced_events.length}`);
+    if ((f.referenced_insights || []).length) refs.push(`${f.referenced_insights.length} Insight${f.referenced_insights.length === 1 ? '' : 's'}`);
+    if ((f.referenced_events || []).length) refs.push(`${f.referenced_events.length} timeline ${f.referenced_events.length === 1 ? 'entry' : 'entries'}`);
     return `<li class="finding-row" data-slug="${esc(f.slug)}">
-        <div class="finding-row-main">
-            <span class="finding-row-title">${esc(f.title)}</span>
-            <span class="finding-row-meta">${esc(f.source)} · ${esc(fmtDate(f.date_added))}</span>
-        </div>
-        <div class="finding-row-tags">${dots}${refs.length ? `<span class="finding-refs">${refs.join(' ')}</span>` : ''}</div>
+        <button type="button" class="finding-row-open" aria-label="Read ${esc(f.title)}">
+        <span class="finding-row-meta">${esc(f.source)} · ${esc(fmtDate(f.date_added))}</span>
+        <span class="finding-row-title">${esc(f.title)}</span>
+        ${f.note ? `<span class="finding-row-excerpt">${esc(f.note.length > 240 ? f.note.slice(0, 240).trimEnd() + '…' : f.note)}</span>` : ''}
+        <span class="finding-row-tags">${dots}${refs.length ? `<span class="finding-refs">${refs.join(' · ')}</span>` : ''}</span>
+        </button>
     </li>`;
 }
 
@@ -343,10 +368,11 @@ function selectFinding(slug, { fromGraph = false, finding = null } = {}) {
     const f = finding || state.findings.find(x => x.slug === slug);
     const panel = document.getElementById('findings-detail');
     if (!f || !panel) return;
+    state.selectedSlug = slug;
 
     document.querySelectorAll('.finding-row.active').forEach(el => el.classList.remove('active'));
     const row = document.querySelector(`.finding-row[data-slug="${CSS.escape(slug)}"]`);
-    if (row) { row.classList.add('active'); row.scrollIntoView({ block: 'nearest' }); }
+    if (row) row.classList.add('active');
 
     const colors = currentColorList();
     // Acronym pills, coloured to match the AI timeline's entry labels.
@@ -366,16 +392,16 @@ function selectFinding(slug, { fromGraph = false, finding = null } = {}) {
     const url = sourceUrl(f.url);
 
     panel.innerHTML = `
-        <button class="findings-detail-close" aria-label="Close">&#x2715;</button>
+        <button class="findings-detail-close" type="button">← Back to Findings</button>
         <h3>${esc(f.title)}</h3>
         <p class="findings-detail-meta">${esc(f.source)} · ${esc(fmtDate(f.date_added))}</p>
         ${f.note ? `<p class="findings-detail-note">${esc(f.note)}</p>` : ''}
         ${topicPills ? `<div class="findings-detail-topics">${topicPills}</div>` : ''}
-        ${insightChips ? `<div class="findings-detail-chiprow">${insightChips}</div>` : ''}
-        ${eventChips ? `<div class="findings-detail-chiprow">${eventChips}</div>` : ''}
+        ${eventChips ? `<section class="findings-references"><h4>Timeline entries</h4><div class="findings-detail-chiprow">${eventChips}</div>
+            <a class="findings-view-timeline" href="/ai?slugs=${encodeURIComponent(f.referenced_events.map(e => e.slug).join(','))}">View these entries in the timeline →</a></section>` : ''}
+        ${insightChips ? `<section class="findings-references"><h4>Insights</h4><div class="findings-detail-chiprow">${insightChips}</div></section>` : ''}
         ${url ? `<a class="btn-primary findings-visit" href="${esc(url)}" target="_blank" rel="noopener">Visit Source ↗</a>` : ''}`;
-    panel.hidden = false;
-    panel.classList.add('show');
+    openDetailPanel(panel);
 
     panel.querySelector('.findings-detail-close').addEventListener('click', closeDetail);
     panel.querySelector('.findings-visit')?.addEventListener('click', () => {
@@ -385,30 +411,33 @@ function selectFinding(slug, { fromGraph = false, finding = null } = {}) {
     if (location.hash !== `#${encodeURIComponent(slug)}`) history.replaceState(history.state, '', `#${encodeURIComponent(slug)}`);
     track('finding_view', { slug: f.slug });
 
-    if (!fromGraph) state.graph?.focus?.(`finding:${slug}`);
+    // Reading a list item does not alter the map's camera.
 }
 
 function closeDetail() {
     _detailController?.abort();
     const panel = document.getElementById('findings-detail');
     if (!panel) return;
-    panel.classList.remove('show');
     panel.hidden = true;
+    const wasOpen = document.querySelector('.findings-split')?.classList.contains('has-detail');
+    document.querySelector('.findings-split')?.classList.remove('has-detail');
+    const selected = state.selectedSlug;
+    state.selectedSlug = null;
+    if (wasOpen) {
+        setView(_returnView);
+        if (window.matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: _returnScroll, behavior: 'instant' });
+        const target = _returnView === 'map' ? document.querySelector('[data-findings-view="map"]') :
+            document.querySelector(`.finding-row[data-slug="${CSS.escape(selected || '')}"] button`);
+        target?.focus({ preventScroll: true });
+    }
     document.querySelectorAll('.finding-row.active').forEach(el => el.classList.remove('active'));
     if (location.hash) history.replaceState(null, '', location.pathname + location.search);
 }
 
-// Esc + click-outside dismiss — attach once per route load.
+// A dedicated reading pane stays open while the reader uses the list/filters.
 function wireDetailDismiss(signal) {
     const onKey = (e) => { if (e.key === 'Escape') closeDetail(); };
     document.addEventListener('keydown', onKey, { signal });
-    document.addEventListener('click', (e) => {
-        const panel = document.getElementById('findings-detail');
-        if (!panel || panel.hidden) return;
-        if (panel.contains(e.target)) return;
-        if (e.target.closest('.finding-row') || e.target.closest('#findings-canvas')) return;
-        closeDetail();
-    }, { signal });
 }
 
 export { state as _state };

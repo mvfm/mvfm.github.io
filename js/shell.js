@@ -135,7 +135,10 @@ const TEMPLATES = {
         <div class="view-header">
             <h2>Findings</h2>
             <div class="header-actions">
-                <button id="findings-map-toggle" class="btn-secondary">Map</button>
+                <div class="findings-view-switch" role="group" aria-label="Findings view">
+                    <button type="button" class="btn-secondary" data-findings-view="list" aria-pressed="true">List</button>
+                    <button type="button" class="btn-secondary" data-findings-view="map" aria-pressed="false">Map</button>
+                </div>
                 <button id="findings-search-toggle" class="icon-button" title="Filter findings">
                     <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
                         stroke-linecap="round" stroke-linejoin="round">
@@ -157,21 +160,22 @@ const TEMPLATES = {
         <div class="findings-split">
             <div class="findings-list">
                 <ul id="findings-rows" class="findings-rows">
-                    <li class="spinner-container"><div class="spinner"></div>
-                        <p class="loading-text">Loading findings…</p></li>
+                    <li class="loading-text">Loading findings…</li>
                 </ul>
             </div>
             <div class="findings-graph">
-                <canvas id="findings-canvas"></canvas>
+                <div class="findings-map-heading"><strong>Explore the connections</strong><span id="findings-map-count"></span></div>
+                <canvas id="findings-canvas" aria-label="Connections between findings, timeline entries, topics, and insights" aria-describedby="findings-map-help"></canvas>
                 <div id="findings-graph-controls" class="findings-graph-controls">
                     <button data-zoom="in" aria-label="Zoom in">+</button>
                     <button data-zoom="out" aria-label="Zoom out">−</button>
-                    <button data-zoom="reset" aria-label="Reset view">⤢</button>
+                    <button data-zoom="reset" aria-label="Fit map" title="Fit map">⤢</button>
                 </div>
                 <div id="findings-graph-legend" class="findings-graph-legend"></div>
+                <p id="findings-map-help" class="findings-map-help">Drag to explore · Select a dot to open or filter</p>
             </div>
-        </div>
-        <aside id="findings-detail" class="findings-detail" hidden></aside>`,
+            <aside id="findings-detail" class="findings-detail" aria-label="Finding details" hidden></aside>
+        </div>`,
 };
 
 export function injectShell() {

@@ -939,14 +939,14 @@ main {
 }
 
 /* Insights */
-.insights-grid {
+.insights-grid, .findings-rows {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
     gap: 1.25rem;
     padding: 0.5rem 0 1.5rem;
 }
 
-.insight-card {
+.insight-card, .finding-row-open {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -961,19 +961,19 @@ main {
     transition: box-shadow var(--trans-fast), transform var(--trans-fast);
 }
 
-.insight-card:hover {
+.insight-card:hover, .finding-row-open:hover {
     box-shadow: 0 4px 16px var(--clr-shadow);
     transform: translateY(-2px);
 }
 
-.insight-card-date {
+.insight-card-date, .finding-row-meta {
     font-size: 0.75rem;
     color: var(--clr-text-muted);
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.03em;
 }
 
-.insight-card-title {
+.insight-card-title, .finding-row-title {
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
@@ -981,7 +981,7 @@ main {
     line-height: 1.35;
 }
 
-.insight-card-desc {
+.insight-card-desc, .finding-row-excerpt {
     margin: 0;
     font-size: 0.875rem;
     color: var(--clr-text-muted);
@@ -1250,58 +1250,84 @@ main {
 }
 
 /* ===== Findings ===== */
-.findings-split { display: flex; gap: 1.5rem; align-items: flex-start; position: relative; }
-/* Own scroll region so a long list never pushes the graph out of view. */
-.findings-list { flex: 0 0 22rem; max-width: 22rem; max-height: 32rem; overflow-y: auto; padding-right: .25rem; }
-.findings-graph { position: relative; flex: 1 1 auto; height: 32rem;
-    border: 1px solid var(--clr-panel-border); border-radius: var(--radius-md); overflow: hidden; }
+.findings-split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+.findings-split.has-detail:not(.show-map) { grid-template-columns: minmax(18rem, .85fr) minmax(0, 1.15fr); }
+.findings-list { min-width: 0; }
+.findings-split.has-detail .findings-list { max-height: 70vh; overflow-y: auto; padding: .25rem; }
+.findings-split.has-detail .findings-rows { grid-template-columns: minmax(0, 1fr); }
+.findings-graph { display: none; position: relative; height: min(70vh, 40rem); min-height: 24rem;
+    border: 1px solid var(--clr-panel-border); border-radius: var(--radius-md); overflow: hidden;
+    background-color: #f8fafc;
+    background-image: radial-gradient(#cbd5e180 .8px, transparent .8px); background-size: 20px 20px;
+    box-shadow: inset 0 0 80px #ffffffb3; }
+.findings-split.show-map .findings-graph { display: block; }
+.findings-split.show-map .findings-list, .findings-split.show-map .findings-detail { display: none; }
 #findings-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
-#findings-map-toggle { display: none; }
-
-/* Empty / error state: no graph box, no mobile Map button — just the message.
-   Two IDs beat the @media `#findings-map-toggle { display:inline-block }` rule. */
+.findings-view-switch { display: flex; gap: .25rem; }
+.findings-view-switch button { min-height: 2.75rem; }
+.findings-view-switch [aria-pressed="true"] { background: var(--clr-primary); color: #fff; }
 #contentPanel.findings-empty .findings-graph,
-#contentPanel.findings-empty #findings-map-toggle { display: none; }
+#contentPanel.findings-empty .findings-view-switch { display: none; }
 
-.findings-rows { list-style: none; margin: 0; padding: 0; }
-.finding-row { display: flex; flex-direction: column; gap: .35rem; padding: .75rem;
-    border-radius: 8px; cursor: pointer; transition: background .15s; }
-.finding-row:hover, .finding-row.active { background: rgba(120,140,180,.12); }
-.finding-row-title { font-weight: 600; }
-.finding-row-meta { font-size: .8rem; color: var(--clr-text-muted); }
-.finding-row-tags { display: flex; align-items: center; gap: .3rem; }
+/* Share the Insights card grid, surfaces, and typography. */
+.findings-rows { list-style: none; margin: 0; }
+.finding-row { display: flex; min-width: 0; }
+.finding-row-open { width: 100%; min-width: 0; box-sizing: border-box;
+    font-family: inherit; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.finding-row-open:focus-visible { outline: 2px solid var(--clr-accent); outline-offset: 3px; }
+.finding-row.active .finding-row-open { border-color: var(--clr-accent); }
+.finding-row-excerpt { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.finding-row-tags { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; margin-top: auto; padding-top: .35rem; }
+@media (prefers-reduced-motion: reduce) {
+    .finding-row-open { transition: none; }
+    .finding-row-open:hover { transform: none; }
+}
 .finding-dot { width: .6rem; height: .6rem; border-radius: 50%; display: inline-block; }
 .finding-refs { font-size: .75rem; color: var(--clr-text-muted); margin-left: .25rem; }
 
 /* #findings-filter reuses .search-bar — hidden until .show, like the AI tab. */
 
-.findings-graph-controls { position: absolute; top: .5rem; right: .5rem; display: flex; gap: .25rem; }
-.findings-graph-controls button { width: 1.9rem; height: 1.9rem; border-radius: 6px;
-    border: 1px solid var(--clr-panel-border); background: var(--clr-bg-main);
-    color: var(--clr-text); cursor: pointer; font-size: 1rem; line-height: 1; }
-.findings-graph-legend { position: absolute; left: .5rem; bottom: .5rem; display: flex;
-    flex-wrap: wrap; gap: .3rem .6rem; font-size: .75rem; color: var(--clr-text-muted);
-    max-width: calc(100% - 1rem); max-height: 45%; overflow-y: auto;
-    padding: .4rem .55rem; border-radius: var(--radius-md);
-    background: rgba(255, 255, 255, 0.9); border: 1px solid var(--clr-panel-border); }
-.findings-graph-legend span { display: inline-flex; align-items: center; gap: .3rem; }
-.findings-graph-legend i { width: .7rem; height: .7rem; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.findings-map-heading { position: absolute; top: 1rem; left: 1.1rem; pointer-events: none;
+    display: flex; flex-direction: column; gap: .2rem; color: #334155; }
+.findings-map-heading strong { font-size: .95rem; }
+.findings-map-heading span { font-size: .72rem; color: #64748b; }
+.findings-graph-controls { position: absolute; top: .75rem; right: .75rem; display: flex; gap: .25rem;
+    background: #fff; padding: .2rem; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 3px 12px #0f172a08; }
+.findings-graph-controls button { width: 2.5rem; height: 2.5rem; border-radius: 8px;
+    border: 0; background: #fff; color: #334155; cursor: pointer; font-size: 1.15rem; line-height: 1; }
+.findings-graph-controls button:hover { background: #f1f5f9; }
+.findings-graph-controls button:focus-visible { outline: 2px solid #0d9488; outline-offset: -2px; }
+.findings-graph-legend { position: absolute; left: 1rem; bottom: 2.2rem; display: flex;
+    flex-wrap: wrap; gap: .4rem .85rem; font-size: .7rem; color: #475569;
+    max-width: calc(100% - 2rem); padding: .5rem .7rem; border-radius: 10px;
+    background: #ffffffed; border: 1px solid #e2e8f0; max-height: 5.5rem; overflow-y: auto; }
+.findings-graph-legend span { display: inline-flex; align-items: center; gap: .35rem; }
+.findings-graph-legend i { width: .5rem; height: .5rem; border-radius: 50%; display: inline-block; }
+.findings-map-help { position: absolute; left: 1rem; bottom: .6rem; margin: 0;
+    font-size: .7rem; color: #64748b; pointer-events: none; }
+@media (max-width: 760px) {
+    .findings-map-heading { top: 1rem; left: .8rem; max-width: calc(100% - 11rem); }
+    .findings-map-heading strong { font-size: .8rem; }
+    .findings-graph-controls button { width: 2.75rem; height: 2.75rem; }
+    .findings-graph-controls { right: .4rem; }
+    .findings-map-help { display: none; }
+    .findings-graph-legend { left: .5rem; bottom: .5rem; padding: .45rem .55rem; gap: .35rem .6rem; }
+}
 
-/* Anchored inside .findings-split (not the viewport) so it can never be
-   clipped by the sticky header or the scroll position. Overlays the graph. */
-.findings-detail { position: absolute; top: 0; right: 0; z-index: 5;
-    width: min(24rem, 92vw); max-height: 32rem;
+/* Dedicated reading pane; never overlays the list or graph. */
+.findings-detail { position: relative; min-width: 0; max-height: 70vh;
     background: var(--clr-bg-main); border: 1px solid var(--clr-panel-border);
-    border-radius: var(--radius-md);
-    padding: 1.5rem; overflow-y: auto; box-shadow: 0 8px 24px rgba(12, 45, 107, 0.14);
-    transform: translateX(calc(100% + 2rem)); visibility: hidden;
-    transition: transform .25s ease, visibility 0s linear .25s; }
-.findings-detail.show { transform: translateX(0); visibility: visible; transition-delay: 0s; }
-.findings-detail-close { position: absolute; top: .75rem; right: .75rem; background: none;
-    border: none; color: var(--clr-text-muted); font-size: 1rem; cursor: pointer; }
-.findings-detail h3 { margin: 0 1.5rem .25rem 0; }
+    border-radius: var(--radius-md); padding: 1.5rem; overflow-y: auto;
+    scroll-margin-top: calc(var(--topbar-height, 6.25rem) + 1rem); overflow-wrap: anywhere; }
+.findings-detail[hidden] { display: none; }
+.findings-detail-close { display: block; min-height: 2.75rem; margin: -.5rem 0 .75rem; padding: .4rem 0;
+    background: none; border: none; color: var(--clr-primary); font-size: .85rem; cursor: pointer; }
+.findings-detail h3 { margin: 0 0 .5rem; }
+.findings-references { margin: 1.25rem 0; }
+.findings-references h4 { margin: 0 0 .5rem; font-size: .9rem; }
+.findings-view-timeline { font-size: .85rem; }
 .findings-detail-meta { font-size: .8rem; color: var(--clr-text-muted); margin: 0 0 .75rem; }
-.findings-detail-note { margin: 0 0 1rem; }
+.findings-detail-note { margin: 0 0 1rem; line-height: 1.65; white-space: pre-line; }
 .findings-detail-topics, .findings-detail-chiprow { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .75rem; }
 .finding-chip { font-size: .8rem; padding: .2rem .5rem; border-radius: 999px;
     border: 1px solid var(--clr-panel-border); color: var(--clr-text); text-decoration: none; }
@@ -1314,22 +1340,15 @@ main {
 #contentPanel a.findings-visit:hover,
 #contentPanel a.findings-visit:focus { color: #fff; text-decoration: none; }
 
-/* Mobile: collapse the split view to list + a Map toggle */
+/* Mobile reading replaces the list in normal page flow, with an explicit Back action. */
 @media (max-width: 760px) {
-    .findings-split { flex-direction: column; }
-    .findings-list { flex-basis: auto; max-width: none; width: 100%; max-height: none; overflow-y: visible; }
-    .findings-graph { width: 100%; height: 24rem; }
-    .findings-split.show-map .findings-list { display: none; }
-    .findings-split:not(.show-map) .findings-graph { display: none; }
-    #findings-map-toggle { display: inline-block; }
-
-    .findings-detail { position: fixed; z-index: 60;
-        top: auto; bottom: 0; right: 0; left: 0; width: 100%;
-        height: 70vh; max-height: none;
-        border: none; border-top: 1px solid var(--clr-panel-border);
-        border-radius: var(--radius-md) var(--radius-md) 0 0;
-        transform: translateY(100%); }
-    .findings-detail.show { transform: translateY(0); }
+    .findings-split, .findings-split.has-detail:not(.show-map) { grid-template-columns: minmax(0, 1fr); }
+    .findings-list, .findings-split.has-detail .findings-list { max-height: none; overflow-y: visible; padding: 0; }
+    .findings-rows { grid-template-columns: minmax(0, 1fr); }
+    .findings-graph { height: 60vh; min-height: 22rem; }
+    .findings-split.has-detail:not(.show-map) .findings-list { display: none; }
+    .findings-detail { width: 100%; box-sizing: border-box; max-height: none; overflow: visible; padding: 1rem; }
+    .finding-chip { padding: .5rem .65rem; }
 }
 
 /* ===== AI timeline component ===== */

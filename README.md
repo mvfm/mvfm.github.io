@@ -138,9 +138,20 @@ article" stripe/chip on matching timeline entries.
   **Imports nothing from app code** — palette, `topicColor`, and callbacks arrive
   via `opts`. Honors `prefers-reduced-motion`, pauses on tab hide, self-disposes
   when its canvas leaves the DOM.
+  The map automatically fits its nodes, uses collision-aware labels and subdued
+  edges, and highlights immediate connections on hover. Findings are teal,
+  events amber, Insights purple, and topics retain their shared colors as rings.
+  The topic legend retains each topic color. The simulation starts when Map becomes visible; zoom and Fit map animate smoothly unless reduced motion is requested. Manual zoom/pan is preserved until Fit map is selected. Controls have mobile
+  touch targets; the compact legend leaves room for the map.
 - `js/findings.js` — loads the API collection, renders list + filters + detail
   panel, and instantiates the graph. Insights manifest titles load as optional
   enrichment after rendering. No topic-only timeline request is needed.
+  List is the default view, using the shared Insights card grid and styling, with source/date metadata, note excerpts, and reference counts. Cards stack in one column on mobile. List / Map
+  buttons are available at every width and preserve filters. Selecting a finding
+  opens a dedicated pane beside the desktop list; on mobile it replaces the list
+  in normal page flow. Back restores the originating view, scroll position, and
+  keyboard focus. References are grouped into Timeline entries and Insights,
+  with a link to view all referenced entries using the existing slug filter.
   `/findings#slug` opens a detail, with the detail endpoint as fallback for slugs
   absent from the collection. Hash changes update the panel; `onUnload` cancels
   requests, timers, route listeners, and the graph. API errors show Retry and are

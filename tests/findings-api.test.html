@@ -68,7 +68,7 @@
     }
     function assert(value, message) { if (!value) throw new Error(message); }
     async function until(check) {
-      for (let i = 0; i < 100; i++) {
+      for (let i = 0; i < 500; i++) {
         if (check()) return;
         await new Promise(resolve => setTimeout(resolve, 10));
       }
@@ -104,10 +104,102 @@
       assert(panel.querySelectorAll('.finding-row').length === 1, 'Topic filter failed');
       assert(_state.graph.filterSet.size === 1, 'Graph filter not updated');
     });
+    await test('List excerpts and dedicated details preserve filters across Map and Back', async () => {
+      mock(); mount(); await findingsRouteOnLoad();
+      assert(getComputedStyle(panel.querySelector('.findings-graph')).display === 'none', 'Map is not optional');
+      assert(panel.querySelector('.finding-row-excerpt').textContent.includes('How AI got its name'), 'Missing excerpt');
+      const input = panel.querySelector('#findings-search-input');
+      input.value = 'Oral'; input.dispatchEvent(new Event('input'));
+      panel.querySelector('[data-findings-view="map"]').click();
+      assert(getComputedStyle(panel.querySelector('.findings-list')).display === 'none', 'Map shares space with list');
+      selectFinding('mccarthy', { fromGraph: true });
+      const detail = panel.querySelector('#findings-detail');
+      assert(detail.parentElement.classList.contains('findings-split'), 'Detail outside layout');
+      assert(getComputedStyle(detail).position === 'relative', 'Detail overlays content');
+      assert(detail.getBoundingClientRect().left >= panel.querySelector('.findings-list').getBoundingClientRect().right, 'Detail overlaps list');
+      assert(detail.querySelector('.findings-view-timeline').getAttribute('href') === '/ai?slugs=ai-gets-its-name', 'Missing timeline collection link');
+      detail.querySelector('.findings-detail-close').click();
+      assert(_state.view === 'map', 'Back did not restore map');
+      panel.querySelector('[data-findings-view="list"]').click();
+      assert(input.value === 'Oral' && panel.querySelectorAll('.finding-row').length === 1, 'Filters lost');
+    });
+    for (const width of [320, 390]) await test(`Mobile Findings at ${width}px: reading, Back, filters, map, and no overflow`, async () => {
+      const frame = document.createElement('iframe');
+      frame.title = 'Mobile Findings layout'; frame.style.cssText = `width:${width}px;height:844px;border:0`;
+      frame.src = './fixtures/findings-mobile.html';
+      document.body.appendChild(frame);
+      try {
+        await until(() => frame.contentDocument?.body?.dataset.ready);
+        const doc = frame.contentDocument, win = frame.contentWindow;
+        const list = doc.querySelector('.findings-list');
+        const input = doc.querySelector('#findings-search-input');
+        input.value = 'Oral'; input.dispatchEvent(new win.Event('input'));
+        const scroll = win.scrollY;
+        doc.querySelector('.finding-row-open').click();
+        const detail = doc.querySelector('#findings-detail');
+        assert(win.getComputedStyle(list).display === 'none', 'List remains alongside mobile detail');
+        assert(win.getComputedStyle(detail).position !== 'fixed', 'Detail is still a bottom overlay');
+        assert(doc.documentElement.scrollWidth <= width, 'Mobile content overflows horizontally');
+        assert(detail.scrollHeight <= detail.clientHeight + 2, 'Long detail has nested scrolling');
+        detail.querySelector('.findings-detail-close').click();
+        assert(win.getComputedStyle(list).display !== 'none', 'Back did not show list');
+        assert(input.value === 'Oral' && doc.querySelectorAll('.finding-row').length === 1, 'Back lost filtering');
+        assert(win.scrollY === scroll, 'Back lost scroll position');
+        assert(doc.activeElement.classList.contains('finding-row-open'), 'Back lost keyboard focus');
+        doc.querySelector('[data-findings-view="map"]').click();
+        await until(() => doc.querySelector('#findings-canvas').clientWidth > 0);
+        assert(win.getComputedStyle(list).display === 'none', 'Mobile map did not replace list');
+        assert(doc.documentElement.scrollWidth <= width, 'Mobile map overflows');
+        const heading = doc.querySelector('.findings-map-heading').getBoundingClientRect();
+        const controls = doc.querySelector('.findings-graph-controls').getBoundingClientRect();
+        assert(heading.right <= controls.left, 'Mobile map heading overlaps controls');
+        assert(doc.querySelector('[data-zoom="in"]').getBoundingClientRect().height >= 44, 'Zoom touch target too small');
+      } finally { frame.remove(); }
+    });
     await test('Optional Insights failure does not prevent Findings rendering', async () => {
       mock(url => url.includes('/insights/') ? response({}, 503) : undefined);
       mount('#mccarthy'); await findingsRouteOnLoad();
       assert(panel.querySelector('#findings-detail h3').textContent === finding.title, 'Finding blocked');
+    });
+    await test('Map fits nodes, preserves manual zoom, and resets to a fitted view', async () => {
+      mock(); mount(); await findingsRouteOnLoad();
+      panel.querySelector('[data-findings-view="map"]').click();
+      const graph = _state.graph;
+      await until(() => graph.W > 0 && graph.H > 0);
+      graph.resetView();
+      await until(() => !graph._cameraTarget);
+      assert(graph.nodes.every(n => graph._sx(n.x) > 20 && graph._sx(n.x) < graph.W - 20 &&
+        graph._sy(n.y) > 40 && graph._sy(n.y) < graph.H - 40), 'Nodes cropped by initial camera');
+      const before = graph.view.k;
+      graph.zoomBy(2);
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        assert(graph._cameraTarget && graph.view.k === before, 'Zoom jumped instead of animating');
+      }
+      await until(() => !graph._cameraTarget);
+      const zoom = graph.view.k;
+      assert(zoom > before, 'Zoom did not complete');
+      graph.resize(); assert(graph.view.k === zoom, 'Resize overwrote manual zoom');
+      graph.resetView(); await until(() => !graph._cameraTarget);
+      assert(graph._autoFit && graph.view.k <= 1.35, 'Fit control did not reset camera');
+      assert(panel.querySelector('#findings-graph-legend').textContent.includes('foundations'), 'Topic legend lost');
+      graph.hoverId = 'finding:mccarthy';
+      assert(graph._isNeighbor('event:ai-gets-its-name'), 'Highlight lost connected event');
+      assert(!graph._isNeighbor('finding:second'), 'Highlight includes unrelated finding');
+    });
+    await test('Map simulation waits for visibility and camera animations stop on unload', async () => {
+      mock(); mount(); await findingsRouteOnLoad();
+      const graph = _state.graph;
+      assert(!graph._raf, 'Simulation ran behind the list');
+      const x = graph.nodes[0].x;
+      panel.querySelector('[data-findings-view="map"]').click();
+      await until(() => graph._visible);
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        await until(() => graph.nodes[0].x !== x);
+        assert(graph._raf, 'Opening animation stopped immediately');
+      }
+      graph.zoomBy(1.5);
+      findingsRouteOnUnload();
+      assert(!graph._raf && !graph._cameraFrame, 'Animations leaked after unload');
     });
     await test('Missing collection entry resolves through detail endpoint', async () => {
       mock(); mount('#detail-only'); await findingsRouteOnLoad();

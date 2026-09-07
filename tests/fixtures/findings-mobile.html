@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/style.css"><title>Mobile Findings fixture</title></head>
+<body>
+<div id="contentPanel"></div>
+<script type="module">
+import { injectShell } from '/js/shell.js';
+import { findingsRouteOnLoad } from '/js/findings.js';
+navigator.sendBeacon = () => true;
+const finding = {
+    id: 42, slug: 'mccarthy', title: 'Oral History: John McCarthy', source: 'IEEE',
+    url: 'https://example.com', date_added: '2026-09-01', updated_at: '2026-09-07T15:30:00Z',
+    note: 'A longer note about the history of artificial intelligence. '.repeat(35),
+    topics: ['foundations'], referenced_events: [{id: 123, slug: 'ai-gets-its-name', title: 'AI Gets Its Name'}],
+    referenced_insights: [],
+};
+const data = {findings: [finding, {...finding, id: 41, slug: 'second', title: 'Another source'}], topics: ['foundations'], total: 2};
+window.fetch = async url => new Response(JSON.stringify(String(url).endsWith('/findings') ? data : []));
+injectShell();
+document.getElementById('contentPanel').appendChild(document.getElementById('tpl-findings').content.cloneNode(true));
+await findingsRouteOnLoad();
+document.body.dataset.ready = 'true';
+</script>
+</body>
+</html>
