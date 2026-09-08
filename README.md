@@ -150,7 +150,8 @@ article" stripe/chip on matching timeline entries.
   buttons are available at every width and preserve filters. Selecting a finding
   opens a dedicated pane beside the desktop list; on mobile it replaces the list
   in normal page flow. Back restores the originating view, scroll position, and
-  keyboard focus. References are grouped into Timeline entries and Insights,
+  keyboard focus. YouTube sources embed a responsive player below the topic pills;
+  closing the panel or leaving the route stops playback. References are grouped into Timeline entries and Insights,
   with a link to view all referenced entries using the existing slug filter.
   `/findings#slug` opens a detail, with the detail endpoint as fallback for slugs
   absent from the collection. Hash changes update the panel; `onUnload` cancels
@@ -159,7 +160,8 @@ article" stripe/chip on matching timeline entries.
 - Timeline events may carry `related_findings: [{id, slug, title, source}]`.
   The stage renders these as teal pills below the media on the left, with purple Insights pills on the right and emits
   `timeline_finding_click {event_id, event_title, finding_slug, finding_title}`.
-  Missing backlinks are treated as an empty array.
+  Matching edge accents use purple on the right for Insights and a green-to-teal
+  gradient on the left for Findings. Missing backlinks are treated as an empty array.
 - Findings are authored in AIAPI and published
   through its content workflow. `findings/index.html` remains the reusable shell;
   its noscript list is a separately maintained static snapshot, not live API data.

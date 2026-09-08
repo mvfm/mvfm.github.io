@@ -154,6 +154,8 @@
       st.show({ ...withIds[1], related_findings: [{ id: 42, slug: 'mccarthy',
         title: 'McCarthy <oral history>', source: 'IEEE' }] }, 'initial');
       const link = el.querySelector('.finding-ref-chip');
+      expect(getComputedStyle(el.querySelector('.finding-ref-stripe')).left).toBe('0px');
+      expect(getComputedStyle(el.querySelector('.insight-ref-stripe')).right).toBe('0px');
       expect(link.getAttribute('href')).toBe('/findings#mccarthy');
       expect(link.textContent).toBe('◈ McCarthy <oral history>');
       expect(link.closest('.ait-body')).toBeFalsy();
@@ -169,6 +171,7 @@
       expect(clicked.eventId).toBe(withIds[1].unique_id);
       st.show(withIds[2], 'initial');
       expect(el.querySelector('article:not([hidden]) .finding-ref-chip')).toBeFalsy();
+      expect(el.querySelector('article:not([hidden]) .finding-ref-stripe')).toBeFalsy();
       st.destroy(); el.remove();
     });
 

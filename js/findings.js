@@ -1,7 +1,7 @@
 import { track } from './analytics.js';
 import { getTopicColor, generateMnemonics, getTopicInitials } from './topics.js';
 import { fetchFindings, fetchFinding, sourceUrl } from './findings-api.js';
-import { buildGraphModel, filterFindings, deriveEventLabel } from './findings-model.js';
+import { buildGraphModel, filterFindings, deriveEventLabel, youtubeVideoId } from './findings-model.js';
 
 const NEUTRAL_TOPIC = 'var(--clr-text-muted)';
 
@@ -44,6 +44,7 @@ let _returnView = 'list';
 let _returnScroll = 0;
 
 export function findingsRouteOnUnload() {
+    document.querySelector('.findings-video')?.remove();
     _routeController?.abort();
     _routeController = null;
     _detailController?.abort();
@@ -394,6 +395,7 @@ function selectFinding(slug, { fromGraph = false, finding = null } = {}) {
         `<a class="finding-chip" href="/ai#event-${esc(encodeURIComponent(e.slug))}">⧉ ${esc(e.title)}</a>`
     ).join('');
     const url = sourceUrl(f.url);
+    const videoId = youtubeVideoId(url);
 
     panel.innerHTML = `
         <button class="findings-detail-close" type="button">← Back to Findings</button>
@@ -401,6 +403,7 @@ function selectFinding(slug, { fromGraph = false, finding = null } = {}) {
         <p class="findings-detail-meta">${esc(f.source)} · ${esc(fmtDate(f.date_added))}</p>
         ${f.note ? `<p class="findings-detail-note">${esc(f.note)}</p>` : ''}
         ${topicPills ? `<div class="findings-detail-topics">${topicPills}</div>` : ''}
+        ${videoId ? `<iframe class="findings-video" src="https://www.youtube-nocookie.com/embed/${videoId}" title="${esc(f.title)} — YouTube video" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>` : ''}
         ${eventChips ? `<section class="findings-references"><h4>Timeline entries</h4><div class="findings-detail-chiprow">${eventChips}</div>
             <a class="findings-view-timeline" href="/ai?slugs=${encodeURIComponent(f.referenced_events.map(e => e.slug).join(','))}">View these entries in the timeline →</a></section>` : ''}
         ${insightChips ? `<section class="findings-references"><h4>Insights</h4><div class="findings-detail-chiprow">${insightChips}</div></section>` : ''}
@@ -419,6 +422,7 @@ function selectFinding(slug, { fromGraph = false, finding = null } = {}) {
 }
 
 function closeDetail() {
+    document.querySelector('.findings-video')?.remove();
     _detailController?.abort();
     const panel = document.getElementById('findings-detail');
     if (!panel) return;

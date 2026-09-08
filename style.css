@@ -1475,10 +1475,17 @@ main {
 }
 .ait-finding-chips .finding-ref-chip { box-sizing: border-box; width: fit-content; max-width: min(420px, calc(100vw - 5rem), 100%); }
 
+.insight-ref-stripe, .finding-ref-stripe {
+  position: absolute; top: 0; bottom: 0; width: 5px; z-index: 4;
+  pointer-events: none;
+}
 .insight-ref-stripe {
-  position: absolute; left: 0; top: 0; bottom: 0; width: 5px; z-index: 4;
+  right: 0; border-radius: 0 6px 6px 0;
   background: linear-gradient(to bottom, #7c3aed, #a21caf);
-  border-radius: 6px 0 0 6px;
+}
+.finding-ref-stripe {
+  left: 0; border-radius: 6px 0 0 6px;
+  background: linear-gradient(to bottom, #059669, #0d9488);
 }
 
 /* Archived ribbon — rotated red corner flag */
@@ -1561,3 +1568,7 @@ main {
      #statsPanel lives outside #contentPanel, so scope via :has(). */
   .app:has(#timeline-embed) #statsPanel { display: none; }
 }
+
+/* Findings source video in the reading pane. */
+.findings-video { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto;
+    border: 0; border-radius: var(--radius-md); margin: 1rem 0; background: #000; }

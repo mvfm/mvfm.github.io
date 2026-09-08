@@ -105,6 +105,13 @@ export class Stage {
     if (!isTitle && articles.length) {
       const stripe = document.createElement('div');
       stripe.className = 'insight-ref-stripe';
+      stripe.setAttribute('aria-hidden', 'true');
+      card.appendChild(stripe);
+    }
+    if (!isTitle && findings.length) {
+      const stripe = document.createElement('div');
+      stripe.className = 'finding-ref-stripe';
+      stripe.setAttribute('aria-hidden', 'true');
       card.appendChild(stripe);
     }
     if (!isTitle && event.is_archived) {

@@ -23,6 +23,7 @@
     import { findingsRouteOnLoad, findingsRouteOnUnload, selectFinding, _state } from '../js/findings.js';
     import { fetchFindings, sourceUrl } from '../js/findings-api.js';
     import { _reset, _getPendingQueue } from '../js/analytics.js';
+    import { youtubeVideoId } from '../js/findings-model.js';
     import { Stage } from '../js/timeline/stage.js';
 
     // Fixtures never reach a backend, including analytics emitted by the UI.
@@ -122,6 +123,30 @@
       assert(_state.view === 'map', 'Back did not restore map');
       panel.querySelector('[data-findings-view="list"]').click();
       assert(input.value === 'Oral' && panel.querySelectorAll('.finding-row').length === 1, 'Filters lost');
+    });
+    await test('YouTube URLs embed below topics and stop when leaving the reading pane', async () => {
+      for (const url of ['https://youtu.be/dQw4w9WgXcQ', 'https://www.youtube.com/watch?feature=share&v=dQw4w9WgXcQ', 'https://m.youtube.com/shorts/dQw4w9WgXcQ', 'https://www.youtube.com/live/dQw4w9WgXcQ']) {
+        assert(youtubeVideoId(url) === 'dQw4w9WgXcQ', 'Supported video URL missed');
+      }
+      for (const url of ['https://youtube.com.evil.test/watch?v=dQw4w9WgXcQ', 'javascript:alert(1)', 'https://youtube.com/playlist?list=abc', 'https://youtu.be/invalid']) {
+        assert(youtubeVideoId(url) === null, 'Invalid video URL accepted');
+      }
+      mock(); mount(); await findingsRouteOnLoad();
+      const videoFinding = {...finding, url: 'https://youtu.be/dQw4w9WgXcQ'};
+      selectFinding('mccarthy', {finding: videoFinding});
+      const video = panel.querySelector('.findings-video');
+      assert(video && video.previousElementSibling.classList.contains('findings-detail-topics'), 'Video not below topics');
+      assert(video.nextElementSibling.classList.contains('findings-references'), 'Video not above references');
+      assert(video.src === 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ', 'Unexpected embed URL');
+      assert(video.getBoundingClientRect().width <= panel.querySelector('#findings-detail').clientWidth, 'Video exceeds pane');
+      panel.querySelector('[data-findings-view="map"]').click();
+      assert(!panel.querySelector('.findings-video'), 'Hidden video can keep playing');
+      selectFinding('mccarthy', {finding: videoFinding});
+      selectFinding('second');
+      assert(!panel.querySelector('.findings-video'), 'Video retained for non-video finding');
+      selectFinding('mccarthy', {finding: videoFinding});
+      findingsRouteOnUnload();
+      assert(!panel.querySelector('.findings-video'), 'Video retained on unload');
     });
     await test('Map focuses the finding being read and retains its cue after hover', async () => {
       mock(); mount(); await findingsRouteOnLoad();
@@ -290,7 +315,8 @@
       frame.title = 'Mobile timeline test'; frame.style.cssText = 'width:390px;height:844px;border:0';
       frame.srcdoc = `<!doctype html><html><head><link rel="stylesheet" href="/style.css"></head>
         <body><div id="stage" class="ait-stage-host"></div><script type="module">
-        import { Stage } from '/js/timeline/stage.js';
+        import { youtubeVideoId } from '../js/findings-model.js';
+    import { Stage } from '/js/timeline/stage.js';
         const stage = new Stage(document.getElementById('stage'), {
           sanitizeText: s => s, colorForTopic: () => '#333', reducedMotion: true,
           insightArticlesFor: () => [{slug:'forwardpropagation',title:'Forward Propagation'}]
