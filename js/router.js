@@ -59,7 +59,8 @@ export class Router {
 
     async navigate(route, updateHistory = true) {
         const def = this.routes[route] || this.routes.home;
-        const prevDef = this.routes[this.currentRoute];
+        const previousRoute = this.currentRoute;
+        const prevDef = this.routes[previousRoute];
         this.currentRoute = route;
 
         // Update browser state
@@ -74,8 +75,10 @@ export class Router {
 
         if (updateHistory) {
             const newPath = route === 'home' ? '/' : `/${route}`;
-            // Preserve existing hash and search (important for TimelineJS and search functionality)
-            const url = newPath + window.location.search + window.location.hash;
+            // Hashes belong to a specific view. Keep them only within that route;
+            // initial deep links and Back/Forward use updateHistory=false.
+            const hash = route === previousRoute ? window.location.hash : '';
+            const url = newPath + window.location.search + hash;
             window.history.pushState({ route }, '', url);
         }
 

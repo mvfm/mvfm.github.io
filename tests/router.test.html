@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Router tests</title></head>
+<body>
+<h1>Router tests</h1><p id="summary">Running…</p><ul id="results"></ul>
+<div id="contentPanel"></div><template id="fixture">Route content</template>
+<script type="module">
+import { Router } from '/js/router.js';
+navigator.sendBeacon = () => true;
+window.fetch = async () => new Response('{}');
+// Exercise navigation without installing global menu/load listeners.
+class TestRouter extends Router { init() {} }
+const originalUrl = location.href;
+const originalRoute = localStorage.getItem('lastRoute');
+const routes = Object.fromEntries(['home', 'ai', 'findings', 'insights', 'contact', 'resume'].map(route =>
+    [route, {title: route, description: route, template: 'fixture'}]));
+const router = new TestRouter(routes);
+let passed = 0, failed = 0;
+async function test(name, from, to, hash, updateHistory, expected) {
+    try {
+        history.replaceState({}, '', `/${from}?api=remote${hash}`);
+        router.currentRoute = from;
+        await router.navigate(to, updateHistory);
+        await new Promise(resolve => setTimeout(resolve, 160));
+        if (location.hash !== expected) throw new Error(`Unexpected hash: ${location.hash}`);
+        if (location.search !== '?api=remote') throw new Error('Query parameters lost');
+        if (updateHistory && location.pathname !== `/${to}`) throw new Error('Wrong destination');
+        passed++;
+        document.getElementById('results').insertAdjacentHTML('beforeend', `<li>✓ ${name}</li>`);
+    } catch (error) {
+        failed++;
+        document.getElementById('results').insertAdjacentHTML('beforeend', `<li>✗ ${name}: ${error.message}</li>`);
+    }
+}
+try {
+    for (const route of ['findings', 'insights', 'contact', 'resume']) {
+        await test(`Timeline → ${route} clears event hash`, 'ai', route, '#event-the-xerox-alto', true, '');
+    }
+    await test('Findings → timeline clears finding hash', 'findings', 'ai', '#source', true, '');
+    await test('Same tab retains its hash', 'ai', 'ai', '#event-the-xerox-alto', true, '#event-the-xerox-alto');
+    await test('Initial Findings deep link survives', 'findings', 'findings', '#source', false, '#source');
+    await test('History navigation retains destination hash', 'ai', 'ai', '#event-the-xerox-alto', false, '#event-the-xerox-alto');
+} finally {
+    history.replaceState({}, '', originalUrl);
+    if (originalRoute === null) localStorage.removeItem('lastRoute');
+    else localStorage.setItem('lastRoute', originalRoute);
+}
+document.getElementById('summary').textContent = `${passed} passed, ${failed} failed`;
+</script>
+</body></html>
