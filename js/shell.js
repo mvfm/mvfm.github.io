@@ -160,7 +160,7 @@ const TEMPLATES = {
         <div class="findings-split">
             <div class="findings-list">
                 <ul id="findings-rows" class="findings-rows">
-                    <li class="loading-text">Loading findings…</li>
+                    <li class="spinner-container"><div class="spinner" aria-hidden="true"></div><p class="loading-text">Loading findings...</p></li>
                 </ul>
             </div>
             <div class="findings-graph">

@@ -1271,6 +1271,8 @@ main {
 
 /* Share the Insights card grid, surfaces, and typography. */
 .findings-rows { list-style: none; margin: 0; }
+.insights-grid > .spinner-container,
+.findings-rows > .spinner-container { grid-column: 1 / -1; }
 .finding-row { display: flex; min-width: 0; }
 .finding-row-open { width: 100%; min-width: 0; box-sizing: border-box;
     font-family: inherit; text-align: left; cursor: pointer; overflow-wrap: anywhere; }

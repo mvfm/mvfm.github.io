@@ -84,7 +84,7 @@ export async function findingsRouteOnLoad() {
     state.allTopics = [];
     state.topicsInUse = [];
     state.model = { nodes: [], edges: [] };
-    rows.innerHTML = '<li class="loading-text">Loading findings…</li>';
+    rows.innerHTML = '<li class="spinner-container"><div class="spinner" aria-hidden="true"></div><p class="loading-text">Loading findings...</p></li>';
     document.getElementById('contentPanel')?.classList.remove('findings-empty');
     const panel = document.getElementById('findings-detail');
     if (panel) panel.hidden = true;
