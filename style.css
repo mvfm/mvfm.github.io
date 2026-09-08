@@ -1574,3 +1574,18 @@ main {
 /* Findings source video in the reading pane. */
 .findings-video { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto;
     border: 0; border-radius: var(--radius-md); margin: 1rem 0; background: #000; }
+
+/* Contact */
+.contact-content { max-width: 42rem; padding: .5rem 0 1.5rem; }
+.contact-content p { line-height: 1.65; }
+.contact-intro { font-size: 1.1rem; }
+.contact-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.75rem; }
+.contact-actions a { display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    min-height: 44px; box-sizing: border-box; text-align: center; }
+#contentPanel .contact-actions a { text-decoration: none; }
+.contact-actions svg { flex-shrink: 0; }
+.contact-actions a:focus-visible { outline: 2px solid var(--clr-accent); outline-offset: 3px; }
+.contact-email { color: var(--clr-text-muted); font-size: .875rem; overflow-wrap: anywhere; user-select: all; }
+@media (max-width: 480px) {
+    .contact-actions { flex-direction: column; }
+}

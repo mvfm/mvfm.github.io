@@ -41,11 +41,16 @@ const TEMPLATES = {
         <p><strong><a href="/resume">View my résumé</a></strong> · <strong><a href="/contact">Get in touch</a></strong></p>`,
 
     contact: `
-        <h2>Contact</h2>
-        <ul>
-            <li>Email: <a href="mailto:marcus.margarites@hotmail.com">marcus.margarites@hotmail.com</a></li>
-            <li>LinkedIn: <a href="https://www.linkedin.com/in/marcusmargarites/">linkedin.com/in/marcusmargarites/</a></li>
-        </ul>`,
+        <div class="contact-content">
+            <h2>Get in touch</h2>
+            <p class="contact-intro">Questions, corrections, interesting sources, or something you’d like to discuss? Send me a message.</p>
+            <p>If you’re writing about a timeline entry, Finding, or Insights article, include its link so I can follow along.</p>
+            <div class="contact-actions">
+                <a class="btn-secondary" href="mailto:marcus.margarites@hotmail.com" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m3 6 9 7 9-7"></path></svg>Email me</a>
+                <a class="btn-secondary" href="https://www.linkedin.com/in/marcusmargarites/" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M20.45 2H3.55C2.69 2 2 2.68 2 3.52v16.96C2 21.32 2.69 22 3.55 22h16.9c.86 0 1.55-.68 1.55-1.52V3.52C22 2.68 21.31 2 20.45 2ZM7.93 18.75H4.98V9.2h2.95v9.55ZM6.46 7.9a1.71 1.71 0 1 1 0-3.42 1.71 1.71 0 0 1 0 3.42Zm12.29 10.85H15.8V14.1c0-1.11-.02-2.54-1.55-2.54-1.55 0-1.79 1.21-1.79 2.46v4.73H9.51V9.2h2.83v1.31h.04c.39-.75 1.36-1.55 2.79-1.55 2.98 0 3.58 1.96 3.58 4.51v5.28Z"></path></svg>Connect on LinkedIn</a>
+            </div>
+            <p class="contact-email">marcus.margarites@hotmail.com</p>
+        </div>`,
 
     resume: `
         <h2>Résumé</h2>
