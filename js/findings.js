@@ -1,4 +1,5 @@
 import { track } from './analytics.js';
+import { observeYouTubePlayback } from './youtube-player.js';
 import { getTopicColor, generateMnemonics, getTopicInitials } from './topics.js';
 import { fetchFindings, fetchFinding, sourceUrl } from './findings-api.js';
 import { buildGraphModel, filterFindings, deriveEventLabel, youtubeVideoId } from './findings-model.js';
@@ -42,9 +43,16 @@ let _routeController = null;
 let _detailController = null;
 let _returnView = 'list';
 let _returnScroll = 0;
+let _disposeVideo = null;
+
+function disposeVideo() {
+    _disposeVideo?.();
+    _disposeVideo = null;
+    document.querySelector('.findings-video')?.remove();
+}
 
 export function findingsRouteOnUnload() {
-    document.querySelector('.findings-video')?.remove();
+    disposeVideo();
     _routeController?.abort();
     _routeController = null;
     _detailController?.abort();
@@ -246,6 +254,7 @@ async function syncDetailHash(signal) {
 function showDetailMessage(message) {
     const panel = document.getElementById('findings-detail');
     if (!panel) return;
+    disposeVideo();
     panel.innerHTML = `<button class="findings-detail-close" type="button">← Back to Findings</button><p role="status">${esc(message)}</p>`;
     openDetailPanel(panel);
     panel.querySelector('button').addEventListener('click', closeDetail);
@@ -397,18 +406,25 @@ function selectFinding(slug, { fromGraph = false, finding = null } = {}) {
     const url = sourceUrl(f.url);
     const videoId = youtubeVideoId(url);
 
+    disposeVideo();
     panel.innerHTML = `
         <button class="findings-detail-close" type="button">← Back to Findings</button>
         <h3>${esc(f.title)}</h3>
         <p class="findings-detail-meta">${esc(f.source)} · ${esc(fmtDate(f.date_added))}</p>
         ${f.note ? `<p class="findings-detail-note">${esc(f.note)}</p>` : ''}
         ${topicPills ? `<div class="findings-detail-topics">${topicPills}</div>` : ''}
-        ${videoId ? `<iframe class="findings-video" src="https://www.youtube-nocookie.com/embed/${videoId}" title="${esc(f.title)} — YouTube video" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>` : ''}
+        ${videoId ? `<iframe class="findings-video" src="https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&amp;origin=${encodeURIComponent(location.origin)}" title="${esc(f.title)} — YouTube video" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>` : ''}
         ${eventChips ? `<section class="findings-references"><h4>Timeline entries</h4><div class="findings-detail-chiprow">${eventChips}</div>
             <a class="findings-view-timeline" href="/ai?slugs=${encodeURIComponent(f.referenced_events.map(e => e.slug).join(','))}">View these entries in the timeline →</a></section>` : ''}
         ${insightChips ? `<section class="findings-references"><h4>Insights</h4><div class="findings-detail-chiprow">${insightChips}</div></section>` : ''}
         ${url ? `<a class="btn-primary findings-visit" href="${esc(url)}" target="_blank" rel="noopener">Visit Source ↗</a>` : ''}`;
     openDetailPanel(panel);
+
+    if (videoId) {
+        _disposeVideo = observeYouTubePlayback(panel.querySelector('.findings-video'), () => {
+            track('finding_video_play', { slug: f.slug, video_id: videoId, url: f.url });
+        });
+    }
 
     panel.querySelector('.findings-detail-close').addEventListener('click', closeDetail);
     panel.querySelector('.findings-visit')?.addEventListener('click', () => {
@@ -422,7 +438,7 @@ function selectFinding(slug, { fromGraph = false, finding = null } = {}) {
 }
 
 function closeDetail() {
-    document.querySelector('.findings-video')?.remove();
+    disposeVideo();
     _detailController?.abort();
     const panel = document.getElementById('findings-detail');
     if (!panel) return;
