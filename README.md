@@ -128,7 +128,7 @@ article" stripe/chip on matching timeline entries.
   date_added, updated_at, note, topics[], referenced_events[], referenced_insights[]}`.
   Event references are `{id, slug, title}` objects; Insight references remain slug
   strings. Top-level topics are the shared global vocabulary, also returned by
-  `/timeline`. Timeline slugs remain derived from headlines exactly as before.
+  `/timeline`. Timeline slugs are derived from headlines.
 - `js/findings-api.js` — validates the response contract, bounds requests with a
   timeout, supports cancellation, and resolves `/api/v2/findings/{slug}` details.
 - `js/findings-model.js` — **pure**, unit-tested: `deriveEventLabel`,
@@ -145,7 +145,7 @@ article" stripe/chip on matching timeline entries.
   touch targets; the compact legend leaves room for the map.
 - `js/findings.js` — loads the API collection, renders list + filters + detail
   panel, and instantiates the graph. Insights manifest titles load as optional
-  enrichment after rendering. No topic-only timeline request is needed.
+  enrichment after rendering.
   List is the default view, using the shared Insights card grid and styling, with source/date metadata, note excerpts, and reference counts. Cards stack in one column on mobile. List / Map
   buttons are available at every width and preserve filters. Selecting a finding
   opens a dedicated pane beside the desktop list; on mobile it replaces the list
@@ -157,17 +157,12 @@ article" stripe/chip on matching timeline entries.
   requests, timers, route listeners, and the graph. API errors show Retry and are
   distinguished from an empty collection.
 - Timeline events may carry `related_findings: [{id, slug, title, source}]`.
-  The stage renders these as teal pills below the media on the left, with the original purple Insights pills on the right and emits
+  The stage renders these as teal pills below the media on the left, with purple Insights pills on the right and emits
   `timeline_finding_click {event_id, event_title, finding_slug, finding_title}`.
-  Missing backlinks are treated as an empty array for backend rollout compatibility.
-- `findings/manifest.json` is retained as migration/rollback source only; the
-  frontend no longer fetches it. New findings are authored in AIAPI and published
+  Missing backlinks are treated as an empty array.
+- Findings are authored in AIAPI and published
   through its content workflow. `findings/index.html` remains the reusable shell;
   its noscript list is a separately maintained static snapshot, not live API data.
-
-Deploy the backend endpoints, migrate the manifest, and publish the records before
-releasing this frontend switch. No frontend HTML or JSON edits are required to
-add live Findings records. API errors do not silently fall back to stale JSON.
 
 ### 2.7 Game of Life (`js/gol.js`)
 
@@ -320,7 +315,6 @@ production; all are cleanup / hardening targets. The fix plan is in
 | I5 | **Two slug algorithms, documented as one.** `slugify()` in `js/main.js` folds accents, strips to `[a-z0-9 -]`, and prefixes a leading digit with `_`. The "Event slug derivation" snippet in `CLAUDE.md` keeps `_`, has no accent map, and no digit handling. `deriveEventLabel` assumes the `_` prefix. | `main.js`, `CLAUDE.md`, `findings-model.js` | Docs disagree with code; `referenced_events` slugs can silently fail to match. |
 | I6 | **`escHtml` / `esc` reimplemented** independently in `js/main.js`, `js/findings.js`, `js/dashboard.js` (plus inline copies). | 3+ modules | DRY violation; a fix in one copy misses the others. |
 | I7 | **Page-lifecycle listeners are inconsistent.** `js/gol.js` uses `beforeunload` (blocks the bfcache); `js/analytics.js` deliberately uses `pagehide` + `visibilitychange`. | `gol.js` vs `analytics.js` | `beforeunload` defeats back/forward cache for the whole page. |
-| I8 | **Resolved by Findings API migration: route-teardown asymmetry.** The router supports `onUnload`, but only `ai` defines one. `findings.js` (`wireFilterUI`, `wireDetailDismiss`) attaches `document`-level `keydown`/`click` listeners on every `/findings` visit and never removes them. | `router.js`, `findings.js` | Listener accumulation / leak across repeated navigation (already flagged in `CLAUDE.md`). |
 | I9 | **Two "add an article" procedures.** `insights/template.html` exists with `ARTICLE_*` placeholder tokens, but `CLAUDE.md` / older docs say to copy `insights/forwardpropagation.html`. | `insights/`, `CLAUDE.md` | Contributors follow different sources; metadata gets missed. |
 | I10 | **`<noscript>` fallbacks duplicate `shell.js` by hand** in `index.html`, `ai.html`, `insights/index.html`, `findings/index.html` — including a hard-coded contact email and a nav list that omits Findings in places. | all shells | Silent drift between the JS UI and the crawler-visible content. |
 | I11 | **Leftover `console.*` in production paths** — `js/ui.js` (`"UI behaviors initialized."`), per-attempt fetch logs in `js/main.js`. | `ui.js`, `main.js` | Console noise; leaks internal URLs. |
@@ -328,7 +322,6 @@ production; all are cleanup / hardening targets. The fix plan is in
 | I13 | **`sendBatch` omits `Content-Type: application/json`.** The `fetch` POST in `analytics.js` sends a JSON string with no header; the beacon path sets it via the `Blob` type. | `analytics.js` | Relies on server content sniffing; the two paths disagree. |
 | I14 | **No `.nojekyll`.** GitHub Pages runs the tree through Jekyll. Harmless today, but any future `_`-prefixed asset (or parts of `docs/`) would be silently dropped. | repo root | Latent deploy trap. |
 | I15 | **`docs/` (specs + plans) is committed to a public repo**, which conflicts with the stated "don't commit design docs/plans" policy and with `run.cmd --ignore=*.md`. | `docs/` | Policy inconsistency; internal planning is public. |
-| I16 | **README (this file, previously) was stale** — referenced KnightLab TimelineJS + CDN, pre-`/api/v2` endpoints, and omitted Findings, `config.js`, `topics.js`, `timeline/*`, and several routes and events. | `README.md` | Fixed by this rewrite; listed so the drift pattern is on record. |
 | I17 | **Dashboard token travels in the URL** (`?token=`), so it lands in history, referrer headers, and logs. `robots.txt` `Disallow: /dashboard.html` is not access control. | `dashboard.html`, `dashboard.js` | Credential exposure. |
 
 ---
@@ -371,13 +364,10 @@ test suites (`tests/*.test.html`) cover `analytics.js`, `findings-model.js`, and
    that pins its output against a table of known headline → slug pairs (I5, code half).
 4. **Standardise page-lifecycle handling** on `pagehide` + `visibilitychange`;
    drop `beforeunload` from `gol.js` and restore bfcache eligibility (I7).
-5. **Completed with Findings API migration: add a `findings` route `onUnload`.** Have `wireFilterUI` / `wireDetailDismiss`
-   return teardown functions and call them on unload; or attach the `document`
-   listeners once at module load instead of per navigation (I8).
-6. **Strip production `console.*`** or gate it behind a `DEBUG` constant in
+5. **Strip production `console.*`** or gate it behind a `DEBUG` constant in
    `config.js` (I11).
-7. **Generate `<noscript>` blocks and `sitemap.xml`** from `shell.js` + the two
-   manifests with a small local script, so the crawler content can't drift from
+6. **Generate `<noscript>` blocks and `sitemap.xml`** from `shell.js`, the Insights
+   manifest, and the Findings API with a small local script, so the crawler content can't drift from
    the app (I10). (Script runs locally; output is committed — still no build step
    in the serving path.)
 
@@ -437,8 +427,8 @@ test suites (`tests/*.test.html`) cover `analytics.js`, `findings-model.js`, and
 4. **Backend contract:** capture the expected `/api/v2/timeline` response shape
    (fields consumed: `events[]`, `title`, `eras`, `topics`, `new_events`,
    `on_this_day`) in one document so the frontend and FastAPI app stay in sync.
-5. **Manifest linting:** a local check that every `referenced_events` slug in
-   `insights/manifest.json` and `findings/manifest.json` resolves against the
+5. **Reference validation:** a local check that every `referenced_events` slug in
+   `insights/manifest.json` and the Findings API response resolves against the
    live timeline (catches I5-class mismatches before they ship).
 
 ---
@@ -496,7 +486,7 @@ a live browser panel, driven over the named pipe `\\.\pipe\wmux` (JSON-RPC).
 | `js/findings.js` / `js/findings-model.js` / `js/findings-graph.js` | Findings route, pure model, canvas force-graph. |
 | `js/findings-api.js` | Findings API contract validation, requests, and safe source URLs. |
 | `insights/` | `manifest.json`, `index.html`, `template.html`, one `<slug>.html` per essay. |
-| `findings/` | `manifest.json`, `index.html`. |
+| `findings/` | `index.html` — page shell and noscript snapshot. |
 | `tests/` | Browser test pages + fixtures. |
 | `docs/` | Design specs and implementation plans (see I15). |
 | `sitemap.xml`, `robots.txt`, `CNAME` | SEO / hosting config. |
