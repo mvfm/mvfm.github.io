@@ -10,6 +10,12 @@ export class Router {
         this.init();
     }
 
+    routePath(route) {
+        // GitHub Pages serves directory indexes at their trailing-slash URLs.
+        if (route === 'home') return '/';
+        return `/${route}${route === 'findings' || route === 'insights' ? '/' : ''}`;
+    }
+
     init() {
         this.menuButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -42,7 +48,7 @@ export class Router {
                 if (savedRoute && this.routes[savedRoute]) {
                     initialRoute = savedRoute;
                     // Update URL to match restored route without adding history entry
-                    const newPath = initialRoute === 'home' ? '/' : `/${initialRoute}`;
+                    const newPath = this.routePath(initialRoute);
                     window.history.replaceState({ route: initialRoute }, '', newPath + window.location.search + window.location.hash);
                 }
             }
@@ -74,7 +80,7 @@ export class Router {
         track('page_view', { route: trackPath });
 
         if (updateHistory) {
-            const newPath = route === 'home' ? '/' : `/${route}`;
+            const newPath = this.routePath(route);
             // Hashes belong to a specific view. Keep them only within that route;
             // initial deep links and Back/Forward use updateHistory=false.
             const hash = route === previousRoute ? window.location.hash : '';

@@ -862,14 +862,14 @@ const routes = {
     insights: {
         title: 'Insights — Marcus Vinicius Freitas Margarites',
         description: 'Deep dives into AI history, algorithms, and ideas — written by Marcus Vinicius Freitas Margarites.',
-        canonicalUrl: 'https://mvfm.digital/insights',
+        canonicalUrl: 'https://mvfm.digital/insights/',
         template: 'tpl-insights',
         onLoad: insightsRouteOnLoad
     },
     findings: {
         title: 'Findings — Marcus Vinicius Freitas Margarites',
         description: 'A curated web of links on AI, its history, and its open problems — with a graph connecting them to the timeline and to Insights.',
-        canonicalUrl: 'https://mvfm.digital/findings',
+        canonicalUrl: 'https://mvfm.digital/findings/',
         template: 'tpl-findings',
         onLoad: findingsRouteOnLoad,
         onUnload: findingsRouteOnUnload
@@ -877,7 +877,7 @@ const routes = {
     'insights-article': {
         get title() { return document.title || 'Insights — mvfm.digital'; },
         get description() { return document.querySelector('meta[name="description"]')?.content || ''; },
-        get canonicalUrl() { return document.querySelector('link[rel="canonical"]')?.getAttribute('href') || 'https://mvfm.digital/insights'; },
+        get canonicalUrl() { return document.querySelector('link[rel="canonical"]')?.getAttribute('href') || 'https://mvfm.digital/insights/'; },
         template: 'tpl-feature',
         onLoad: insightsArticleOnLoad
     }

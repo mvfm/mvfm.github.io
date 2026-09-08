@@ -204,7 +204,7 @@ export class Stage {
       findings.forEach(f => {
         const link = document.createElement('a');
         link.className = 'finding-ref-chip';
-        link.href = `/findings#${encodeURIComponent(f.slug)}`;
+        link.href = `/findings/#${encodeURIComponent(f.slug)}`;
         link.textContent = `◈ ${f.title}`;
         link.title = f.source ? `${f.title} — ${f.source}` : f.title;
         link.dataset.eventId = slug; link.dataset.eventTitle = headline;

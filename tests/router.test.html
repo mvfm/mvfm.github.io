@@ -24,7 +24,8 @@ async function test(name, from, to, hash, updateHistory, expected) {
         await new Promise(resolve => setTimeout(resolve, 160));
         if (location.hash !== expected) throw new Error(`Unexpected hash: ${location.hash}`);
         if (location.search !== '?api=remote') throw new Error('Query parameters lost');
-        if (updateHistory && location.pathname !== `/${to}`) throw new Error('Wrong destination');
+        const expectedPath = to === 'home' ? '/' : `/${to}${['findings', 'insights'].includes(to) ? '/' : ''}`;
+        if (updateHistory && location.pathname !== expectedPath) throw new Error('Wrong destination');
         passed++;
         document.getElementById('results').insertAdjacentHTML('beforeend', `<li>✓ ${name}</li>`);
     } catch (error) {

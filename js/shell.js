@@ -30,7 +30,7 @@ const TEMPLATES = {
             misunderstood along the way. These essays follow the people, ideas, breakthroughs, failures, and recurring
             patterns that deserve more room than a single timeline entry can give them.
         </p>
-        <p><strong><a href="/insights">Read the latest Insights</a></strong></p>
+        <p><strong><a href="/insights/">Read the latest Insights</a></strong></p>
 
         <h2>About me</h2>
         <p>

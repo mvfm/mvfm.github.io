@@ -156,7 +156,7 @@
       const link = el.querySelector('.finding-ref-chip');
       expect(getComputedStyle(el.querySelector('.finding-ref-stripe')).left).toBe('0px');
       expect(getComputedStyle(el.querySelector('.insight-ref-stripe')).right).toBe('0px');
-      expect(link.getAttribute('href')).toBe('/findings#mccarthy');
+      expect(link.getAttribute('href')).toBe('/findings/#mccarthy');
       expect(link.textContent).toBe('◈ McCarthy <oral history>');
       expect(link.closest('.ait-body')).toBeFalsy();
       expect(getComputedStyle(link.parentElement).position).toBe('absolute');
