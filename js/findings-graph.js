@@ -72,6 +72,7 @@ export class FindingsGraph {
         this.view = { x: 0, y: 0, k: 1 };     // pan x/y (world units), zoom k
         this._autoFit = true;
         this.selectedId = null;
+        this._followId = null;
         this.filterSet = null;                 // Set<slug> or null
         this.visibleNonFinding = null;         // Set<nodeId> of non-finding nodes still tied to a visible finding
         this.hoverId = null;
@@ -137,6 +138,13 @@ export class FindingsGraph {
         const ctx = this.ctx;
         if (!this.W || !this.H) return;
         if (this._autoFit && !this._cameraTarget) this._fit();
+        // The simulation keeps moving nodes after the opening camera transition.
+        const followed = this.index.get(this._followId);
+        if (followed) {
+            const target = this._cameraTarget || this.view;
+            target.x = followed.x;
+            target.y = followed.y;
+        }
         ctx.clearRect(0, 0, this.W, this.H);
 
         const dim = (id) => this.hoverId && id !== this.hoverId && !this._isNeighbor(id) ? 0.15 : 1;
@@ -339,6 +347,7 @@ export class FindingsGraph {
         c.addEventListener('mousedown', (e) => {
             this._cancelCamera();
             this._autoFit = false;
+            this._followId = null;
             const rect = c.getBoundingClientRect();
             const px = e.clientX - rect.left, py = e.clientY - rect.top;
             const hit = this._pick(px, py);
@@ -369,6 +378,7 @@ export class FindingsGraph {
 
         c.addEventListener('wheel', (e) => {
             this._autoFit = false;
+            this._followId = null;
             e.preventDefault();
             const rect = c.getBoundingClientRect();
             const px = e.clientX - rect.left, py = e.clientY - rect.top;
@@ -386,6 +396,7 @@ export class FindingsGraph {
         c.addEventListener('touchmove', (e) => {
             this._cancelCamera();
             this._autoFit = false;
+            this._followId = null;
             if (e.touches.length !== 1 || !t0) return;
             moved = true;
             const t = e.touches[0];
@@ -431,7 +442,9 @@ export class FindingsGraph {
         this.selectedId = node.id;
         this._resize();
         this._autoFit = false;
+        this._followId = null;
         this._animateView({ x: node.x, y: node.y, k: Math.max(this.view.k, 1.2) });
+        this._followId = node.id;
         this.requestDraw();
     }
 
@@ -444,11 +457,13 @@ export class FindingsGraph {
     }
     zoomBy(f) {
         this._autoFit = false;
+        this._followId = null;
         const base = this._cameraTarget || this.view;
         this._animateView({ ...base, k: Math.max(.1, Math.min(4, base.k * f)) });
     }
     resetView() {
         this.selectedId = null;
+        this._followId = null;
         this._autoFit = true;
         const start = { ...this.view };
         this._fit();

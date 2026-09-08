@@ -157,6 +157,12 @@
       assert(!graph._autoFit, 'Focus overwritten by auto-fit');
       await until(() => !graph._cameraTarget);
       assert(graph.view.k >= 1.2, 'Finding not brought into focus');
+      const node = graph.index.get(graph.selectedId);
+      node.x += 600; node.y -= 400;
+      graph._draw();
+      assert(Math.abs(graph._sx(node.x) - graph.W / 2) < 1 && Math.abs(graph._sy(node.y) - graph.H / 2) < 1, 'Moving finding drifted away from center');
+      graph.zoomBy(1.2);
+      assert(!graph._followId, 'Manual navigation did not release camera follow');
       panel.querySelector('#findings-canvas').dispatchEvent(new MouseEvent('mouseleave'));
       assert(graph.selectedId === 'finding:mccarthy', 'Cue lost on mouseleave');
       graph.resetView();
