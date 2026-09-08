@@ -6,7 +6,7 @@
 // centering, alpha-cooled), and pointer interaction — hover highlight, node
 // drag (pins via fx/fy), empty-space pan, wheel zoom-to-cursor, click →
 // opts callbacks, and minimal one-finger touch pan. Public control surface:
-// setFilter({ matchedFindingSlugs }), zoomBy(f), resetView().
+// setFilter({ matchedFindingSlugs }), focusFinding(slug), zoomBy(f), resetView().
 
 const TYPE_STYLE = {
     finding: { r: 9, fill: '#0d9488' },
@@ -71,6 +71,7 @@ export class FindingsGraph {
 
         this.view = { x: 0, y: 0, k: 1 };     // pan x/y (world units), zoom k
         this._autoFit = true;
+        this.selectedId = null;
         this.filterSet = null;                 // Set<slug> or null
         this.visibleNonFinding = null;         // Set<nodeId> of non-finding nodes still tied to a visible finding
         this.hoverId = null;
@@ -161,13 +162,13 @@ export class FindingsGraph {
         ctx.globalAlpha = 1;
         // nodes
         for (const n of this.nodes) {
-            const a = dim(n.id) * faded(n);
+            const a = n.id === this.selectedId ? 1 : dim(n.id) * faded(n);
             ctx.globalAlpha = a;
             const color = this._nodeFill(n);
             ctx.fillStyle = n.type === 'topic' ? '#fff' : color;
             const r = this._nodeRadius(n) * Math.sqrt(Math.max(.65, this.view.k));
             const x = this._sx(n.x), y = this._sy(n.y);
-            if (n.id === this.hoverId) {
+            if (n.id === this.hoverId || n.id === this.selectedId) {
                 ctx.globalAlpha = .12;
                 ctx.fillStyle = color;
                 ctx.beginPath(); ctx.arc(x, y, r + 7, 0, Math.PI * 2); ctx.fill();
@@ -181,11 +182,11 @@ export class FindingsGraph {
         }
         // Place important labels first and skip collisions rather than printing
         // every title over its neighbours. Hover always reveals a full title.
-        const rank = n => n.id === this.hoverId ? -1 : ({ topic: 0, finding: 1, insight: 2, event: 3 }[n.type]);
+        const rank = n => n.id === this.selectedId ? -2 : n.id === this.hoverId ? -1 : ({ topic: 0, finding: 1, insight: 2, event: 3 }[n.type]);
         const occupied = [];
         for (const n of [...this.nodes].sort((a, b) => rank(a) - rank(b))) {
-            const active = n.id === this.hoverId;
-            if (!n.label || faded(n) < 1 || (this.hoverId && !active && !this._isNeighbor(n.id))) continue;
+            const active = n.id === this.hoverId || n.id === this.selectedId;
+            if (!n.label || (!active && faded(n) < 1) || (this.hoverId && !active && !this._isNeighbor(n.id))) continue;
             if (n.type === 'event' && !active && !this.hoverId && this.view.k < 1.2) continue;
             ctx.font = `${n.type === 'topic' || active ? 600 : 500} 11px system-ui, sans-serif`;
             let label = n.label;
@@ -423,6 +424,17 @@ export class FindingsGraph {
     // Force a backing-store re-measure (e.g. after display:none → visible on mobile).
     resize() { this._resize(); }
 
+    // Called after revealing Map so the camera uses its current viewport.
+    focusFinding(slug) {
+        const node = this.index.get(`finding:${slug}`);
+        if (!node) return;
+        this.selectedId = node.id;
+        this._resize();
+        this._autoFit = false;
+        this._animateView({ x: node.x, y: node.y, k: Math.max(this.view.k, 1.2) });
+        this.requestDraw();
+    }
+
     _fit() {
         if (!this.W || !this.H || !this.nodes.length) return;
         const xs = this.nodes.map(n => n.x), ys = this.nodes.map(n => n.y);
@@ -436,6 +448,7 @@ export class FindingsGraph {
         this._animateView({ ...base, k: Math.max(.1, Math.min(4, base.k * f)) });
     }
     resetView() {
+        this.selectedId = null;
         this._autoFit = true;
         const start = { ...this.view };
         this._fit();

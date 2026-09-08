@@ -123,6 +123,20 @@
       panel.querySelector('[data-findings-view="list"]').click();
       assert(input.value === 'Oral' && panel.querySelectorAll('.finding-row').length === 1, 'Filters lost');
     });
+    await test('Map focuses the finding being read and retains its cue after hover', async () => {
+      mock(); mount(); await findingsRouteOnLoad();
+      selectFinding('mccarthy');
+      panel.querySelector('[data-findings-view="map"]').click();
+      const graph = _state.graph;
+      assert(graph.selectedId === 'finding:mccarthy', 'Reading selection lost');
+      assert(!graph._autoFit, 'Focus overwritten by auto-fit');
+      await until(() => !graph._cameraTarget);
+      assert(graph.view.k >= 1.2, 'Finding not brought into focus');
+      panel.querySelector('#findings-canvas').dispatchEvent(new MouseEvent('mouseleave'));
+      assert(graph.selectedId === 'finding:mccarthy', 'Cue lost on mouseleave');
+      graph.resetView();
+      assert(!graph.selectedId, 'Fit map did not clear focus');
+    });
     for (const width of [320, 390]) await test(`Mobile Findings at ${width}px: reading, Back, filters, map, and no overflow`, async () => {
       const frame = document.createElement('iframe');
       frame.title = 'Mobile Findings layout'; frame.style.cssText = `width:${width}px;height:844px;border:0`;

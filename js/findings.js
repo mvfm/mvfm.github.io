@@ -69,8 +69,12 @@ export async function findingsRouteOnLoad() {
     document.querySelectorAll('[data-findings-view]').forEach(btn => {
         btn.setAttribute('aria-pressed', String(btn.dataset.findingsView === 'list'));
         btn.addEventListener('click', () => {
+            const selectedSlug = state.selectedSlug;
             closeDetail();
             setView(btn.dataset.findingsView);
+            if (btn.dataset.findingsView === 'map' && selectedSlug) {
+                state.graph?.focusFinding(selectedSlug);
+            }
         }, { signal });
     });
     state.selectedTopics.clear();
