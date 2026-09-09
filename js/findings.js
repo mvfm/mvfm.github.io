@@ -313,8 +313,8 @@ function renderLegend() {
     const el = document.getElementById('findings-graph-legend');
     if (!el) return;
 
-    const swatch = (color, label) =>
-        `<span><i style="background:${color}"></i>${esc(label)}</span>`;
+    const swatch = (color, label, outline = false) =>
+        `<span><i style="${outline ? `box-shadow:inset 0 0 0 2px ${color}` : `background:${color}`}"></i>${esc(label)}</span>`;
 
     // Fixed node types.
     const parts = [
@@ -324,7 +324,7 @@ function renderLegend() {
     ];
 
     for (const topic of state.topicsInUse) {
-        parts.push(swatch(state.allTopics.length ? getTopicColor(topic, state.allTopics, true) : GRAPH_PALETTE.topic, topic));
+        parts.push(swatch(state.allTopics.length ? getTopicColor(topic, state.allTopics, true) : GRAPH_PALETTE.topic, topic, true));
     }
 
     el.innerHTML = parts.join('');
