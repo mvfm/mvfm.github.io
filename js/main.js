@@ -6,6 +6,7 @@ import { injectShell } from './shell.js';
 import { API_V2 } from './config.js';
 import { getTopicColor, generateMnemonics, getTopicInitials } from './topics.js';
 import { findingsRouteOnLoad, findingsRouteOnUnload } from './findings.js';
+import { fetchFindings } from './findings-api.js';
 import { AITimeline } from './timeline/timeline.js';
 
 // Mirrors TimelineJS slugify() exactly — keep in sync with app/util.py
@@ -785,13 +786,33 @@ const insightsRouteOnLoad = async () => {
             return;
         }
 
-        grid.innerHTML = articles.map(article => `
+        grid.innerHTML = articles.map(article => {
+            const dots = (article.topics || []).map(topic => {
+                const color = allTopics.length ? getTopicColor(topic, allTopics, true) : '#94a3b8';
+                return `<span class="finding-dot" data-topic="${escHtml(topic)}" style="background:${color}" title="${escHtml(topic)}" role="img" aria-label="${escHtml(topic)}"></span>`;
+            }).join('');
+            const count = (article.referenced_events || []).length;
+            const refs = count ? `<span class="finding-refs">${count} timeline ${count === 1 ? 'entry' : 'entries'}</span>` : '';
+            return `
             <a class="insight-card" href="/insights/${escHtml(article.slug)}.html" data-slug="${escHtml(article.slug)}">
                 <span class="insight-card-date">${escHtml(formatDate(article.date))}</span>
                 <h3 class="insight-card-title">${escHtml(article.title)}</h3>
                 <p class="insight-card-desc">${escHtml(article.description)}</p>
+                ${dots || refs ? `<span class="finding-row-tags">${dots}${refs}</span>` : ''}
             </a>
-        `).join('');
+        `;
+        }).join('');
+
+        // Use the same full topic palette as Findings, without delaying the cards
+        // or making the static Insights listing depend on backend availability.
+        if (!allTopics.length) {
+            fetchFindings().then(({ topics }) => {
+                if (!grid.isConnected) return;
+                grid.querySelectorAll('[data-topic]').forEach(dot => {
+                    dot.style.background = getTopicColor(dot.dataset.topic, topics, true);
+                });
+            }).catch(err => console.warn('Could not load Insights topic colors:', err));
+        }
 
     } catch (err) {
         console.error('Failed to load insights manifest:', err);
