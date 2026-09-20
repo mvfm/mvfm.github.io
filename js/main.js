@@ -425,6 +425,12 @@ const aiRouteOnLoad = async () => {
                                 article_slug: chip.dataset.articleSlug, article_title: chip.dataset.articleTitle,
                             });
                         },
+                        onChipsExpand: (toggle) => {
+                            track('timeline_chips_expand', {
+                                event_id: toggle.dataset.eventId, event_title: toggle.dataset.eventTitle,
+                                kind: toggle.dataset.noun.toLowerCase(), count: Number(toggle.dataset.count),
+                            });
+                        },
                         onFindingClick: (chip) => {
                             track('timeline_finding_click', {
                                 event_id: chip.dataset.eventId, event_title: chip.dataset.eventTitle,

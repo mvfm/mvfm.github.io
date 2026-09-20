@@ -184,8 +184,7 @@ export class Stage {
     body.appendChild(text);
 
     if (!isTitle && articles.length) {
-      const chips = document.createElement('div');
-      chips.className = 'ait-chips';
+      const { chips, list } = this._chipGroup('ait-chips', 'insight-ref-chip', '✦', 'Insights', articles.length, slug, headline);
       articles.forEach(a => {
         const link = document.createElement('a');
         link.className = 'insight-ref-chip';
@@ -193,14 +192,13 @@ export class Stage {
         link.dataset.eventId = slug; link.dataset.eventTitle = headline;
         link.dataset.articleSlug = a.slug; link.dataset.articleTitle = a.title;
         link.textContent = `✦ ${a.title}`;
-        chips.appendChild(link);
+        list.appendChild(link);
       });
       card.appendChild(chips);
     }
 
     if (!isTitle && findings.length) {
-      const chips = document.createElement('div');
-      chips.className = 'ait-finding-chips';
+      const { chips, list } = this._chipGroup('ait-finding-chips', 'finding-ref-chip', '◈', 'Findings', findings.length, slug, headline);
       findings.forEach(f => {
         const link = document.createElement('a');
         link.className = 'finding-ref-chip';
@@ -209,13 +207,34 @@ export class Stage {
         link.title = f.source ? `${f.title} — ${f.source}` : f.title;
         link.dataset.eventId = slug; link.dataset.eventTitle = headline;
         link.dataset.findingSlug = f.slug; link.dataset.findingTitle = f.title;
-        chips.appendChild(link);
+        list.appendChild(link);
       });
       card.appendChild(chips);
     }
 
     card.appendChild(body);
     this._buildNav(card);
+  }
+
+  // Several chips would stack over the media caption, so 2+ collapse behind one
+  // summary chip that expands on demand. Returns the container and the element
+  // the individual chips should be appended to.
+  _chipGroup(groupClass, chipClass, glyph, noun, count, slug, headline) {
+    const chips = document.createElement('div');
+    chips.className = groupClass;
+    if (count < 2) return { chips, list: chips };
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = `${chipClass} chip-toggle`;
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.dataset.eventId = slug; toggle.dataset.eventTitle = headline;
+    toggle.dataset.glyph = glyph; toggle.dataset.noun = noun; toggle.dataset.count = String(count);
+    toggle.textContent = `${glyph} ${count} ${noun} ▴`;
+    const list = document.createElement('div');
+    list.className = `ait-chip-list ${chipClass}-list`;
+    list.hidden = true;
+    chips.append(list, toggle);
+    return { chips, list };
   }
 
   _buildMedia(media) {
@@ -310,6 +329,17 @@ export class Stage {
     }
     const opt = ev.target.closest('.purchase-link');
     if (opt) { this.opts.onCartOptionClick?.(opt, ev); this.mount.querySelectorAll('.purchase-dropdown.open').forEach(d => d.classList.remove('open')); return; }
+    const toggle = ev.target.closest('.chip-toggle');
+    if (toggle) {
+      const list = toggle.parentElement.querySelector('.ait-chip-list');
+      const { glyph, noun, count } = toggle.dataset;
+      const open = list.hidden;
+      list.hidden = !open;
+      toggle.setAttribute('aria-expanded', String(open));
+      if (open) this.opts.onChipsExpand?.(toggle, ev);
+      toggle.textContent = open ? `${glyph} Hide ${noun.toLowerCase()} ▾` : `${glyph} ${count} ${noun} ▴`;
+      return;
+    }
     const finding = ev.target.closest('.finding-ref-chip');
     if (finding) { this.opts.onFindingClick?.(finding, ev); return; }
     const chip = ev.target.closest('.insight-ref-chip');
