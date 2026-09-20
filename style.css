@@ -104,6 +104,27 @@ body {
     -webkit-text-stroke-width: 1px;
 }
 
+/* Chromium clamps sub-pixel text strokes to a full device pixel (at 1x DPR),
+   so the outline looks much heavier than in Firefox. Fade the stroke colour
+   to approximate Firefox's hairline. */
+@supports not (-moz-appearance: none) {
+    .brand {
+        -webkit-text-stroke: 0.25px color-mix(in srgb, var(--clr-primary) 45%, transparent);
+    }
+
+    .scrolled .brand {
+        -webkit-text-stroke-width: 0.5px;
+    }
+}
+
+/* Firefox: the solid 1px stroke clogs the shrunken header lettering; use a
+   thinner, softened stroke. (Full-size header is unaffected.) */
+@supports (-moz-appearance: none) {
+    .scrolled .brand {
+        -webkit-text-stroke: 0.5px color-mix(in srgb, var(--clr-primary) 55%, transparent);
+    }
+}
+
 nav {
     background: linear-gradient(0deg, #f9fafb, #ffffff);
     border-bottom: 1px solid #e5e7eb;
