@@ -1299,6 +1299,7 @@ main {
     font-family: inherit; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
 .finding-row-open:focus-visible { outline: 2px solid var(--clr-accent); outline-offset: 3px; }
 .finding-row.active .finding-row-open { border-color: var(--clr-accent); }
+.finding-row-source { font-size: .8125rem; color: var(--clr-primary); line-height: 1.4; }
 .finding-row-excerpt { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .finding-row-tags { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; margin-top: auto; padding-top: .35rem; }
 @media (prefers-reduced-motion: reduce) {

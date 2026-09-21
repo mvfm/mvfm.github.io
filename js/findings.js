@@ -23,9 +23,13 @@ const esc = (s) => String(s ?? '')
 
 const fmtDate = (d) => {
     if (!d) return '';
-    const [y, m] = d.split('-');
+    const [y, m, day] = d.split('-');
     if (!m) return y;
-    return new Date(+y, +m - 1).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+    const date = new Date(+y, +m - 1);
+    if (!day) return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+    const n = parseInt(day, 10);
+    const suffix = n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th');
+    return `${date.toLocaleDateString('en-US', { month: 'long' })} ${n}${suffix}, ${y}`;
 };
 
 const state = {
@@ -340,8 +344,9 @@ function rowHtml(f) {
     if ((f.referenced_events || []).length) refs.push(`${f.referenced_events.length} timeline ${f.referenced_events.length === 1 ? 'entry' : 'entries'}`);
     return `<li class="finding-row" data-slug="${esc(f.slug)}">
         <button type="button" class="finding-row-open" aria-label="Read ${esc(f.title)}">
-        <span class="finding-row-meta">${esc(f.source)} · ${esc(fmtDate(f.date_added))}</span>
+        <span class="finding-row-meta">${esc(fmtDate(f.date_added))}</span>
         <span class="finding-row-title">${esc(f.title)}</span>
+        ${f.source ? `<span class="finding-row-source">${esc(f.source)}</span>` : ''}
         ${f.note ? `<span class="finding-row-excerpt">${esc(f.note.length > 240 ? f.note.slice(0, 240).trimEnd() + '…' : f.note)}</span>` : ''}
         <span class="finding-row-tags">${dots}${refs.length ? `<span class="finding-refs">${refs.join(' · ')}</span>` : ''}</span>
         </button>
