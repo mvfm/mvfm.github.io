@@ -185,6 +185,61 @@
       graph.resetView();
       assert(!graph.selectedId, 'Fit map did not clear focus');
     });
+    await test('Map click retains connections, hover previews, and only double-click activates nodes', async () => {
+      mock(); mount(); await findingsRouteOnLoad();
+      panel.querySelector('[data-findings-view="map"]').click();
+      const graph = _state.graph, canvas = graph.canvas;
+      graph.resize();
+      await until(() => graph.W > 0 && graph.H > 0);
+      graph._stop(); graph._autoFit = false; graph._followId = null;
+      graph.view = { x: 0, y: 0, k: 1 };
+      // Fixed positions and no labels keep pixel samples clear of label boxes.
+      graph.nodes.forEach((node, i) => { node.label = ''; node.x = (i % 3 - 1) * 120; node.y = Math.floor(i / 3) * 100 - 50; });
+      const first = graph.index.get('finding:mccarthy');
+      const other = graph.index.get('finding:second');
+      const topic = graph.index.get('topic:foundations');
+      const actions = [];
+      graph.opts.onSelectFinding = ref => actions.push(['finding', ref]);
+      graph.opts.onSelectTopic = ref => actions.push(['topic', ref]);
+      graph.opts.onNavigate = (type, ref) => actions.push([type, ref]);
+      function mouse(type, node) {
+        const rect = canvas.getBoundingClientRect();
+        canvas.dispatchEvent(new MouseEvent(type, { bubbles: true, button: 0,
+          clientX: rect.left + (node ? graph._sx(node.x) : 4),
+          clientY: rect.top + (node ? graph._sy(node.y) : 4) }));
+      }
+      function opacity(node) {
+        graph._draw();
+        const dpr = canvas.width / graph.W;
+        return graph.ctx.getImageData(Math.floor(graph._sx(node.x) * dpr), Math.floor(graph._sy(node.y) * dpr), 1, 1).data[3];
+      }
+      mouse('mousemove', first);
+      assert(opacity(other) < 80 && opacity(topic) === 255, `Hover did not isolate neighbours: other=${opacity(other)}, topic=${opacity(topic)}`);
+      mouse('mouseleave');
+      assert(opacity(other) === 255, 'Unclicked hover did not restore natural appearance');
+      mouse('click', first); mouse('mouseleave');
+      assert(graph.selectedId === first.id && opacity(other) < 80 && opacity(topic) === 255, 'Click highlight did not persist');
+      assert(actions.length === 0, 'Single click activated a node');
+      mouse('mousemove', other);
+      assert(opacity(first) < 80 && opacity(other) === 255, 'Hover failed to override selection');
+      mouse('mouseleave');
+      assert(opacity(first) === 255 && opacity(other) < 80, 'Hover exit lost selection');
+      mouse('click', other); mouse('mouseleave');
+      assert(graph.selectedId === other.id && opacity(first) < 80, 'Click did not replace selection');
+      mouse('click');
+      assert(!graph.selectedId && opacity(first) === 255, 'Empty-space click did not clear selection');
+      for (const type of ['finding', 'topic', 'event', 'insight']) {
+        const node = graph.nodes.find(n => n.type === type);
+        const before = actions.length;
+        mouse('click', node); mouse('click', node);
+        assert(actions.length === before, 'Click activated ' + type);
+        mouse('dblclick', node);
+        assert(actions.length === before + 1 && actions[before][0] === type && actions[before][1] === node.ref, 'Double-click failed for ' + type);
+      }
+      mouse('click', first);
+      mouse('mousedown'); mouse('mousemove', other); mouse('mouseup'); mouse('click', other);
+      assert(graph.selectedId === first.id, 'Panning changed the selection');
+    });
     for (const width of [320, 390]) await test(`Mobile Findings at ${width}px: reading, Back, filters, map, and no overflow`, async () => {
       const frame = document.createElement('iframe');
       frame.title = 'Mobile Findings layout'; frame.style.cssText = `width:${width}px;height:844px;border:0`;

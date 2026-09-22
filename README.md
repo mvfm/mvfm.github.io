@@ -139,7 +139,9 @@ article" stripe/chip on matching timeline entries.
   via `opts`. Honors `prefers-reduced-motion`, pauses on tab hide, self-disposes
   when its canvas leaves the DOM.
   The map automatically fits its nodes, uses collision-aware labels and subdued
-  edges, and highlights immediate connections on hover. Findings are teal,
+  edges, and highlights immediate connections on hover. Clicking a node retains
+  that highlight; clicking empty space clears it. Hover temporarily overrides the
+  selection, and double-clicking opens a node or applies its topic filter. Findings are teal,
   events amber, Insights purple, and topics retain their shared colors as rings.
   The topic legend retains each topic color. The simulation starts when Map becomes visible; zoom and Fit map animate smoothly unless reduced motion is requested. Manual zoom/pan is preserved until Fit map is selected. Controls have mobile
   touch targets; the compact legend leaves room for the map.

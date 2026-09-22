@@ -177,7 +177,7 @@ const TEMPLATES = {
                     <button data-zoom="reset" aria-label="Fit map" title="Fit map">⤢</button>
                 </div>
                 <div id="findings-graph-legend" class="findings-graph-legend"></div>
-                <p id="findings-map-help" class="findings-map-help">Drag to explore · Select a dot to open or filter</p>
+                <p id="findings-map-help" class="findings-map-help">Click to highlight · Double-click to open or filter · Drag to explore</p>
             </div>
             <aside id="findings-detail" class="findings-detail" aria-label="Finding details" hidden></aside>
         </div>`,

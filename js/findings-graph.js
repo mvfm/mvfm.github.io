@@ -4,8 +4,8 @@
 // Full engine: canvas scaffold + deterministic seed layout + DPR-aware sizing
 // (ResizeObserver), a self-halting rAF force simulation (repulsion / springs /
 // centering, alpha-cooled), and pointer interaction — hover highlight, node
-// drag (pins via fx/fy), empty-space pan, wheel zoom-to-cursor, click →
-// opts callbacks, and minimal one-finger touch pan. Public control surface:
+// drag (pins via fx/fy), empty-space pan, wheel zoom-to-cursor, click to highlight,
+// double-click → opts callbacks, and minimal one-finger touch pan. Public control surface:
 // setFilter({ matchedFindingSlugs }), focusFinding(slug), zoomBy(f), resetView().
 
 const TYPE_STYLE = {
@@ -147,7 +147,8 @@ export class FindingsGraph {
         }
         ctx.clearRect(0, 0, this.W, this.H);
 
-        const dim = (id) => this.hoverId && id !== this.hoverId && !this._isNeighbor(id) ? 0.15 : 1;
+        const highlightId = this.hoverId || this.selectedId;
+        const dim = (id) => highlightId && id !== highlightId && !this._isNeighbor(id, highlightId) ? 0.15 : 1;
         // Spec §5: with a filter active, fade non-matching finding nodes AND any
         // topic/event/insight node left with no visible finding.
         const faded = (n) => {
@@ -158,9 +159,9 @@ export class FindingsGraph {
 
         // edges
         for (const e of this.edges) {
-            const active = e.a.id === this.hoverId || e.b.id === this.hoverId;
+            const active = e.a.id === highlightId || e.b.id === highlightId;
             ctx.lineWidth = active ? 1.7 : .8;
-            ctx.strokeStyle = active ? this._nodeFill(this.index.get(this.hoverId)) : this.P.edge;
+            ctx.strokeStyle = active ? this._nodeFill(this.index.get(highlightId)) : this.P.edge;
             ctx.globalAlpha = (active ? .85 : .3) * Math.min(dim(e.a.id), dim(e.b.id)) * Math.min(faded(e.a), faded(e.b));
             ctx.beginPath();
             ctx.moveTo(this._sx(e.a.x), this._sy(e.a.y));
@@ -170,13 +171,13 @@ export class FindingsGraph {
         ctx.globalAlpha = 1;
         // nodes
         for (const n of this.nodes) {
-            const a = n.id === this.selectedId ? 1 : dim(n.id) * faded(n);
+            const a = dim(n.id) * faded(n);
             ctx.globalAlpha = a;
             const color = this._nodeFill(n);
             ctx.fillStyle = n.type === 'topic' ? '#fff' : color;
             const r = this._nodeRadius(n) * Math.sqrt(Math.max(.65, this.view.k));
             const x = this._sx(n.x), y = this._sy(n.y);
-            if (n.id === this.hoverId || n.id === this.selectedId) {
+            if (n.id === highlightId) {
                 ctx.globalAlpha = .12;
                 ctx.fillStyle = color;
                 ctx.beginPath(); ctx.arc(x, y, r + 7, 0, Math.PI * 2); ctx.fill();
@@ -189,13 +190,13 @@ export class FindingsGraph {
             ctx.lineWidth = n.type === 'topic' ? 2.5 : 1.8; ctx.stroke();
         }
         // Place important labels first and skip collisions rather than printing
-        // every title over its neighbours. Hover always reveals a full title.
-        const rank = n => n.id === this.selectedId ? -2 : n.id === this.hoverId ? -1 : ({ topic: 0, finding: 1, insight: 2, event: 3 }[n.type]);
+        // every title over its neighbours. The highlighted node gets its full title.
+        const rank = n => n.id === highlightId ? -1 : ({ topic: 0, finding: 1, insight: 2, event: 3 }[n.type]);
         const occupied = [];
         for (const n of [...this.nodes].sort((a, b) => rank(a) - rank(b))) {
-            const active = n.id === this.hoverId || n.id === this.selectedId;
-            if (!n.label || (!active && faded(n) < 1) || (this.hoverId && !active && !this._isNeighbor(n.id))) continue;
-            if (n.type === 'event' && !active && !this.hoverId && this.view.k < 1.2) continue;
+            const active = n.id === highlightId;
+            if (!n.label || (!active && faded(n) < 1) || (highlightId && !active && !this._isNeighbor(n.id, highlightId))) continue;
+            if (n.type === 'event' && !active && !highlightId && this.view.k < 1.2) continue;
             ctx.font = `${n.type === 'topic' || active ? 600 : 500} 11px system-ui, sans-serif`;
             let label = n.label;
             const limit = active ? Math.min(340, this.W - 40) : (this.W < 500 ? 116 : 168);
@@ -216,9 +217,8 @@ export class FindingsGraph {
         ctx.globalAlpha = 1;
     }
 
-    _isNeighbor(id) {
-        if (!this.hoverId) return false;
-        return this.neighbours.get(this.hoverId)?.has(id) || false;
+    _isNeighbor(id, highlightId = this.hoverId || this.selectedId) {
+        return this.neighbours.get(highlightId)?.has(id) || false;
     }
 
     _kick() {
@@ -366,6 +366,16 @@ export class FindingsGraph {
         window.addEventListener('mouseup', this._onUp);
 
         c.addEventListener('click', (e) => {
+            if (e.button !== 0 || moved) return;
+            const rect = c.getBoundingClientRect();
+            const hit = this._pick(e.clientX - rect.left, e.clientY - rect.top);
+            this.selectedId = hit ? hit.id : null;
+            this.hoverId = null;
+            this.requestDraw();
+        });
+
+        c.addEventListener('dblclick', (e) => {
+            if (e.button !== 0) return;
             if (moved) return;   // suppress the click that follows a drag/pan
             const rect = c.getBoundingClientRect();
             const hit = this._pick(e.clientX - rect.left, e.clientY - rect.top);
