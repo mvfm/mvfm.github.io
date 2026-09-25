@@ -155,24 +155,53 @@
       st.show({ ...withIds[1], related_findings: [{ id: 42, slug: 'mccarthy',
         title: 'McCarthy <oral history>', source: 'IEEE' }] }, 'initial');
       const link = el.querySelector('.finding-ref-chip');
-      expect(getComputedStyle(el.querySelector('.finding-ref-stripe')).left).toBe('0px');
-      expect(getComputedStyle(el.querySelector('.insight-ref-stripe')).right).toBe('0px');
+      expect(el.querySelector('.finding-ref-stripe, .insight-ref-stripe')).toBeFalsy();
       expect(link.getAttribute('href')).toBe('/findings/#mccarthy');
-      expect(link.textContent).toBe('◈ McCarthy <oral history>');
+      expect(link.textContent).toBe('McCarthy <oral history>');
+      expect(link.title).toBe('McCarthy <oral history> — IEEE');
       expect(link.closest('.ait-body')).toBeFalsy();
-      expect(getComputedStyle(link.parentElement).position).toBe('absolute');
-      expect(link.parentElement.className).toBe('ait-finding-chips');
-      expect(el.querySelector('.insight-ref-chip').parentElement.className).toBe('ait-chips');
-      expect(getComputedStyle(link.parentElement).left).toBe('20px');
-      expect(getComputedStyle(el.querySelector('.insight-ref-chip').parentElement).right).toBe('20px');
+      expect(getComputedStyle(link.closest('.ait-related')).position).toBe('absolute');
+      expect(link.closest('.ait-finding-chips')).toBeTruthy();
+      expect(el.querySelector('.insight-ref-chip').closest('.ait-chips')).toBeTruthy();
+      expect(link.closest('.ait-related')).toBe(el.querySelector('.insight-ref-chip').closest('.ait-related'));
       expect(getComputedStyle(link).borderRadius).toBe(getComputedStyle(el.querySelector('.insight-ref-chip')).borderRadius);
       expect(link.querySelector('oral')).toBeFalsy();
+      const findingToggle = el.querySelector('.ait-finding-chips .chip-toggle');
+      expect(link.parentElement.hidden).toBe(true);
+      expect(findingToggle.textContent).toBe('Findings 1');
+      findingToggle.click();
+      expect(link.parentElement.hidden).toBe(false);
+      expect(clicked).toBe(null);
       link.click();
       expect(clicked.findingSlug).toBe('mccarthy');
       expect(clicked.eventId).toBe(withIds[1].unique_id);
       st.show(withIds[2], 'initial');
       expect(el.querySelector('article:not([hidden]) .finding-ref-chip')).toBeFalsy();
       expect(el.querySelector('article:not([hidden]) .finding-ref-stripe')).toBeFalsy();
+      st.destroy(); el.remove();
+    });
+
+    test('Related lists keep their counts, open one at a time and return focus on Escape', () => {
+      const el = mount();
+      const st = new Stage(el, { ...baseOpts, insightArticlesFor: () => [
+        { slug: 'a', title: 'First' }, { slug: 'b', title: 'Second' }
+      ] });
+      st.show({ ...withIds[1], related_findings: [
+        { id: 1, slug: 'a', title: 'First' }, { id: 2, slug: 'b', title: 'Second' }
+      ] }, 'initial');
+      const insight = el.querySelector('.ait-chips .chip-toggle');
+      const finding = el.querySelector('.ait-finding-chips .chip-toggle');
+      insight.click();
+      expect(insight.textContent).toBe('Insights 2');
+      finding.click();
+      expect(insight.getAttribute('aria-expanded')).toBe('false');
+      expect(el.querySelectorAll('.ait-chip-list:not([hidden])').length).toBe(1);
+      expect(finding.textContent).toBe('Findings 2');
+      const link = el.querySelector('.ait-finding-chips .ait-chip-list a');
+      link.focus();
+      link.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      expect(el.querySelectorAll('.ait-chip-list:not([hidden])').length).toBe(0);
+      expect(document.activeElement).toBe(finding);
       st.destroy(); el.remove();
     });
 
@@ -236,12 +265,20 @@
       st.destroy();
     });
 
-    test('Stage.show renders insight chip + stripe when insightArticlesFor returns entries', () => {
+    test('A single insight opens a submenu before its article link', () => {
       const el = mount();
       const st = new Stage(el, { ...baseOpts, insightArticlesFor: () => [{ slug: 'backprop', title: 'Backprop' }] });
       st.show(withIds[4], 'initial');
       expect(el.querySelector('.insight-ref-chip')).toBeTruthy();
-      expect(el.querySelector('.insight-ref-stripe')).toBeTruthy();
+      const toggle = el.querySelector('.ait-chips .chip-toggle');
+      const list = el.querySelector('.ait-chips .ait-chip-list');
+      expect(toggle.textContent).toBe('Insights 1');
+      expect(list.hidden).toBe(true);
+      toggle.click();
+      expect(list.hidden).toBe(false);
+      expect(el.querySelector('.insight-ref-chip').textContent).toBe('Backprop');
+      expect(el.querySelector('.insight-ref-chip').getAttribute('href')).toBe('/insights/backprop.html');
+      expect(el.querySelector('.insight-ref-stripe')).toBeFalsy();
       st.destroy();
     });
 
@@ -626,11 +663,12 @@
       const pill = activeCard(el).querySelector('.ait-quote-pill');
       const topic = activeCard(el).querySelector('.topic-pill');
       const cs = getComputedStyle(pill);
-      expect(cs.position).toBe('absolute');
-      expect(cs.left).toBe('16px');
-      expect(cs.top).toBe('16px');
-      expect(cs.borderRadius).toBe(getComputedStyle(topic).borderRadius);
-      expect(cs.height).toBe('28px');
+      const groupStyle = getComputedStyle(pill.closest('.ait-related'));
+      expect(groupStyle.position).toBe('absolute');
+      expect(groupStyle.left).toBe('16px');
+      expect(groupStyle.top).toBe('16px');
+      expect(cs.borderRadius).toBe('3px');
+      expect(cs.height).toBe('22px');
       st.destroy(); el.remove();
     });
     test('Quote overlay opens over the whole card, navy, with caption, first quote first', () => {

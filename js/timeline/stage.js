@@ -117,18 +117,11 @@ export class Stage {
     card.innerHTML = '';
     card.className = 'ait-card' + (event.is_archived ? ' archived' : '') + (isTitle ? ' title' : '');
 
-    if (!isTitle && articles.length) {
-      const stripe = document.createElement('div');
-      stripe.className = 'insight-ref-stripe';
-      stripe.setAttribute('aria-hidden', 'true');
-      card.appendChild(stripe);
-    }
-    if (!isTitle && findings.length) {
-      const stripe = document.createElement('div');
-      stripe.className = 'finding-ref-stripe';
-      stripe.setAttribute('aria-hidden', 'true');
-      card.appendChild(stripe);
-    }
+    card.style.setProperty('--ait-topic-count', event.topics?.length || 0);
+    const related = document.createElement('div');
+    related.className = 'ait-related';
+    related.setAttribute('role', 'group');
+    related.setAttribute('aria-label', 'Related content');
     if (!isTitle && event.is_archived) {
       const wrap = document.createElement('div');
       wrap.className = 'archived-ribbon-wrap'; wrap.setAttribute('aria-hidden', 'true');
@@ -157,7 +150,7 @@ export class Stage {
     const media = this._buildMedia(event.media);
     if (media) card.appendChild(media);
     const quotes = event.related_quotes || [];
-    if (!isTitle && quotes.length) card.appendChild(this._buildQuotePill(card, quotes, slug, headline, fmtDate(event.start_date)));
+    if (!isTitle && quotes.length) related.appendChild(this._buildQuotePill(card, quotes, slug, headline, fmtDate(event.start_date)));
 
     const body = document.createElement('div');
     body.className = 'ait-body';
@@ -202,34 +195,36 @@ export class Stage {
     body.appendChild(text);
 
     if (!isTitle && articles.length) {
-      const { chips, list } = this._chipGroup('ait-chips', 'insight-ref-chip', '✦', 'Insights', articles.length, slug, headline);
+      const { chips, list } = this._chipGroup('ait-chips', 'insight-ref-chip', 'Insights', articles.length, slug, headline);
       articles.forEach(a => {
         const link = document.createElement('a');
         link.className = 'insight-ref-chip';
         link.href = `/insights/${a.slug}.html`;
         link.dataset.eventId = slug; link.dataset.eventTitle = headline;
         link.dataset.articleSlug = a.slug; link.dataset.articleTitle = a.title;
-        link.textContent = `✦ ${a.title}`;
+        link.textContent = a.title;
+        link.title = a.title;
         list.appendChild(link);
       });
-      card.appendChild(chips);
+      related.appendChild(chips);
     }
 
     if (!isTitle && findings.length) {
-      const { chips, list } = this._chipGroup('ait-finding-chips', 'finding-ref-chip', '◈', 'Findings', findings.length, slug, headline);
+      const { chips, list } = this._chipGroup('ait-finding-chips', 'finding-ref-chip', 'Findings', findings.length, slug, headline);
       findings.forEach(f => {
         const link = document.createElement('a');
         link.className = 'finding-ref-chip';
         link.href = `/findings/#${encodeURIComponent(f.slug)}`;
-        link.textContent = `◈ ${f.title}`;
+        link.textContent = f.title;
         link.title = f.source ? `${f.title} — ${f.source}` : f.title;
         link.dataset.eventId = slug; link.dataset.eventTitle = headline;
         link.dataset.findingSlug = f.slug; link.dataset.findingTitle = f.title;
         list.appendChild(link);
       });
-      card.appendChild(chips);
+      related.insertBefore(chips, related.querySelector('.ait-chips'));
     }
 
+    if (related.children.length) card.appendChild(related);
     card.appendChild(body);
     this._buildNav(card);
   }
@@ -241,14 +236,7 @@ export class Stage {
     pill.setAttribute('aria-haspopup', 'dialog');
     pill.setAttribute('aria-expanded', 'false');
     pill.setAttribute('aria-label', quotes.length === 1 ? 'Quote from this entry' : `${quotes.length} quotes from this entry`);
-    const glyph = document.createElement('span');
-    glyph.className = 'ait-quote-pill-glyph';
-    glyph.setAttribute('aria-hidden', 'true');
-    glyph.textContent = '❝';
-    pill.appendChild(glyph);
-    const count = document.createElement('span');
-    count.textContent = `${quotes.length} ${quotes.length === 1 ? 'Quote' : 'Quotes'}`;
-    pill.appendChild(count);
+    this._labelRelated(pill, 'Quotes', quotes.length);
     pill.addEventListener('click', () => {
       if (this._quoteOverlay?.isOpen && this._quoteOverlay.opener === pill) { this._quoteOverlay.close(); return; }
       this._quoteOverlay?.destroy();
@@ -284,20 +272,24 @@ export class Stage {
     return pill;
   }
 
-  // Several chips would stack over the media caption, so 2+ collapse behind one
-  // summary chip that expands on demand. Returns the container and the element
-  // the individual chips should be appended to.
-  _chipGroup(groupClass, chipClass, glyph, noun, count, slug, headline) {
+  // Every category opens a list, even for one item, so adjacent controls behave alike.
+  _labelRelated(button, label, count) {
+    const number = document.createElement('span');
+    number.className = 'ait-related-count';
+    number.textContent = String(count);
+    button.append(document.createTextNode(`${label} `), number);
+  }
+
+  _chipGroup(groupClass, chipClass, noun, count, slug, headline) {
     const chips = document.createElement('div');
     chips.className = groupClass;
-    if (count < 2) return { chips, list: chips };
     const toggle = document.createElement('button');
     toggle.type = 'button';
     toggle.className = `${chipClass} chip-toggle`;
     toggle.setAttribute('aria-expanded', 'false');
     toggle.dataset.eventId = slug; toggle.dataset.eventTitle = headline;
-    toggle.dataset.glyph = glyph; toggle.dataset.noun = noun; toggle.dataset.count = String(count);
-    toggle.textContent = `${glyph} ${count} ${noun} ▴`;
+    toggle.dataset.noun = noun; toggle.dataset.count = String(count);
+    this._labelRelated(toggle, noun, count);
     const list = document.createElement('div');
     list.className = `ait-chip-list ${chipClass}-list`;
     list.hidden = true;
@@ -401,12 +393,15 @@ export class Stage {
     const toggle = ev.target.closest('.chip-toggle');
     if (toggle) {
       const list = toggle.parentElement.querySelector('.ait-chip-list');
-      const { glyph, noun, count } = toggle.dataset;
       const open = list.hidden;
+      this.mount.querySelectorAll('.chip-toggle[aria-expanded="true"]').forEach(other => {
+        if (other === toggle) return;
+        other.parentElement.querySelector('.ait-chip-list').hidden = true;
+        other.setAttribute('aria-expanded', 'false');
+      });
       list.hidden = !open;
       toggle.setAttribute('aria-expanded', String(open));
       if (open) this.opts.onChipsExpand?.(toggle, ev);
-      toggle.textContent = open ? `${glyph} Hide ${noun.toLowerCase()} ▾` : `${glyph} ${count} ${noun} ▴`;
       return;
     }
     const finding = ev.target.closest('.finding-ref-chip');
