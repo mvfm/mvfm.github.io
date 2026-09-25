@@ -13,7 +13,7 @@ export function validateFinding(f) {
     return f;
 }
 
-async function readJson(path, signal) {
+export async function readJson(path, signal) {
     const ctrl = new AbortController();
     const abort = () => ctrl.abort();
     if (signal?.aborted) ctrl.abort();

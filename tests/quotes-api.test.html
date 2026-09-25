@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Quotes API Tests</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    #contentPanel{position:relative;margin:2rem auto;max-width:1100px;background:#fff;color:#0f172a;padding:1rem}
+    body { background: #0f172a; color: #e2e8f0; font-family: system-ui, sans-serif; padding: 2rem; }
+    #summary { margin: 1rem 0; font-weight: bold; font-size: 1.1rem; }
+    .test-result { padding: .75rem; margin: .5rem 0; border-left: 4px solid; font-family: monospace; white-space: pre-wrap; }
+    .pass { background: rgba(34,197,94,.1); border-color: #22c55e; }
+    .fail { background: rgba(239,68,68,.1); border-color: #ef4444; }
+  </style>
+</head>
+<body>
+  <h2>Quotes API Tests</h2>
+  <div id="summary"></div>
+  <div id="results"></div>
+  <div id="contentPanel"></div>
+
+  <script type="module">
+    import { validateQuote, fetchQuotes, fetchQuote, sourceUrl } from '../js/quotes-api.js';
+    import { injectShell } from '../js/shell.js';
+    import { quotesRouteOnLoad, quotesRouteOnUnload, selectQuote, closeDetail, _state } from '../js/quotes.js';
+    import { _reset, _getPendingQueue } from '../js/analytics.js';
+
+    // ---- harness (also copied verbatim into tests/quotes.test.html) ----
+    const results = [];
+    function deepEqual(a, b) {
+      if (a === b) return true;
+      if (a == null || b == null || typeof a !== 'object' || typeof b !== 'object') return false;
+      const ka = Object.keys(a), kb = Object.keys(b);
+      return ka.length === kb.length && ka.every(k => deepEqual(a[k], b[k]));
+    }
+    function expect(val) {
+      return {
+        toBe(e) { if (val !== e) throw new Error(`Expected ${JSON.stringify(val)} to be ${JSON.stringify(e)}`); },
+        toEqual(e) { if (!deepEqual(val, e)) throw new Error(`Expected ${JSON.stringify(val)} to equal ${JSON.stringify(e)}`); },
+        toBeTruthy() { if (!val) throw new Error(`Expected ${JSON.stringify(val)} to be truthy`); },
+        toBeFalsy() { if (val) throw new Error(`Expected ${JSON.stringify(val)} to be falsy`); },
+      };
+    }
+    let chain = Promise.resolve();
+    function test(name, fn) {
+      const idx = results.length;
+      results.push({ name, pass: true, error: null });
+      chain = chain.then(() => fn()).then(() => {}, e => { results[idx] = { name, pass: false, error: (e && e.message) || String(e) }; });
+    }
+    function renderResults() {
+      const passed = results.filter(r => r.pass).length, failed = results.length - passed;
+      document.getElementById('summary').textContent = `${passed} passed, ${failed} failed ${failed ? '❌' : '✅'}`;
+      results.forEach(r => {
+        const d = document.createElement('div');
+        d.className = `test-result ${r.pass ? 'pass' : 'fail'}`;
+        d.textContent = r.pass ? `✓ ${r.name}` : `✗ ${r.name}\n  ${r.error}`;
+        document.getElementById('results').appendChild(d);
+      });
+    }
+    // ---- end harness ----
+
+    async function waitFor(cond, timeout = 2000) {
+      const t0 = Date.now();
+      while (Date.now() - t0 < timeout) { if (cond()) return; await new Promise(r => setTimeout(r, 25)); }
+      throw new Error('Timeout waiting for condition');
+    }
+
+    const quote = (o = {}) => ({
+      id: 7, slug: 'machines-will-think', text: 'Machines will think', speaker: 'Alan Turing',
+      speaker_role: 'Mathematician', source_title: 'Computing Machinery and Intelligence',
+      source_url: 'https://example.com/turing', locator: 'p. 442', context: 'Opening of the paper.',
+      quote_date: '1950-10-01', date_precision: 'exact', language: 'en', is_translation: false,
+      verification: 'primary', kind: 'prediction', updated_at: '2026-09-01T12:00:00Z',
+      topics: ['foundations'], referenced_events: [{ id: 3, slug: 'ai-gets-its-name', title: 'AI Gets Its Name' }],
+      referenced_insights: ['forwardpropagation'], source_finding: null, ...o,
+    });
+    const collection = (quotes) => ({ quotes, topics: ['foundations'], kinds: ['prediction'], total: quotes.length });
+
+    let requests = [];
+    // Analytics may flush (5s interval / visibilitychange) mid-test; count pending + already-beaconed events.
+    const beaconEvents = [];
+    const nameOf = (e) => e.event || e.name || e.event_name;
+    const allEvents = () => [...beaconEvents, ..._getPendingQueue()];
+    const countEvents = (name) => allEvents().filter(e => nameOf(e) === name).length;
+    function mockFetch(routes) {
+      const log = [];
+      requests = log;
+      window.fetch = async (url, opts) => {
+        log.push(String(url));
+        if (String(url).includes('/beacon')) {
+          try { beaconEvents.push(...JSON.parse(opts.body).events); } catch {}
+          return { ok: true, status: 200, json: async () => ({}) };
+        }
+        const u = new URL(url, location.href);
+        const hit = routes[u.pathname.replace(/^.*\/api\/v2/, '')];
+        if (!hit) return { ok: false, status: 404, json: async () => ({ detail: 'Quote not found' }) };
+        return { ok: true, status: 200, json: async () => hit };
+      };
+      return log;
+    }
+
+    test('validateQuote accepts the full contract', () => {
+      expect(validateQuote(quote()).slug).toBe('machines-will-think');
+    });
+    test('validateQuote rejects missing/invalid fields', () => {
+      const bad = [
+        quote({ id: 'x' }), quote({ text: '' }), quote({ source_url: 'javascript:alert(1)' }),
+        quote({ date_precision: 'decade' }), quote({ verification: 'maybe' }), quote({ topics: 'a' }),
+        quote({ referenced_events: [{ id: 1, slug: '', title: 't' }] }),
+        quote({ source_finding: { id: 1, slug: 's' } }),
+      ];
+      bad.forEach((q, i) => { let threw = false; try { validateQuote(q); } catch { threw = true; } if (!threw) throw new Error(`case ${i} accepted`); });
+    });
+    test('validateQuote allows null role/locator/source_finding', () => {
+      validateQuote(quote({ speaker_role: null, locator: null, source_finding: null }));
+      validateQuote(quote({ source_finding: { id: 1, slug: 'f', title: 'T', source: 'S' } }));
+    });
+    test('fetchQuotes returns the collection and keeps API order', async () => {
+      const log = mockFetch({ '/quotes': collection([quote({ slug: 'b', id: 2 }), quote({ slug: 'a', id: 1 })]) });
+      const data = await fetchQuotes();
+      expect(data.quotes.map(q => q.slug)).toEqual(['b', 'a']);
+      expect(log[0].endsWith('/api/v2/quotes')).toBe(true);
+    });
+    test('fetchQuotes rejects a total mismatch and duplicate slugs', async () => {
+      mockFetch({ '/quotes': { ...collection([quote()]), total: 5 } });
+      let threw = false; try { await fetchQuotes(); } catch { threw = true; }
+      expect(threw).toBe(true);
+      mockFetch({ '/quotes': collection([quote(), quote({ id: 8 })]) });
+      threw = false; try { await fetchQuotes(); } catch { threw = true; }
+      expect(threw).toBe(true);
+    });
+    test('fetchQuote returns the quote and surfaces 404 with status', async () => {
+      mockFetch({ '/quotes/machines-will-think': { quote: quote() } });
+      expect((await fetchQuote('machines-will-think')).id).toBe(7);
+      let status = 0; try { await fetchQuote('nope'); } catch (e) { status = e.status; }
+      expect(status).toBe(404);
+    });
+    test('fetchQuote rejects a slug that does not match the request', async () => {
+      mockFetch({ '/quotes/other': { quote: quote() } });
+      let threw = false; try { await fetchQuote('other'); } catch { threw = true; }
+      expect(threw).toBe(true);
+    });
+    test('sourceUrl only allows http(s)', () => {
+      expect(sourceUrl('https://a.b/c')).toBe('https://a.b/c');
+      expect(sourceUrl('javascript:alert(1)')).toBe(null);
+      expect(sourceUrl('nope')).toBe(null);
+    });
+
+    // --- route tests are appended here in Task 6 ---
+    injectShell();
+    const panel = document.getElementById('contentPanel');
+    function mount(hash = '', search = '') {
+      panel.replaceChildren(document.getElementById('tpl-quotes').content.cloneNode(true));
+      history.replaceState(null, '', location.pathname + search + hash);
+    }
+    const second = () => quote({ id: 8, slug: 'second', text: 'The Analytical Engine weaves algebraic patterns', speaker: 'Ada Lovelace', kind: 'vision', topics: ['history'],
+      quote_date: '1843-07-01', date_precision: 'month', verification: 'secondary', is_translation: true });
+    const full = () => ({
+      quotes: [quote(), second()], topics: ['foundations', 'history'], kinds: ['prediction', 'vision'], total: 2,
+    });
+    const routeMock = () => mockFetch({
+      '/quotes': full(),
+      '/quotes/machines-will-think': { quote: quote() },
+      '/quotes/second': { quote: second() },
+    });
+
+    const pills = () => [...panel.querySelectorAll('#quotes-topic-filters .topic-pill')];
+    const pill = (t) => pills().find(p => p.textContent === t);
+    const rowSlugs = () => [...panel.querySelectorAll('.quote-row')].map(li => li.dataset.slug);
+    const setSelect = (id, v) => { const el = panel.querySelector(id); el.value = v; el.dispatchEvent(new Event('change')); };
+
+    test('route renders rows, count, selects, topic pills, dots and provenance notes', async () => {
+      routeMock(); mount(); await quotesRouteOnLoad();
+      expect(panel.querySelectorAll('.quote-row').length).toBe(2);
+      expect(panel.querySelector('#quotes-count').textContent).toBe('2 of 2 quotes');
+      expect(panel.querySelectorAll('#quotes-speaker option').length).toBe(3);
+      expect(panel.querySelectorAll('#quotes-kind option').length).toBe(3);
+      expect(pills().map(p => p.textContent)).toEqual(['foundations', 'history']);
+      expect(panel.querySelectorAll('.quote-row')[0].querySelectorAll('.finding-row-tags .finding-dot').length).toBe(1);
+      const meta = panel.querySelectorAll('.quote-row-meta')[1].textContent;
+      expect(meta.includes('July 1843') && meta.includes('Secondary source') && meta.includes('Translation')).toBe(true);
+      expect(panel.querySelector('#quotes-filter').classList.contains('show')).toBe(false);
+      quotesRouteOnUnload();
+    });
+    test('search toggle opens the bar and focuses the input; text search filters immediately and writes ?q', async () => {
+      routeMock(); mount(); await quotesRouteOnLoad();
+      panel.querySelector('#quotes-search-toggle').click();
+      expect(panel.querySelector('#quotes-filter').classList.contains('show')).toBe(true);
+      expect(document.activeElement === panel.querySelector('#quotes-search-input')).toBe(true);
+      const input = panel.querySelector('#quotes-search-input');
+      input.value = 'analytical'; input.dispatchEvent(new Event('input'));
+      expect(rowSlugs()).toEqual(['second']);
+      expect(location.search).toBe('?q=analytical');
+      panel.querySelector('#quotes-search-toggle').click();
+      expect(panel.querySelector('#quotes-filter').classList.contains('show')).toBe(false);
+      quotesRouteOnUnload();
+    });
+    test('topic pills multi-select with AND semantics and write ?topics', async () => {
+      routeMock(); mount(); await quotesRouteOnLoad();
+      pill('history').click();
+      expect(rowSlugs()).toEqual(['second']);
+      expect(pill('history').classList.contains('selected')).toBe(true);
+      expect(location.search).toBe('?topics=history');
+      pill('foundations').click();
+      expect(panel.querySelector('.loading-text').textContent).toBe('No quotes match.');
+      expect(location.search).toBe('?topics=history%2Cfoundations');
+      pill('history').click();
+      expect(rowSlugs()).toEqual(['machines-will-think']);
+      quotesRouteOnUnload();
+    });
+    test('speaker/kind selects combine with topics; Clear resets everything without closing the bar', async () => {
+      routeMock(); mount(); await quotesRouteOnLoad();
+      panel.querySelector('#quotes-search-toggle').click();
+      setSelect('#quotes-kind', 'vision');
+      expect(rowSlugs()).toEqual(['second']);
+      expect(location.search).toBe('?kind=vision');
+      setSelect('#quotes-speaker', 'Ada Lovelace');
+      expect(location.search).toBe('?kind=vision&speaker=Ada+Lovelace');
+      pill('foundations').click();
+      expect(panel.querySelector('.loading-text').textContent).toBe('No quotes match.');
+      panel.querySelector('#quotes-filter-clear').click();
+      expect(rowSlugs().length).toBe(2);
+      expect(location.search).toBe('');
+      expect(panel.querySelector('#quotes-search-input').value).toBe('');
+      expect(panel.querySelector('#quotes-kind').value + panel.querySelector('#quotes-speaker').value).toBe('');
+      expect(pills().some(p => p.classList.contains('selected'))).toBe(false);
+      expect(panel.querySelector('#quotes-filter').classList.contains('show')).toBe(true);
+      quotesRouteOnUnload();
+    });
+    test('URL filters (q, topics, speaker, kind) are honoured on load and auto-open the bar; unknown values are dropped', async () => {
+      routeMock(); mount('', '?speaker=Ada%20Lovelace&kind=bogus&topics=history,ghost&q=engine'); await quotesRouteOnLoad();
+      expect(rowSlugs()).toEqual(['second']);
+      expect(panel.querySelector('#quotes-kind').value).toBe('');
+      expect(panel.querySelector('#quotes-search-input').value).toBe('engine');
+      expect(pill('history').classList.contains('selected')).toBe(true);
+      expect(_state.filters.topics).toEqual(['history']);
+      expect(panel.querySelector('#quotes-filter').classList.contains('show')).toBe(true);
+      expect(location.search.includes('ghost') || location.search.includes('bogus')).toBe(false);
+      quotesRouteOnUnload();
+      routeMock(); mount('', '?api=remote'); await quotesRouteOnLoad();
+      expect(panel.querySelector('#quotes-filter').classList.contains('show')).toBe(false);
+      quotesRouteOnUnload();
+    });
+    test('detail shows context, source, and links out (events, insights)', async () => {
+      routeMock(); mount(); await quotesRouteOnLoad();
+      selectQuote('machines-will-think');
+      const d = panel.querySelector('#quotes-detail');
+      expect(d.hidden).toBe(false);
+      expect(d.querySelector('.quotes-detail-text').textContent).toBe('Machines will think');
+      expect(d.querySelector('.quotes-detail-attrib').textContent).toBe('Alan Turing, Mathematician');
+      expect(d.querySelector('a[href="/ai#event-ai-gets-its-name"]').textContent.includes('AI Gets Its Name')).toBe(true);
+      expect(!!d.querySelector('a[href="/insights/forwardpropagation.html"]')).toBe(true);
+      expect(d.querySelector('.findings-visit').getAttribute('rel')).toBe('noopener');
+      expect(d.querySelectorAll('a.finding-chip').length).toBe(2);
+      expect(d.querySelector('.finding-topic-pill').title).toBe('foundations');
+      expect(d.querySelector('.finding-topic-pill').textContent.length > 0).toBe(true);
+      expect(location.hash).toBe('#machines-will-think');
+      expect(panel.querySelector('.quotes-split').classList.contains('has-detail')).toBe(true);
+      closeDetail();
+      expect(d.hidden).toBe(true);
+      expect(location.hash).toBe('');
+      quotesRouteOnUnload();
+    });
+    test('deep link opens a quote from the collection without an extra request', async () => {
+      routeMock(); mount('#second'); await quotesRouteOnLoad();
+      expect(panel.querySelector('#quotes-detail .quotes-detail-text').textContent).toBe('The Analytical Engine weaves algebraic patterns');
+      expect(panel.querySelector('#quotes-detail .quotes-detail-attrib').textContent.startsWith('Ada Lovelace')).toBe(true);
+      expect(requests.some(u => u.includes('/quotes/second'))).toBe(false);
+      quotesRouteOnUnload();
+    });
+    test('filter URL writes preserve other params (api=remote) and the hash', async () => {
+      routeMock(); mount('#second', '?api=remote&kind=vision'); await quotesRouteOnLoad();
+      expect(rowSlugs()).toEqual(['second']);
+      pill('history').click();
+      expect(location.search.includes('api=remote')).toBe(true);
+      expect(location.search.includes('topics=history')).toBe(true);
+      expect(location.hash).toBe('#second');
+      panel.querySelector('#quotes-filter-clear').click();
+      expect(location.search).toBe('?api=remote');
+      expect(location.hash).toBe('#second');
+      quotesRouteOnUnload();
+    });
+    const manyQuotes = () => Array.from({ length: 30 }, (_, i) => quote({ id: 100 - i, slug: `q-${i}`,
+      text: `Quote number ${i} ` + 'lorem ipsum '.repeat(12), quote_date: `19${String(99 - i).padStart(2, '0')}-01-01` }));
+    const manyCollection = () => ({ quotes: manyQuotes(), topics: ['foundations'], kinds: ['prediction'], total: 30 });
+    test('deep link scrolls a quote far down the list into view inside the list box (desktop)', async () => {
+      if (window.innerWidth <= 760) return; // desktop geometry only; run at 1440x900
+      mockFetch({ '/quotes': manyCollection() }); mount('#q-27'); await quotesRouteOnLoad();
+      const list = panel.querySelector('.quotes-list');
+      const row = panel.querySelector('.quote-row[data-slug="q-27"]');
+      expect(list.scrollHeight > list.clientHeight).toBe(true);
+      expect(list.scrollTop > 0).toBe(true);
+      const l = list.getBoundingClientRect(), r = row.getBoundingClientRect();
+      expect(r.top >= l.top - 1 && r.bottom <= l.bottom + 1).toBe(true);
+      expect(row.classList.contains('active')).toBe(true);
+      quotesRouteOnUnload();
+    });
+    test('opening an already-visible quote does not move the list', async () => {
+      if (window.innerWidth <= 760) return;
+      mockFetch({ '/quotes': manyCollection() }); mount(); await quotesRouteOnLoad();
+      selectQuote('q-1');
+      expect(panel.querySelector('.quotes-list').scrollTop).toBe(0);
+      quotesRouteOnUnload();
+    });
+        test('deep link to a quote outside the collection uses the detail API', async () => {
+      mockFetch({ '/quotes': { quotes: [quote()], topics: ['foundations'], kinds: ['prediction'], total: 1 },
+        '/quotes/second': { quote: second() } });
+      mount('#second'); await quotesRouteOnLoad();
+      await waitFor(() => panel.querySelector('#quotes-detail .quotes-detail-attrib'));
+      expect(panel.querySelector('#quotes-detail .quotes-detail-attrib').textContent.startsWith('Ada Lovelace')).toBe(true);
+      quotesRouteOnUnload();
+    });
+    test('unknown deep link shows "Quote not found." and Back closes it', async () => {
+      routeMock(); mount('#does-not-exist'); await quotesRouteOnLoad();
+      await waitFor(() => panel.querySelector('#quotes-detail [role="status"]')?.textContent === 'Quote not found.');
+      panel.querySelector('.findings-detail-close').click();
+      expect(panel.querySelector('#quotes-detail').hidden).toBe(true);
+      quotesRouteOnUnload();
+    });
+    test('load failure shows Retry; empty collection shows a distinct message', async () => {
+      window.fetch = async () => ({ ok: false, status: 500, json: async () => ({}) });
+      mount(); await quotesRouteOnLoad();
+      expect(!!panel.querySelector('.quotes-retry')).toBe(true);
+      mockFetch({ '/quotes': { quotes: [], topics: [], kinds: [], total: 0 } });
+      mount(); await quotesRouteOnLoad();
+      expect(panel.querySelector('#quotes-rows').textContent.includes('Nothing here yet.')).toBe(true);
+      expect(panel.querySelector('.quotes-retry')).toBeFalsy();
+      quotesRouteOnUnload();
+    });
+    test('analytics: quote_view and quotes_filter (superset payload) are tracked; text input is debounced', async () => {
+      _reset(); beaconEvents.length = 0; routeMock(); mount(); await quotesRouteOnLoad();
+      selectQuote('machines-will-think');
+      setSelect('#quotes-kind', 'vision');
+      pill('history').click();
+      const filters = () => allEvents().filter(e => nameOf(e) === 'quotes_filter');
+      expect(countEvents('quote_view') > 0).toBe(true);
+      expect(countEvents('quotes_filter')).toBe(2);
+      const props = (e) => e.properties || e.props || e.data || e;
+      const last = props(filters()[1]);
+      expect(last.kind).toBe('vision');
+      expect(last.topic).toBe('history');
+      expect(last.result_count).toBe(1);
+      expect(last.query).toBe('');
+      expect(last.speaker).toBe('');
+      const input = panel.querySelector('#quotes-search-input');
+      input.value = 'a'; input.dispatchEvent(new Event('input'));
+      input.value = 'an'; input.dispatchEvent(new Event('input'));
+      expect(countEvents('quotes_filter')).toBe(2);
+      await waitFor(() => countEvents('quotes_filter') === 3, 1500);
+      expect(props(filters()[2]).query).toBe('an');
+      quotesRouteOnUnload();
+    });
+    test('unload clears the pending debounce timer (no analytics after teardown)', async () => {
+      _reset(); beaconEvents.length = 0; routeMock(); mount(); await quotesRouteOnLoad();
+      const input = panel.querySelector('#quotes-search-input');
+      input.value = 'x'; input.dispatchEvent(new Event('input'));
+      quotesRouteOnUnload();
+      await new Promise(r => setTimeout(r, 600));
+      expect(countEvents('quotes_filter')).toBe(0);
+    });
+    test('unload aborts the in-flight request and later loads start clean', async () => {
+      let signal = null;
+      window.fetch = (url, opts) => new Promise((_, reject) => { signal = opts.signal; opts.signal.addEventListener('abort', () => reject(new DOMException('a', 'AbortError'))); });
+      mount(); const p = quotesRouteOnLoad(); quotesRouteOnUnload(); await p;
+      expect(signal.aborted).toBe(true);
+      routeMock(); mount(); await quotesRouteOnLoad();
+      expect(_state.filters.kind).toBe('');
+      expect(_state.filters.topics).toEqual([]);
+      expect(panel.querySelectorAll('.quote-row').length).toBe(2);
+      quotesRouteOnUnload();
+    });
+    test('Escape in the search input keeps the detail open; Escape elsewhere closes it', async () => {
+      routeMock(); mount(); await quotesRouteOnLoad();
+      selectQuote('machines-will-think');
+      const detail = panel.querySelector('#quotes-detail');
+      expect(detail.hidden).toBe(false);
+      const input = panel.querySelector('#quotes-search-input');
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      expect(detail.hidden).toBe(false);
+      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      expect(detail.hidden).toBe(true);
+      quotesRouteOnUnload();
+    });
+    test('long quotes never overflow the list card horizontally', async () => {
+      mockFetch({ '/quotes': { quotes: [quote({ text: 'W'.repeat(400) })], topics: ['foundations'], kinds: ['prediction'], total: 1 } });
+      mount(); await quotesRouteOnLoad();
+      const card = panel.querySelector('.quote-row-open');
+      expect(card.scrollWidth <= card.clientWidth + 1).toBe(true);
+      quotesRouteOnUnload();
+    });
+
+    test('quote cards use the same surface as Insights/Findings cards', async () => {
+      routeMock(); mount(); await quotesRouteOnLoad();
+      const cs = getComputedStyle(panel.querySelector('.quote-row-open'));
+      expect(cs.borderTopLeftRadius).toBe('18px');
+      expect(cs.backgroundImage.includes('linear-gradient')).toBe(true);
+      expect(cs.boxShadow !== 'none').toBe(true);
+      const ref = document.createElement('button'); ref.className = 'finding-row-open'; panel.appendChild(ref);
+      const rs = getComputedStyle(ref);
+      expect(cs.borderTopColor).toBe(rs.borderTopColor);
+      expect(cs.boxShadow).toBe(rs.boxShadow);
+      expect(cs.paddingTop + cs.paddingLeft).toBe(rs.paddingTop + rs.paddingLeft);
+      ref.remove();
+      quotesRouteOnUnload();
+    });
+
+    chain.then(renderResults);
+  </script>
+</body>
+</html>

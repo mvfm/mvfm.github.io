@@ -54,6 +54,7 @@
     import { Stage } from '../js/timeline/stage.js';
     import { Minimap } from '../js/timeline/minimap.js';
     import { createScale } from '../js/timeline/scale.js';
+    import { MediaOverlay } from '../js/timeline/overlay.js';
     import { SAMPLE } from './fixtures/timeline-sample.js';
 
     // Micro test framework
@@ -481,6 +482,395 @@
       await Promise.resolve();
       expect(fired && fired.unique_id).toBe('gpt-4');
       t.destroy();
+    });
+
+    // ---- MediaOverlay ----
+    function overlayHost() {
+      const host = document.createElement('div');
+      host.style.cssText = 'position:relative;width:300px;height:300px';
+      document.body.appendChild(host);
+      return host;
+    }
+    const mkOverlay = (host, extra = {}) => new MediaOverlay({
+      host, label: 'Quotes', className: 'ait-quote-overlay',
+      items: [{ slug: 'a', text: 'First' }, { slug: 'b', text: 'Second' }, { slug: 'c', text: 'Third' }],
+      renderItem: (it) => { const p = document.createElement('p'); p.textContent = it.text; return p; },
+      linkFor: (it) => ({ href: `/quotes/#${it.slug}`, label: 'Read in Quotes →' }),
+      ...extra,
+    });
+
+    test('MediaOverlay opens on the first item with a counter and link', () => {
+      const host = overlayHost(); const ov = mkOverlay(host);
+      ov.open();
+      const el = host.querySelector('.ait-overlay');
+      expect(el.getAttribute('role')).toBe('dialog');
+      expect(el.querySelector('.ait-overlay-scroll').textContent).toBe('First');
+      expect(el.querySelector('.ait-overlay-count').textContent).toBe('Quote 1 of 3');
+      const dots = el.querySelectorAll('.ait-overlay-dot');
+      expect(dots.length).toBe(3);
+      expect(el.querySelectorAll('.ait-overlay-dot.active').length).toBe(1);
+      expect(dots[0].classList.contains('active')).toBe(true);
+      expect(el.querySelector('.ait-overlay-dots').getAttribute('aria-hidden')).toBe('true');
+      expect(el.querySelector('.ait-overlay-link').getAttribute('href')).toBe('/quotes/#a');
+      expect(host.classList.contains('has-overlay')).toBe(true);
+      ov.destroy(); host.remove();
+    });
+    test('MediaOverlay keeps the decorative mark outside the scroll region', () => {
+      const host = overlayHost(); const ov = mkOverlay(host); ov.open();
+      const el = host.querySelector('.ait-overlay');
+      const mark = el.querySelector('.ait-overlay-mark');
+      expect(mark.parentElement).toBe(el);
+      expect(mark.getAttribute('aria-hidden')).toBe('true');
+      expect(el.querySelector('.ait-overlay-scroll').contains(mark)).toBe(false);
+      ov.destroy(); host.remove();
+    });
+    test('MediaOverlay pager steps, wraps, and reports navigation', () => {
+      const host = overlayHost(); const navs = [];
+      const ov = mkOverlay(host, { onNav: (n) => navs.push(n.index) }); ov.open();
+      const el = host.querySelector('.ait-overlay');
+      el.querySelector('.ait-overlay-next').click();
+      expect(el.querySelector('.ait-overlay-scroll').textContent).toBe('Second');
+      el.querySelector('.ait-overlay-prev').click(); el.querySelector('.ait-overlay-prev').click();
+      expect(el.querySelector('.ait-overlay-scroll').textContent).toBe('Third');
+      expect(navs).toEqual([1, 0, 2]);
+      expect(el.querySelectorAll('.ait-overlay-dot')[2].classList.contains('active')).toBe(true);
+      expect(el.querySelectorAll('.ait-overlay-dot.active').length).toBe(1);
+      expect(el.querySelector('.ait-overlay-count').textContent).toBe('Quote 3 of 3');
+      ov.destroy(); host.remove();
+    });
+    test('MediaOverlay hides the pager for a single item', () => {
+      const host = overlayHost();
+      const ov = mkOverlay(host, { items: [{ slug: 'a', text: 'Only' }] }); ov.open();
+      const el = host.querySelector('.ait-overlay');
+      expect(el.querySelector('.ait-overlay-prev').hidden).toBe(true);
+      expect(el.querySelector('.ait-overlay-next').hidden).toBe(true);
+      expect(el.querySelector('.ait-overlay-count').hidden).toBe(true);
+      expect(el.querySelector('.ait-overlay-dots').hidden).toBe(true);
+      expect(getComputedStyle(el.querySelector('.ait-overlay-dots')).display).toBe('none');
+      ov.destroy(); host.remove();
+    });
+    test('MediaOverlay caption is text-only and hidden when absent', () => {
+      const host = overlayHost();
+      const ov = mkOverlay(host, { caption: 'ON <B>X</B> · 1936' }); ov.open();
+      const cap = host.querySelector('.ait-overlay-caption');
+      expect(cap.textContent).toBe('ON <B>X</B> · 1936');
+      expect(cap.querySelector('b')).toBeFalsy();
+      ov.destroy();
+      const ov2 = mkOverlay(host); ov2.open();
+      expect(host.querySelector('.ait-overlay-caption').hidden).toBe(true);
+      ov2.destroy(); host.remove();
+    });
+    test('MediaOverlay arrow keys page and never reach ancestors; Escape closes and restores focus', () => {
+      const host = overlayHost(); const opener = document.createElement('button'); document.body.appendChild(opener);
+      let ancestorKeys = 0; host.addEventListener('keydown', () => { ancestorKeys++; });
+      let closed = 0; const ov = mkOverlay(host, { onClose: () => { closed++; } }); ov.open(opener);
+      const el = host.querySelector('.ait-overlay');
+      expect(document.activeElement).toBe(el);
+      el.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+      expect(el.querySelector('.ait-overlay-scroll').textContent).toBe('Second');
+      expect(ancestorKeys).toBe(0);
+      el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      expect(host.querySelector('.ait-overlay')).toBeFalsy();
+      expect(host.classList.contains('has-overlay')).toBe(false);
+      expect(document.activeElement).toBe(opener);
+      expect(closed).toBe(1);
+      opener.remove(); host.remove();
+    });
+    test('MediaOverlay wheel events stay inside so the timeline does not page', () => {
+      const host = overlayHost(); let seen = 0; host.addEventListener('wheel', () => { seen++; });
+      const ov = mkOverlay(host); ov.open();
+      host.querySelector('.ait-overlay-scroll').dispatchEvent(new WheelEvent('wheel', { deltaY: 100, bubbles: true }));
+      expect(seen).toBe(0);
+      ov.destroy(); host.remove();
+    });
+    test('MediaOverlay closes on outside pointerdown but not on inside', () => {
+      const host = overlayHost(); const ov = mkOverlay(host); ov.open();
+      host.querySelector('.ait-overlay').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      expect(ov.isOpen).toBe(true);
+      document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      expect(ov.isOpen).toBe(false);
+      host.remove();
+    });
+    test('MediaOverlay link click reports the current item; destroy is idempotent', () => {
+      const host = overlayHost(); const clicks = [];
+      const ov = mkOverlay(host, { onLinkClick: (it, ev) => { ev.preventDefault(); clicks.push(it.slug); } }); ov.open();
+      host.querySelector('.ait-overlay-next').click();
+      host.querySelector('.ait-overlay-link').click();
+      expect(clicks).toEqual(['b']);
+      ov.destroy(); ov.destroy(); host.remove();
+    });
+
+    // ---- Quotes on the stage ----
+    const quotesFor = (n) => Array.from({ length: n }, (_, i) => ({
+      id: i + 1, slug: `quote-${i + 1}`, text: `Quote number ${i + 1}`, speaker: `Speaker ${i + 1}` }));
+    const activeCard = (el) => el.querySelector('article:not([hidden])');
+
+    test('Stage shows a quote pill only when there are quotes (never on the title card)', () => {
+      const el = mount(); const st = new Stage(el, baseOpts);
+      st.show({ ...withIds[1], related_quotes: [] }, 'initial');
+      expect(activeCard(el).querySelector('.ait-quote-pill')).toBeFalsy();
+      st.show({ ...withIds[1] }, 'initial');
+      expect(activeCard(el).querySelector('.ait-quote-pill')).toBeFalsy();
+      st.show({ ...withIds[1], is_title: true, related_quotes: quotesFor(1) }, 'initial');
+      expect(activeCard(el).querySelector('.ait-quote-pill')).toBeFalsy();
+      st.show({ ...withIds[1], related_quotes: quotesFor(3) }, 'initial');
+      const pill = activeCard(el).querySelector('.ait-quote-pill');
+      expect(!!pill).toBe(true);
+      expect(pill.textContent.includes('3')).toBe(true);
+      expect(pill.getAttribute('aria-expanded')).toBe('false');
+      st.destroy(); el.remove();
+    });
+    test('Quote pill sits top-left with the topic pills\' radius and height', () => {
+      const el = mount(); const st = new Stage(el, baseOpts);
+      st.show({ ...withIds[1], topics: ['x'], related_quotes: quotesFor(1) }, 'initial');
+      const pill = activeCard(el).querySelector('.ait-quote-pill');
+      const topic = activeCard(el).querySelector('.topic-pill');
+      const cs = getComputedStyle(pill);
+      expect(cs.position).toBe('absolute');
+      expect(cs.left).toBe('16px');
+      expect(cs.top).toBe('16px');
+      expect(cs.borderRadius).toBe(getComputedStyle(topic).borderRadius);
+      expect(cs.height).toBe('28px');
+      st.destroy(); el.remove();
+    });
+    test('Quote overlay opens over the whole card, navy, with caption, first quote first', () => {
+      const el = mount(); const opened = [];
+      const st = new Stage(el, { ...baseOpts, onQuoteOpen: (i) => opened.push(i) });
+      st.show({ ...withIds[1], related_quotes: quotesFor(3) }, 'initial');
+      const card = activeCard(el);
+      expect(card.querySelector('.ait-overlay')).toBeFalsy();
+      card.querySelector('.ait-quote-pill').click();
+      const ov = card.querySelector('.ait-overlay');
+      expect(ov.parentElement).toBe(card);
+      expect(ov.querySelector('.ait-quote-text').textContent).toBe('Quote number 1');
+      expect(ov.querySelector('.ait-quote-speaker').textContent).toBe('Speaker 1');
+      expect(ov.querySelector('.ait-overlay-link').getAttribute('href')).toBe('/quotes/#quote-1');
+      const headline = withIds[1].text.headline.toUpperCase();
+      const capText = ov.querySelector('.ait-overlay-caption').textContent;
+      expect(capText.startsWith('ON ' + headline)).toBe(true);
+      expect(capText).toBe(capText.toUpperCase());
+      expect(card.querySelector('.ait-quote-pill').getAttribute('aria-expanded')).toBe('true');
+      const alpha = getComputedStyle(ov).backgroundColor.match(/rgba\(\s*(\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/);
+      expect(!!alpha && alpha[1] === '12' && alpha[2] === '45' && alpha[3] === '107').toBe(true);
+      expect(!!alpha && Number(alpha[4]) > 0.5 && Number(alpha[4]) < 1).toBe(true);
+      expect(opened).toEqual([{ eventId: withIds[1].unique_id, eventTitle: withIds[1].text.headline, count: 3 }]);
+      st.destroy(); el.remove();
+    });
+    test('Caption has no date part when the entry has no date', () => {
+      const el = mount(); const st = new Stage(el, baseOpts);
+      st.show({ ...withIds[1], start_date: undefined, related_quotes: quotesFor(1) }, 'initial');
+      const card = activeCard(el); card.querySelector('.ait-quote-pill').click();
+      expect(card.querySelector('.ait-overlay-caption').textContent).toBe('ON ' + withIds[1].text.headline.toUpperCase());
+      st.destroy(); el.remove();
+    });
+    test('Overlay palette: solid white mark with a drop shadow, white non-underlined link, no rose', () => {
+      const el = mount(); const st = new Stage(el, baseOpts);
+      // site link colours are scoped to #contentPanel; mirror that so the pinned states are exercised
+      const panel = document.createElement('div'); panel.id = 'contentPanel';
+      el.parentNode.insertBefore(panel, el); panel.appendChild(el);
+      st.show({ ...withIds[1], related_quotes: quotesFor(2) }, 'initial');
+      const card = activeCard(el); card.querySelector('.ait-quote-pill').click();
+      const ov = card.querySelector('.ait-overlay');
+      const m = getComputedStyle(ov.querySelector('.ait-overlay-mark')).color.match(/rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+      expect(!!m && m[1] === '255' && m[2] === '255' && m[3] === '255').toBe(true);
+      expect(!!m && (m[4] === undefined || Number(m[4]) >= 0.9)).toBe(true);
+      expect(getComputedStyle(ov.querySelector('.ait-overlay-mark')).textShadow === 'none').toBe(false);
+      const link = getComputedStyle(ov.querySelector('.ait-overlay-link'));
+      expect(link.color).toBe('rgb(255, 255, 255)');
+      expect(link.textDecorationLine).toBe('none');
+      const rose = getComputedStyle(document.documentElement).getPropertyValue('--clr-quote').trim();
+      for (const n of [ov, ...ov.querySelectorAll('*')]) {
+        const cs = getComputedStyle(n);
+        for (const c of [cs.color, cs.backgroundColor, cs.borderTopColor]) {
+          const mm = c.match(/rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)/);
+          if (mm) expect(Number(mm[1]) > 200 && Number(mm[2]) < 160 && Number(mm[3]) < 190 && Number(mm[1]) - Number(mm[2]) > 60).toBe(false);
+        }
+      }
+      void rose;
+      st.destroy(); panel.remove(); el.remove();
+    });
+    test('Overlay covers the whole slide: pills, chips and entry arrows are underneath it', () => {
+      const el = mount(); const st = new Stage(el, { ...baseOpts, insightArticlesFor: () => [{ slug: 'forwardpropagation', title: 'Forward Propagation' }],
+        getNeighbours: () => ({ prev: { headline: 'P', date: '' }, next: { headline: 'N', date: '' } }) });
+      st.show({ ...withIds[1], topics: ['x'], related_quotes: quotesFor(2),
+        related_findings: [{ id: 1, slug: 'f', title: 'A finding', source: 'S' }] }, 'initial');
+      const card = activeCard(el);
+      card.querySelector('.ait-quote-pill').click();
+      const ov = card.querySelector('.ait-overlay');
+      const c = card.getBoundingClientRect(), o = ov.getBoundingClientRect();
+      expect(Math.abs(o.left - c.left) < 1 && Math.abs(o.right - c.right) < 1 && Math.abs(o.top - c.top) < 1 && Math.abs(o.bottom - c.bottom) < 1).toBe(true);
+      for (const sel of ['.topic-pill', '.insight-ref-chip', '.finding-ref-chip', '.ait-nav-prev', '.ait-nav-next', '.ait-quote-pill']) {
+        const n = card.querySelector(sel);
+        expect(!!n).toBe(true);
+        const r = n.getBoundingClientRect();
+        if (!r.width) continue;
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        expect(!!hit && ov.contains(hit)).toBe(true);
+      }
+      st.destroy(); el.remove();
+    });
+    test('Quote text auto-fits: short quotes keep full size, medium quotes shrink to fit, huge ones stop at the floor and scroll', () => {
+      const el = mount(); const st = new Stage(el, baseOpts);
+      const open = (text) => {
+        st.show({ ...withIds[1], related_quotes: [{ id: 1, slug: 'q', speaker: 'S', text }] }, 'initial');
+        const card = activeCard(el);
+        const pill = card.querySelector('.ait-quote-pill'); pill.click();
+        const sc = card.querySelector('.ait-overlay-scroll'); const t = card.querySelector('.ait-quote-text');
+        return { sc, t, over: sc.scrollHeight > sc.clientHeight + 1, px: parseFloat(getComputedStyle(t).fontSize), inline: t.style.fontSize };
+      };
+      const short = open('Short quote.');
+      expect(short.inline).toBe('');
+      expect(short.over).toBe(false);
+      const full = short.px;
+      let found = null;
+      for (let n = 20; n <= 600 && !found; n += 20) {
+        const r = open('word '.repeat(n).trim());
+        if (r.inline !== '' && !r.over) found = r;
+      }
+      expect(!!found).toBe(true);
+      expect(found.px < full && found.px >= 17).toBe(true);
+      const huge = open('Very long quote. '.repeat(400));
+      expect(huge.px).toBe(17);
+      expect(huge.over).toBe(true);
+      st.destroy(); el.remove();
+    });
+    test('Paging to another quote re-fits the text (no leftover shrink from the previous one)', () => {
+      const el = mount(); const st = new Stage(el, baseOpts);
+      st.show({ ...withIds[1], related_quotes: [{ id: 1, slug: 'a', speaker: 'S', text: 'Very long quote. '.repeat(400) },
+        { id: 2, slug: 'b', speaker: 'S', text: 'Short.' }] }, 'initial');
+      const card = activeCard(el); card.querySelector('.ait-quote-pill').click();
+      const first = parseFloat(getComputedStyle(card.querySelector('.ait-quote-text')).fontSize);
+      card.querySelector('.ait-overlay-next').click();
+      const t = card.querySelector('.ait-quote-text');
+      expect(t.textContent).toBe('Short.');
+      expect(t.style.fontSize).toBe('');
+      expect(parseFloat(getComputedStyle(t).fontSize) > first).toBe(true);
+      st.destroy(); el.remove();
+    });
+        test('Quote mark stays put while a long quote scrolls', () => {
+      const el = mount(); const st = new Stage(el, baseOpts);
+      const long = { id: 1, slug: 'long', speaker: 'S', text: 'Very long quote. '.repeat(400) };
+      st.show({ ...withIds[1], related_quotes: [long] }, 'initial');
+      const card = activeCard(el);
+      card.querySelector('.ait-quote-pill').click();
+      const ov = card.querySelector('.ait-overlay');
+      const mark = ov.querySelector('.ait-overlay-mark');
+      const scroll = ov.querySelector('.ait-overlay-scroll');
+      expect(scroll.scrollHeight > scroll.clientHeight).toBe(true);
+      const before = mark.getBoundingClientRect().top;
+      scroll.scrollTop = 200;
+      expect(scroll.scrollTop > 0).toBe(true);
+      expect(mark.getBoundingClientRect().top).toBe(before);
+      st.destroy(); el.remove();
+    });
+    test('Quote pager reports navigation; arrow keys do not reach the timeline', () => {
+      const el = mount(); const navs = []; let stageKeys = 0;
+      el.addEventListener('keydown', () => { stageKeys++; });
+      const st = new Stage(el, { ...baseOpts, onQuoteNav: (n) => navs.push(n.quoteSlug) });
+      st.show({ ...withIds[1], related_quotes: quotesFor(3) }, 'initial');
+      const card = activeCard(el);
+      card.querySelector('.ait-quote-pill').click();
+      const ov = card.querySelector('.ait-overlay');
+      ov.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+      expect(ov.querySelector('.ait-quote-text').textContent).toBe('Quote number 2');
+      expect(navs).toEqual(['quote-2']);
+      expect(stageKeys).toBe(0);
+      st.destroy(); el.remove();
+    });
+    test('Clicking the pill again, or Escape, closes the overlay and returns focus', () => {
+      const el = mount(); const st = new Stage(el, baseOpts);
+      st.show({ ...withIds[1], related_quotes: quotesFor(2) }, 'initial');
+      const card = activeCard(el); const pill = card.querySelector('.ait-quote-pill');
+      pill.click(); pill.click();
+      expect(card.querySelector('.ait-overlay')).toBeFalsy();
+      expect(pill.getAttribute('aria-expanded')).toBe('false');
+      pill.click();
+      card.querySelector('.ait-overlay').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      expect(card.querySelector('.ait-overlay')).toBeFalsy();
+      expect(document.activeElement).toBe(pill);
+      st.destroy(); el.remove();
+    });
+    test('Overlay link click is reported with the current quote', () => {
+      const el = mount(); const clicks = [];
+      const st = new Stage(el, { ...baseOpts, onQuoteClick: (i, ev) => { ev.preventDefault(); clicks.push(i); } });
+      st.show({ ...withIds[1], related_quotes: quotesFor(2) }, 'initial');
+      activeCard(el).querySelector('.ait-quote-pill').click();
+      activeCard(el).querySelector('.ait-overlay-next').click();
+      activeCard(el).querySelector('.ait-overlay-link').click();
+      expect(clicks).toEqual([{ eventId: withIds[1].unique_id, eventTitle: withIds[1].text.headline, quoteSlug: 'quote-2', speaker: 'Speaker 2' }]);
+      st.destroy(); el.remove();
+    });
+    test('Changing entry closes any open quote overlay', () => {
+      const el = mount(); const st = new Stage(el, baseOpts);
+      st.show({ ...withIds[1], related_quotes: quotesFor(2) }, 'initial');
+      activeCard(el).querySelector('.ait-quote-pill').click();
+      expect(el.querySelectorAll('.ait-overlay').length).toBe(1);
+      st.show(withIds[2], 'initial');
+      expect(el.querySelectorAll('.ait-overlay').length).toBe(0);
+      expect(document.querySelectorAll('.ait-overlay').length).toBe(0);
+      st.destroy(); el.remove();
+    });
+    test('Quote text is set as text, never parsed as HTML', () => {
+      const el = mount(); const st = new Stage(el, baseOpts);
+      st.show({ ...withIds[1], related_quotes: [{ id: 1, slug: 'x', speaker: '<b>S</b>', text: '<img src=x onerror=alert(1)>' }] }, 'initial');
+      activeCard(el).querySelector('.ait-quote-pill').click();
+      expect(activeCard(el).querySelector('.ait-overlay img')).toBeFalsy();
+      expect(activeCard(el).querySelector('.ait-quote-text').textContent).toBe('<img src=x onerror=alert(1)>');
+      st.destroy(); el.remove();
+    });
+
+    test('Archived card dims media content but not an open quote overlay (opacity chain is 1)', () => {
+      const el = mount(); const st = new Stage(el, baseOpts);
+      st.show({ ...withIds[0], is_archived: true, related_quotes: quotesFor(1) }, 'initial');
+      const card = activeCard(el);
+      expect(card.classList.contains('archived')).toBe(true);
+      expect(getComputedStyle(card.querySelector('.ait-media')).opacity).toBe('0.72');
+      expect(getComputedStyle(card.querySelector('.ait-body')).opacity).toBe('0.72');
+      card.querySelector('.ait-quote-pill').click();
+      const ov = card.querySelector('.ait-overlay');
+      expect(getComputedStyle(ov).opacity).toBe('1');
+      let eff = 1;
+      for (let n = ov; n && n !== card.parentElement; n = n.parentElement) eff *= Number(getComputedStyle(n).opacity);
+      expect(eff).toBe(1);
+      st.destroy(); el.remove();
+    });
+
+    test('Mobile quote overlay spans the card width even with a narrow image', async () => {
+      const frame = document.createElement('iframe');
+      frame.title = 'Mobile quote overlay test'; frame.style.cssText = 'width:375px;height:812px;border:0';
+      const svg = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="200"><rect width="100" height="200" fill="#888"/></svg>');
+      frame.srcdoc = `<!doctype html><html><head><link rel="stylesheet" href="/style.css"></head>
+        <body><div id="stage" class="ait-stage-host"></div><script type="module">
+        import { Stage } from '/js/timeline/stage.js';
+        const stage = new Stage(document.getElementById('stage'), {
+          sanitizeText: s => s, colorForTopic: () => '#333', reducedMotion: true, insightArticlesFor: () => []
+        });
+        stage.show({unique_id:'narrow',start_date:{year:1950},
+          text:{headline:'Narrow Image',text:'Body.'},
+          media:{url:${JSON.stringify(svg)}},
+          related_quotes:[{id:1,slug:'q1',speaker:'Someone',text:'A long quote that keeps going and going. '.repeat(12)+'Supercalifragilisticexpialidocious'.repeat(3)}]
+        },'initial');
+        document.querySelector('.ait-quote-pill').click();
+        document.body.dataset.ready = 'true';
+        <\/script>`;
+      document.body.appendChild(frame);
+      try {
+        await new Promise((res, rej) => {
+          const t0 = Date.now();
+          (function poll() {
+            if (frame.contentDocument?.body?.dataset.ready) return res();
+            if (Date.now() - t0 > 5000) return rej(new Error('iframe timeout'));
+            setTimeout(poll, 25);
+          })();
+        });
+        const doc = frame.contentDocument;
+        const ov = doc.querySelector('.ait-overlay');
+        expect(!!ov).toBe(true);
+        const w = ov.getBoundingClientRect().width;
+        expect(w >= 300).toBe(true);
+        const sc = doc.querySelector('.ait-overlay-scroll');
+        expect(sc.scrollWidth <= sc.clientWidth + 1).toBe(true);
+      } finally { frame.remove(); }
     });
 
     runAll().then(renderResults);

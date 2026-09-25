@@ -15,6 +15,8 @@ function fmtDate(d) {
     : `${MONTHS[m - 1]} ${d.year}`;
 }
 
+import { MediaOverlay } from './overlay.js';
+
 export class Stage {
   constructor(mountEl, opts) {
     this.mount = mountEl;
@@ -31,6 +33,7 @@ export class Stage {
     // late transitionend / timeout from a superseded transition is a no-op
     this._hideTimer = null;
     this._gen = 0;
+    this._quoteOverlay = null;
     // one delegated click handler for all overlay interactions
     this._onClick = (ev) => this._handleClick(ev);
     this.mount.addEventListener('click', this._onClick);
@@ -49,6 +52,9 @@ export class Stage {
   }
 
   show(event, direction) {
+    // an overlay belongs to the card it was opened on
+    this._quoteOverlay?.destroy();
+    this._quoteOverlay = null;
     const incoming = this._cards[1 - this._front];
     const outgoing = this._cards[this._front];
     this._renderInto(incoming, event);
@@ -141,6 +147,8 @@ export class Stage {
 
     const media = this._buildMedia(event.media);
     if (media) card.appendChild(media);
+    const quotes = event.related_quotes || [];
+    if (!isTitle && quotes.length) card.appendChild(this._buildQuotePill(card, quotes, slug, headline, fmtDate(event.start_date)));
 
     const body = document.createElement('div');
     body.className = 'ait-body';
@@ -214,6 +222,57 @@ export class Stage {
 
     card.appendChild(body);
     this._buildNav(card);
+  }
+
+  _buildQuotePill(card, quotes, slug, headline, dateText = '') {
+    const pill = document.createElement('button');
+    pill.type = 'button';
+    pill.className = 'ait-quote-pill';
+    pill.setAttribute('aria-haspopup', 'dialog');
+    pill.setAttribute('aria-expanded', 'false');
+    pill.setAttribute('aria-label', quotes.length === 1 ? 'Quote from this entry' : `${quotes.length} quotes from this entry`);
+    const glyph = document.createElement('span');
+    glyph.className = 'ait-quote-pill-glyph';
+    glyph.setAttribute('aria-hidden', 'true');
+    glyph.textContent = '❝';
+    pill.appendChild(glyph);
+    if (quotes.length > 1) {
+      const n = document.createElement('span');
+      n.textContent = String(quotes.length);
+      pill.appendChild(n);
+    }
+    pill.addEventListener('click', () => {
+      if (this._quoteOverlay?.isOpen && this._quoteOverlay.opener === pill) { this._quoteOverlay.close(); return; }
+      this._quoteOverlay?.destroy();
+      const overlay = new MediaOverlay({
+        host: card,
+        caption: [`On ${headline}`, dateText].filter(Boolean).join(' · ').toUpperCase(),
+        items: quotes, label: 'Quotes', className: 'ait-quote-overlay',
+        renderItem: (q) => {
+          const frag = document.createDocumentFragment();
+          const text = document.createElement('blockquote');
+          text.className = 'ait-quote-text'; text.dataset.fit = ''; text.textContent = q.text;
+          const rule = document.createElement('div');
+          rule.className = 'ait-quote-rule'; rule.setAttribute('aria-hidden', 'true');
+          const who = document.createElement('p');
+          who.className = 'ait-quote-speaker'; who.textContent = q.speaker;
+          frag.append(text, rule, who);
+          return frag;
+        },
+        linkFor: (q) => ({ href: `/quotes/#${encodeURIComponent(q.slug)}`, label: 'Read in Quotes →' }),
+        onOpen: ({ count }) => {
+          pill.setAttribute('aria-expanded', 'true');
+          this.opts.onQuoteOpen?.({ eventId: slug, eventTitle: headline, count });
+        },
+        onNav: ({ index, item }) => this.opts.onQuoteNav?.({ eventId: slug, eventTitle: headline, quoteSlug: item.slug, index }),
+        onLinkClick: (q, ev) => this.opts.onQuoteClick?.({ eventId: slug, eventTitle: headline, quoteSlug: q.slug, speaker: q.speaker }, ev),
+        onClose: () => pill.setAttribute('aria-expanded', 'false'),
+      });
+      overlay.opener = pill;
+      this._quoteOverlay = overlay;
+      overlay.open(pill);
+    });
+    return pill;
   }
 
   // Several chips would stack over the media caption, so 2+ collapse behind one
@@ -352,6 +411,7 @@ export class Stage {
   destroy() {
     if (this._hideTimer) { clearTimeout(this._hideTimer); this._hideTimer = null; }
     this._gen++; // invalidate any pending transition callback
+    this._quoteOverlay?.destroy(); this._quoteOverlay = null;
     this.mount.removeEventListener('click', this._onClick);
     this.mount.innerHTML = '';
     this.mount.classList.remove('ait-stage');

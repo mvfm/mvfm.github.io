@@ -6,6 +6,7 @@ import { injectShell } from './shell.js';
 import { API_V2 } from './config.js';
 import { getTopicColor, generateMnemonics, getTopicInitials } from './topics.js';
 import { findingsRouteOnLoad, findingsRouteOnUnload } from './findings.js';
+import { quotesRouteOnLoad, quotesRouteOnUnload } from './quotes.js';
 import { fetchFindings } from './findings-api.js';
 import { AITimeline } from './timeline/timeline.js';
 
@@ -435,6 +436,17 @@ const aiRouteOnLoad = async () => {
                             track('timeline_finding_click', {
                                 event_id: chip.dataset.eventId, event_title: chip.dataset.eventTitle,
                                 finding_slug: chip.dataset.findingSlug, finding_title: chip.dataset.findingTitle,
+                            });
+                        },
+                        onQuoteOpen: ({ eventId, eventTitle, count }) => {
+                            track('timeline_quote_open', { event_id: eventId, event_title: eventTitle, count });
+                        },
+                        onQuoteNav: ({ eventId, quoteSlug, index }) => {
+                            track('timeline_quote_nav', { event_id: eventId, quote_slug: quoteSlug, index });
+                        },
+                        onQuoteClick: ({ eventId, eventTitle, quoteSlug, speaker }) => {
+                            track('timeline_quote_click', {
+                                event_id: eventId, event_title: eventTitle, quote_slug: quoteSlug, speaker,
                             });
                         },
                         onTextLinkClick: (link) => {
@@ -900,6 +912,14 @@ const routes = {
         template: 'tpl-findings',
         onLoad: findingsRouteOnLoad,
         onUnload: findingsRouteOnUnload
+    },
+    quotes: {
+        title: 'Quotes — Marcus Vinicius Freitas Margarites',
+        description: 'Quotes on AI from the people who shaped it, each linked to the timeline entries and Insights it illuminates.',
+        canonicalUrl: 'https://mvfm.digital/quotes/',
+        template: 'tpl-quotes',
+        onLoad: quotesRouteOnLoad,
+        onUnload: quotesRouteOnUnload
     },
     'insights-article': {
         get title() { return document.title || 'Insights — mvfm.digital'; },

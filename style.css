@@ -3,6 +3,7 @@
     --clr-primary: #0c2d6b;
     --clr-primary-light: #15408f;
     --clr-accent: #1baaff;
+    --clr-quote: #e11d48;
     --clr-bg-main: #ffffff;
     --clr-text: #0f172a;
     --clr-text-muted: #475569;
@@ -960,14 +961,14 @@ main {
 }
 
 /* Insights */
-.insights-grid, .findings-rows {
+.insights-grid, .findings-rows, .quotes-rows {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
     gap: 1.25rem;
     padding: 0.5rem 0 1.5rem;
 }
 
-.insight-card, .finding-row-open {
+.insight-card, .finding-row-open, .quote-row-open {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -982,7 +983,7 @@ main {
     transition: box-shadow var(--trans-fast), transform var(--trans-fast);
 }
 
-.insight-card:hover, .finding-row-open:hover {
+.insight-card:hover, .finding-row-open:hover, .quote-row-open:hover {
     box-shadow: 0 4px 16px var(--clr-shadow);
     transform: translateY(-2px);
 }
@@ -1271,11 +1272,11 @@ main {
 }
 
 /* ===== Findings ===== */
-.findings-split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; align-items: start; }
-.findings-split.has-detail:not(.show-map) { grid-template-columns: minmax(18rem, .85fr) minmax(0, 1.15fr); }
-.findings-list { min-width: 0; }
-.findings-split.has-detail .findings-list { max-height: 70vh; overflow-y: auto; padding: .25rem; }
-.findings-split.has-detail .findings-rows { grid-template-columns: minmax(0, 1fr); }
+.findings-split, .quotes-split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+.findings-split.has-detail:not(.show-map), .quotes-split.has-detail { grid-template-columns: minmax(18rem, .85fr) minmax(0, 1.15fr); }
+.findings-list, .quotes-list { min-width: 0; }
+.findings-split.has-detail .findings-list, .quotes-split.has-detail .quotes-list { max-height: 70vh; overflow-y: auto; padding: .25rem; }
+.findings-split.has-detail .findings-rows, .quotes-split.has-detail .quotes-rows { grid-template-columns: minmax(0, 1fr); }
 .findings-graph { display: none; position: relative; height: min(70vh, 40rem); min-height: 24rem;
     border: 1px solid var(--clr-panel-border); border-radius: var(--radius-md); overflow: hidden;
     background-color: #f8fafc;
@@ -1291,20 +1292,22 @@ main {
 #contentPanel.findings-empty .findings-view-switch { display: none; }
 
 /* Share the Insights card grid, surfaces, and typography. */
-.findings-rows { list-style: none; margin: 0; }
+.findings-rows, .quotes-rows { list-style: none; margin: 0; }
 .insights-grid > .spinner-container,
-.findings-rows > .spinner-container { grid-column: 1 / -1; }
-.finding-row { display: flex; min-width: 0; }
-.finding-row-open { width: 100%; min-width: 0; box-sizing: border-box;
+.findings-rows > .spinner-container,
+.quotes-rows > .spinner-container,
+.quotes-rows > .loading-text { grid-column: 1 / -1; }
+.finding-row, .quote-row { display: flex; min-width: 0; }
+.finding-row-open, .quote-row-open { width: 100%; min-width: 0; box-sizing: border-box;
     font-family: inherit; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
-.finding-row-open:focus-visible { outline: 2px solid var(--clr-accent); outline-offset: 3px; }
-.finding-row.active .finding-row-open { border-color: var(--clr-accent); }
+.finding-row-open:focus-visible, .quote-row-open:focus-visible { outline: 2px solid var(--clr-accent); outline-offset: 3px; }
+.finding-row.active .finding-row-open, .quote-row.active .quote-row-open { border-color: var(--clr-accent); }
 .finding-row-source { font-size: .8125rem; color: var(--clr-primary); line-height: 1.4; }
 .finding-row-excerpt { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .finding-row-tags { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; margin-top: auto; padding-top: .35rem; }
 @media (prefers-reduced-motion: reduce) {
-    .finding-row-open { transition: none; }
-    .finding-row-open:hover { transform: none; }
+    .finding-row-open, .quote-row-open { transition: none; }
+    .finding-row-open:hover, .quote-row-open:hover { transform: none; }
 }
 .finding-dot { width: .6rem; height: .6rem; border-radius: 50%; display: inline-block; }
 .finding-refs { font-size: .75rem; color: var(--clr-text-muted); margin-left: .25rem; }
@@ -1339,11 +1342,11 @@ main {
 }
 
 /* Dedicated reading pane; never overlays the list or graph. */
-.findings-detail { position: relative; min-width: 0; max-height: 70vh;
+.findings-detail, .quotes-detail { position: relative; min-width: 0; max-height: 70vh;
     background: var(--clr-bg-main); border: 1px solid var(--clr-panel-border);
     border-radius: var(--radius-md); padding: 1.5rem; overflow-y: auto;
     scroll-margin-top: calc(var(--topbar-height, 6.25rem) + 1rem); overflow-wrap: anywhere; }
-.findings-detail[hidden] { display: none; }
+.findings-detail[hidden], .quotes-detail[hidden] { display: none; }
 .findings-detail-close { display: block; min-height: 2.75rem; margin: -.5rem 0 .75rem; padding: .4rem 0;
     background: none; border: none; color: var(--clr-primary); font-size: .85rem; cursor: pointer; }
 .findings-detail h3 { margin: 0 0 .5rem; }
@@ -1363,15 +1366,21 @@ main {
 #contentPanel a.findings-visit:visited,
 #contentPanel a.findings-visit:hover,
 #contentPanel a.findings-visit:focus { color: #fff; text-decoration: none; }
+#contentPanel .quotes-detail a.finding-chip:link,
+#contentPanel .quotes-detail a.finding-chip:visited,
+#contentPanel .quotes-detail a.finding-chip:hover,
+#contentPanel .quotes-detail a.finding-chip:focus { color: var(--clr-text); text-decoration: none; }
 
 /* Mobile reading replaces the list in normal page flow, with an explicit Back action. */
 @media (max-width: 760px) {
-    .findings-split, .findings-split.has-detail:not(.show-map) { grid-template-columns: minmax(0, 1fr); }
-    .findings-list, .findings-split.has-detail .findings-list { max-height: none; overflow-y: visible; padding: 0; }
-    .findings-rows { grid-template-columns: minmax(0, 1fr); }
+    .findings-split, .findings-split.has-detail:not(.show-map),
+    .quotes-split, .quotes-split.has-detail { grid-template-columns: minmax(0, 1fr); }
+    .findings-list, .findings-split.has-detail .findings-list,
+    .quotes-list, .quotes-split.has-detail .quotes-list { max-height: none; overflow-y: visible; padding: 0; }
+    .findings-rows, .quotes-rows { grid-template-columns: minmax(0, 1fr); }
     .findings-graph { height: 60vh; min-height: 22rem; }
-    .findings-split.has-detail:not(.show-map) .findings-list { display: none; }
-    .findings-detail { width: 100%; box-sizing: border-box; max-height: none; overflow: visible; padding: 1rem; }
+    .findings-split.has-detail:not(.show-map) .findings-list, .quotes-split.has-detail .quotes-list { display: none; }
+    .findings-detail, .quotes-detail { width: 100%; box-sizing: border-box; max-height: none; overflow: visible; padding: 1rem; }
     .finding-chip { padding: .5rem .65rem; }
 }
 
@@ -1484,6 +1493,102 @@ main {
 /* Purchase cart — just below the topic pills, top-right */
 .ait-cart { position: absolute; top: calc(1rem + 28px + .4rem); right: 1rem; z-index: 6; }
 
+/* Quotes pill — top-left, mirrors the topic pills across the top edge */
+.ait-quote-pill {
+  position: absolute; top: 1rem; left: 1rem; z-index: 6;
+  box-sizing: border-box; min-width: 28px; height: 28px; padding: 0 .4rem;
+  display: inline-flex; align-items: center; justify-content: center; gap: .2rem;
+  border: 0; border-radius: 4px; cursor: pointer;
+  background: var(--clr-quote, #e11d48); color: #fff;
+  font: 700 .7rem/1 "Helvetica Neue", Helvetica, Arial, sans-serif;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .2);
+}
+.ait-quote-pill:hover, .ait-quote-pill[aria-expanded="true"] { filter: brightness(1.12); }
+.ait-quote-pill:focus-visible { outline: 2px solid #fff; outline-offset: 2px; box-shadow: 0 0 0 4px var(--clr-quote, #e11d48); }
+.ait-quote-pill-glyph { font-size: .95rem; line-height: 1; transform: translateY(1px); }
+
+/* Overlay (used for quotes). Child of the card, covering the WHOLE slide (pills, chips
+   and the prev/next arrows sit underneath; close it to get to them). Navy site colour
+   only; --ait-overlay-alpha is the opacity knob. */
+.ait-card.has-overlay { overflow: hidden; }
+.ait-overlay {
+  --ait-overlay-alpha: .92;
+  position: absolute; inset: 0; z-index: 11;
+  display: flex; flex-direction: column; box-sizing: border-box;
+  padding: 1rem 2.5rem .75rem; border-radius: inherit;
+  background: rgba(12, 45, 107, var(--ait-overlay-alpha)); color: #fff;
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .ait-overlay { background: rgba(12, 45, 107, .97); }
+}
+.ait-overlay:focus { outline: none; }
+.ait-overlay-caption {
+  position: absolute; top: 1.05rem; left: 2.5rem; right: 3.5rem; z-index: 2;
+  font: 400 11px/1.3 "Helvetica Neue", Helvetica, Arial, sans-serif;
+  letter-spacing: .12em; text-transform: uppercase; color: rgba(255, 255, 255, .75);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ait-overlay-caption[hidden] { display: none; }
+.ait-overlay-mark {
+  position: absolute; top: 2.4rem; left: 2.2rem; z-index: 1;
+  font: 700 6.5rem/1 Georgia, "PT Serif", serif; color: #fff;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, .9), 0 5px 14px rgba(0, 0, 0, .85), 0 0 2px rgba(0, 0, 0, .6);
+  pointer-events: none; user-select: none;
+}
+.ait-overlay-close {
+  position: absolute; top: .55rem; right: .6rem; z-index: 2;
+  width: 28px; height: 28px; border: 0; border-radius: 4px; cursor: pointer;
+  background: rgba(255, 255, 255, .14); color: #fff; font-size: 1.15rem; line-height: 1;
+}
+.ait-overlay-close:hover { background: rgba(255, 255, 255, .26); }
+.ait-overlay-scroll {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; box-sizing: border-box;
+  display: flex; flex-direction: column; justify-content: safe center;
+  padding: 3.4rem .75rem .75rem 5rem;
+  scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .35) transparent;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 3.4rem);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 3.4rem);
+}
+.ait-quote-text {
+  margin: 0; max-width: 54ch; text-wrap: pretty;
+  font: 400 2rem/1.35 Georgia, "PT Serif", serif;
+}
+.ait-quote-rule { flex: none; width: 3rem; height: 2px; margin: 1rem 0 .7rem; background: rgba(255, 255, 255, .8); }
+.ait-quote-speaker {
+  margin: 0; font-size: .85rem; font-weight: 700; letter-spacing: .08em;
+  font-variant: small-caps; color: rgba(255, 255, 255, .92);
+}
+.ait-overlay-foot {
+  display: flex; align-items: center; gap: .5rem; padding-top: .6rem;
+  border-top: 1px solid rgba(255, 255, 255, .16); font-size: .8rem;
+}
+.ait-overlay-prev, .ait-overlay-next {
+  width: 28px; height: 28px; border: 0; border-radius: 4px; cursor: pointer;
+  background: rgba(255, 255, 255, .14); color: #fff; font-size: .8rem;
+}
+.ait-overlay-prev:hover, .ait-overlay-next:hover { background: rgba(255, 255, 255, .26); }
+.ait-overlay-prev[hidden], .ait-overlay-next[hidden], .ait-overlay-dots[hidden] { display: none; }
+.ait-overlay-dots { display: inline-flex; align-items: center; gap: .45rem; }
+.ait-overlay-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, .35); }
+.ait-overlay-dot.active { background: #fff; }
+/* live region: announced, not shown (the dots are the visual counter) */
+.ait-overlay-count {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+.ait-overlay-link { margin-left: auto; padding: .2rem .45rem; border-radius: 4px; text-decoration: none; }
+/* #contentPanel a:link/:hover (site-wide link colours) out-specify a bare class, so every
+   overlay link state is pinned here: white, never underlined; feedback is a background pill. */
+#contentPanel a.ait-overlay-link:link,
+#contentPanel a.ait-overlay-link:visited,
+#contentPanel a.ait-overlay-link:hover,
+#contentPanel a.ait-overlay-link:focus,
+#contentPanel a.ait-overlay-link:active { color: #fff; text-decoration: none; }
+#contentPanel a.ait-overlay-link:hover,
+#contentPanel a.ait-overlay-link:focus-visible { background: rgba(255, 255, 255, .14); }
+.ait-overlay button:focus-visible, .ait-overlay a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
 /* Insights retain their original bottom-right stack. */
 .ait-chips {
   position: absolute; bottom: 1.25rem; right: 1.25rem;
@@ -1521,6 +1626,24 @@ button.chip-toggle { font-family: inherit; }
 .finding-ref-stripe {
   left: 0; border-radius: 6px 0 0 6px;
   background: linear-gradient(to bottom, #059669, #0d9488);
+}
+
+/* Quotes tab — shares the Insights/Findings card, split, detail and chip rules above; only the Quotes-specific bits live here. */
+#quotes-filter.show { max-height: 40rem; }
+.quotes-selects { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; padding: .25rem 0 .5rem; font-size: .875rem; }
+.quotes-selects label { display: inline-flex; align-items: center; gap: .4rem; color: var(--clr-text-muted); }
+.quotes-selects select { font: inherit; padding: .5rem .75rem; border: 1px solid var(--clr-panel-border); border-radius: var(--radius-md); background: rgba(255, 255, 255, 0.4); color: var(--clr-text); max-width: 14rem; }
+.quotes-count { margin-left: auto; color: var(--clr-text-muted); }
+.quote-row-kind { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--clr-primary); }
+.quote-row-text { font: 400 1.05rem/1.4 Georgia, "PT Serif", serif; color: var(--clr-text); display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+.quote-row-attrib { font-size: .8125rem; line-height: 1.4; color: var(--clr-primary); }
+.quotes-detail-text { margin: 0 0 .75rem; font: 400 1.5rem/1.35 Georgia, "PT Serif", serif; border-left: 4px solid var(--clr-primary); padding-left: 1rem; }
+.quotes-detail-text:focus { outline: none; }
+.quotes-detail-attrib { margin: 0; color: var(--clr-primary); }
+.quotes-detail-meta, .quotes-detail-source { margin: .25rem 0 .75rem; font-size: .8rem; color: var(--clr-text-muted); }
+.quotes-detail-context { margin: 1rem 0; line-height: 1.65; }
+@media (max-width: 760px) {
+  .quotes-count { margin-left: 0; width: 100%; }
 }
 
 /* Archived ribbon — rotated red corner flag */
@@ -1576,6 +1699,12 @@ button.chip-toggle { font-family: inherit; }
   .ait-body { flex: 0 0 auto; padding: 12px 2px 0; }
 
   .ait-topics { top: .5rem; right: .5rem; }
+  .ait-quote-pill { top: .5rem; left: .5rem; }
+  .ait-overlay { padding: .75rem 1.25rem .5rem; }
+  .ait-overlay-caption { left: 1.25rem; top: .85rem; }
+  .ait-quote-text { font-size: 1.35rem; overflow-wrap: anywhere; }
+  .ait-overlay-mark { font-size: 5rem; top: 1.9rem; left: 1.1rem; }
+  .ait-overlay-scroll { padding: 2.9rem .25rem .5rem 2.6rem; }
   .ait-cart { top: calc(.5rem + 28px + .4rem); right: .5rem; }
   /* chips are appended to the card *before* .ait-body in the DOM (harmless when
      absolute on desktop); once in flow they must sit after the text */

@@ -7,6 +7,7 @@ export const NAV_ITEMS = [
     { route: 'ai',       label: 'AI' },
     { route: 'insights', label: 'Insights' },
     { route: 'findings', label: 'Findings' },
+    { route: 'quotes',   label: 'Quotes' },
 ];
 
 const TEMPLATES = {
@@ -180,6 +181,41 @@ const TEMPLATES = {
                 <p id="findings-map-help" class="findings-map-help">Click to highlight · Double-click to open or filter · Drag to explore</p>
             </div>
             <aside id="findings-detail" class="findings-detail" aria-label="Finding details" hidden></aside>
+        </div>`,
+    quotes: `
+        <div class="view-header">
+            <h2>Quotes</h2>
+            <div class="header-actions">
+                <button id="quotes-search-toggle" type="button" class="icon-button" title="Filter quotes">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div id="quotes-filter" class="search-bar">
+            <div class="search-inner">
+                <input type="text" id="quotes-search-input" placeholder="Filter quotes…" aria-label="Filter quotes">
+                <div class="search-actions">
+                    <button id="quotes-filter-clear" type="button" class="btn-secondary">Clear</button>
+                </div>
+            </div>
+            <div id="quotes-topic-filters" class="topic-filter-list"></div>
+            <div class="quotes-selects">
+                <label>Speaker <select id="quotes-speaker"><option value="">All</option></select></label>
+                <label>Kind <select id="quotes-kind"><option value="">All</option></select></label>
+                <span id="quotes-count" class="quotes-count" aria-live="polite"></span>
+            </div>
+        </div>
+        <div class="quotes-split">
+            <div class="quotes-list">
+                <ul id="quotes-rows" class="quotes-rows">
+                    <li class="spinner-container"><div class="spinner" aria-hidden="true"></div><p class="loading-text">Loading quotes...</p></li>
+                </ul>
+            </div>
+            <aside id="quotes-detail" class="quotes-detail" aria-label="Quote details" hidden></aside>
         </div>`,
 };
 

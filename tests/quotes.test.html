@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Quotes Model Tests</title>
+  <style>
+    body { background: #0f172a; color: #e2e8f0; font-family: system-ui, sans-serif; padding: 2rem; }
+    #summary { margin: 1rem 0; font-weight: bold; font-size: 1.1rem; }
+    .test-result { padding: .75rem; margin: .5rem 0; border-left: 4px solid; font-family: monospace; white-space: pre-wrap; }
+    .pass { background: rgba(34,197,94,.1); border-color: #22c55e; }
+    .fail { background: rgba(239,68,68,.1); border-color: #ef4444; }
+  </style>
+</head>
+<body>
+  <h2>Quotes Model Tests</h2>
+  <div id="summary"></div>
+  <div id="results"></div>
+
+  <script type="module">
+    import { formatQuoteDate, kindLabel, filterQuotes, speakersOf, quoteNotes } from '../js/quotes-model.js';
+
+    // ---- harness (also copied verbatim into tests/quotes-api.test.html) ----
+    const results = [];
+    function deepEqual(a, b) {
+      if (a === b) return true;
+      if (a == null || b == null || typeof a !== 'object' || typeof b !== 'object') return false;
+      const ka = Object.keys(a), kb = Object.keys(b);
+      return ka.length === kb.length && ka.every(k => deepEqual(a[k], b[k]));
+    }
+    function expect(val) {
+      return {
+        toBe(e) { if (val !== e) throw new Error(`Expected ${JSON.stringify(val)} to be ${JSON.stringify(e)}`); },
+        toEqual(e) { if (!deepEqual(val, e)) throw new Error(`Expected ${JSON.stringify(val)} to equal ${JSON.stringify(e)}`); },
+        toBeTruthy() { if (!val) throw new Error(`Expected ${JSON.stringify(val)} to be truthy`); },
+        toBeFalsy() { if (val) throw new Error(`Expected ${JSON.stringify(val)} to be falsy`); },
+      };
+    }
+    let chain = Promise.resolve();
+    function test(name, fn) {
+      const idx = results.length;
+      results.push({ name, pass: true, error: null });
+      chain = chain.then(() => fn()).then(() => {}, e => { results[idx] = { name, pass: false, error: (e && e.message) || String(e) }; });
+    }
+    function renderResults() {
+      const passed = results.filter(r => r.pass).length, failed = results.length - passed;
+      document.getElementById('summary').textContent = `${passed} passed, ${failed} failed ${failed ? '❌' : '✅'}`;
+      results.forEach(r => {
+        const d = document.createElement('div');
+        d.className = `test-result ${r.pass ? 'pass' : 'fail'}`;
+        d.textContent = r.pass ? `✓ ${r.name}` : `✗ ${r.name}\n  ${r.error}`;
+        document.getElementById('results').appendChild(d);
+      });
+    }
+    // ---- end harness ----
+
+    const Q = (o) => ({ id: 1, slug: 'a', text: 'Machines will think', speaker: 'Alan Turing', speaker_role: null,
+      source_title: 'Computing Machinery', kind: 'prediction', topics: ['foundations'],
+      verification: 'primary', is_translation: false, ...o });
+
+    test('formatQuoteDate honours precision', () => {
+      expect(formatQuoteDate('1950-10-01', 'exact')).toBe('October 1st, 1950');
+      expect(formatQuoteDate('1950-10-01', 'month')).toBe('October 1950');
+      expect(formatQuoteDate('1950-10-01', 'year')).toBe('1950');
+    });
+    test('formatQuoteDate uses ordinals like Findings (1st 2nd 3rd 4th 11th 12th 13th 21st 22nd 23rd)', () => {
+      const d = (day) => formatQuoteDate(`1950-10-${String(day).padStart(2, '0')}`, 'exact');
+      expect([1, 2, 3, 4, 11, 12, 13, 21, 22, 23, 30].map(d)).toEqual([
+        'October 1st, 1950', 'October 2nd, 1950', 'October 3rd, 1950', 'October 4th, 1950',
+        'October 11th, 1950', 'October 12th, 1950', 'October 13th, 1950', 'October 21st, 1950',
+        'October 22nd, 1950', 'October 23rd, 1950', 'October 30th, 1950']);
+    });
+    test('formatQuoteDate tolerates bad input', () => {
+      expect(formatQuoteDate('', 'exact')).toBe('');
+      expect(formatQuoteDate('nonsense', 'year')).toBe('');
+      expect(formatQuoteDate('1950-13-01', 'exact')).toBe('1950');
+    });
+    test('kindLabel capitalises known kinds and passes unknown through', () => {
+      expect(kindLabel('humor')).toBe('Humor');
+      expect(kindLabel('mystery')).toBe('mystery');
+    });
+    test('filterQuotes ANDs filters; speaker is case-insensitive exact', () => {
+      const qs = [Q({ slug: 'a' }), Q({ slug: 'b', speaker: 'Ada Lovelace', kind: 'vision', topics: ['history'] })];
+      expect(filterQuotes(qs, { speaker: 'alan turing' }).map(q => q.slug)).toEqual(['a']);
+      expect(filterQuotes(qs, { speaker: 'Alan' }).length).toBe(0);
+      expect(filterQuotes(qs, { kind: 'VISION' }).map(q => q.slug)).toEqual(['b']);
+      expect(filterQuotes(qs, { topic: 'history', kind: 'prediction' }).length).toBe(0);
+      expect(filterQuotes(qs, {}).length).toBe(2);
+    });
+    test('filterQuotes query searches text, speaker and source', () => {
+      const qs = [Q({ slug: 'a' }), Q({ slug: 'b', text: 'Other', speaker: 'X', source_title: 'Analytical Engine' })];
+      expect(filterQuotes(qs, { query: 'engine' }).map(q => q.slug)).toEqual(['b']);
+      expect(filterQuotes(qs, { query: 'THINK' }).map(q => q.slug)).toEqual(['a']);
+    });
+    test('filterQuotes topics list is ANDed and case-insensitive; legacy topic still works', () => {
+      const qs = [Q({ slug: 'a', topics: ['foundations', 'history'] }), Q({ slug: 'b', topics: ['history'] }), Q({ slug: 'c', topics: [] })];
+      expect(filterQuotes(qs, { topics: ['history'] }).map(q => q.slug)).toEqual(['a', 'b']);
+      expect(filterQuotes(qs, { topics: ['history', 'Foundations'] }).map(q => q.slug)).toEqual(['a']);
+      expect(filterQuotes(qs, { topics: ['history', 'nope'] }).length).toBe(0);
+      expect(filterQuotes(qs, { topics: [] }).length).toBe(3);
+      expect(filterQuotes(qs, { topic: 'foundations' }).map(q => q.slug)).toEqual(['a']);
+      expect(filterQuotes(qs, { topic: 'foundations', topics: ['history'], query: 'think' }).map(q => q.slug)).toEqual(['a']);
+    });
+    test('speakersOf is sorted and unique', () => {
+      expect(speakersOf([Q({ speaker: 'B' }), Q({ speaker: 'A' }), Q({ speaker: 'B' })])).toEqual(['A', 'B']);
+    });
+    test('quoteNotes flags secondary sources and translations', () => {
+      expect(quoteNotes(Q({}))).toEqual([]);
+      expect(quoteNotes(Q({ verification: 'secondary', is_translation: true }))).toEqual(['Secondary source', 'Translation']);
+    });
+
+    chain.then(renderResults);
+  </script>
+</body>
+</html>

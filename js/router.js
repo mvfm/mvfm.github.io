@@ -13,7 +13,7 @@ export class Router {
     routePath(route) {
         // GitHub Pages serves directory indexes at their trailing-slash URLs.
         if (route === 'home') return '/';
-        return `/${route}${route === 'findings' || route === 'insights' ? '/' : ''}`;
+        return `/${route}${['findings', 'insights', 'quotes'].includes(route) ? '/' : ''}`;
     }
 
     init() {
