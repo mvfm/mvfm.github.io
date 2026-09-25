@@ -37,6 +37,15 @@ export class Stage {
     // one delegated click handler for all overlay interactions
     this._onClick = (ev) => this._handleClick(ev);
     this.mount.addEventListener('click', this._onClick);
+    this._onPillKey = (ev) => {
+      if (ev.key !== 'Escape') return;
+      const group = ev.target.closest('.ait-chips, .ait-finding-chips, .ait-cart');
+      const toggle = group?.querySelector('[aria-expanded="true"]');
+      if (!toggle) return;
+      ev.preventDefault(); ev.stopPropagation();
+      toggle.click(); toggle.focus({ preventScroll: true });
+    };
+    this.mount.addEventListener('keydown', this._onPillKey);
     // live region for a11y
     this._live = document.createElement('p');
     this._live.className = 'ait-sr-only';
@@ -159,6 +168,7 @@ export class Stage {
       const btn = document.createElement('button');
       btn.className = 'cart-btn'; btn.type = 'button';
       btn.setAttribute('aria-label', 'Purchase links');
+      btn.setAttribute('aria-expanded', 'false');
       btn.dataset.eventId = slug; btn.dataset.eventTitle = headline;
       btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>';
       const dd = document.createElement('div');
@@ -236,16 +246,15 @@ export class Stage {
     glyph.setAttribute('aria-hidden', 'true');
     glyph.textContent = '❝';
     pill.appendChild(glyph);
-    if (quotes.length > 1) {
-      const n = document.createElement('span');
-      n.textContent = String(quotes.length);
-      pill.appendChild(n);
-    }
+    const count = document.createElement('span');
+    count.textContent = `${quotes.length} ${quotes.length === 1 ? 'Quote' : 'Quotes'}`;
+    pill.appendChild(count);
     pill.addEventListener('click', () => {
       if (this._quoteOverlay?.isOpen && this._quoteOverlay.opener === pill) { this._quoteOverlay.close(); return; }
       this._quoteOverlay?.destroy();
       const overlay = new MediaOverlay({
         host: card,
+        reducedMotion: this.opts.reducedMotion,
         caption: [`On ${headline}`, dateText].filter(Boolean).join(' · ').toUpperCase(),
         items: quotes, label: 'Quotes', className: 'ait-quote-overlay',
         renderItem: (q) => {
@@ -381,13 +390,14 @@ export class Stage {
       ev.stopPropagation();
       const dd = cart.parentElement.querySelector('.purchase-dropdown');
       const open = dd.classList.contains('open');
-      this.mount.querySelectorAll('.purchase-dropdown.open').forEach(d => d.classList.remove('open'));
+      this._closePurchases();
       if (!open) dd.classList.add('open');
+      cart.setAttribute('aria-expanded', String(!open));
       this.opts.onCartClick?.(ev);
       return;
     }
     const opt = ev.target.closest('.purchase-link');
-    if (opt) { this.opts.onCartOptionClick?.(opt, ev); this.mount.querySelectorAll('.purchase-dropdown.open').forEach(d => d.classList.remove('open')); return; }
+    if (opt) { this.opts.onCartOptionClick?.(opt, ev); this._closePurchases(); return; }
     const toggle = ev.target.closest('.chip-toggle');
     if (toggle) {
       const list = toggle.parentElement.querySelector('.ait-chip-list');
@@ -405,7 +415,14 @@ export class Stage {
     if (chip) { this.opts.onInsightClick?.(chip, ev); return; }
     const link = ev.target.closest('.ait-text a');
     if (link) { this.opts.onTextLinkClick?.(link, ev); return; }
-    this.mount.querySelectorAll('.purchase-dropdown.open').forEach(d => d.classList.remove('open'));
+    this._closePurchases();
+  }
+
+  _closePurchases() {
+    this.mount.querySelectorAll('.purchase-dropdown.open').forEach(d => {
+      d.classList.remove('open');
+      d.parentElement.querySelector('.cart-btn').setAttribute('aria-expanded', 'false');
+    });
   }
 
   destroy() {
@@ -413,6 +430,7 @@ export class Stage {
     this._gen++; // invalidate any pending transition callback
     this._quoteOverlay?.destroy(); this._quoteOverlay = null;
     this.mount.removeEventListener('click', this._onClick);
+    this.mount.removeEventListener('keydown', this._onPillKey);
     this.mount.innerHTML = '';
     this.mount.classList.remove('ait-stage');
     this.mount.removeAttribute('role');

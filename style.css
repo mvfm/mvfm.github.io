@@ -1496,31 +1496,31 @@ main {
 /* Quotes pill — top-left, mirrors the topic pills across the top edge */
 .ait-quote-pill {
   position: absolute; top: 1rem; left: 1rem; z-index: 6;
-  box-sizing: border-box; min-width: 28px; height: 28px; padding: 0 .4rem;
-  display: inline-flex; align-items: center; justify-content: center; gap: .2rem;
-  border: 0; border-radius: 4px; cursor: pointer;
-  background: var(--clr-quote, #e11d48); color: #fff;
-  font: 700 .7rem/1 "Helvetica Neue", Helvetica, Arial, sans-serif;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, .2);
+  box-sizing: border-box; min-width: 28px; height: 28px; padding: .25rem .65rem;
+  display: inline-flex; align-items: center; justify-content: center; gap: .3rem;
+  border: 1.5px solid var(--clr-quote, #e11d48); border-radius: 4px; cursor: pointer;
+  background: #ffe4e6; color: #9f1239;
+  font: 700 .72rem/1.2 "Helvetica Neue", Helvetica, Arial, sans-serif;
+  white-space: nowrap;
 }
-.ait-quote-pill:hover, .ait-quote-pill[aria-expanded="true"] { filter: brightness(1.12); }
-.ait-quote-pill:focus-visible { outline: 2px solid #fff; outline-offset: 2px; box-shadow: 0 0 0 4px var(--clr-quote, #e11d48); }
 .ait-quote-pill-glyph { font-size: .95rem; line-height: 1; transform: translateY(1px); }
 
 /* Overlay (used for quotes). Child of the card, covering the WHOLE slide (pills, chips
    and the prev/next arrows sit underneath; close it to get to them). Navy site colour
    only; --ait-overlay-alpha is the opacity knob. */
 .ait-card.has-overlay { overflow: hidden; }
-.ait-overlay {
+.ait-overlay, .ait-overlay-exit {
   --ait-overlay-alpha: .92;
   position: absolute; inset: 0; z-index: 11;
   display: flex; flex-direction: column; box-sizing: border-box;
   padding: 1rem 2.5rem .75rem; border-radius: inherit;
   background: rgba(12, 45, 107, var(--ait-overlay-alpha)); color: #fff;
   -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  transform-origin: top left;
 }
+.ait-overlay-exit { pointer-events: none; overflow: hidden; }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .ait-overlay { background: rgba(12, 45, 107, .97); }
+  .ait-overlay, .ait-overlay-exit { background: rgba(12, 45, 107, .97); }
 }
 .ait-overlay:focus { outline: none; }
 .ait-overlay-caption {
@@ -1615,6 +1615,48 @@ main {
 .ait-chips .ait-chip-list { align-items: flex-end; border-color: #d8b4fe; max-width: 100%; }
 button.chip-toggle { font-family: inherit; }
 
+/* Slide actions share shape, feedback and timing; topic mnemonics are labels. */
+.ait-topics .topic-pill, .ait-topics .topic-pill:hover {
+  cursor: default; transform: none; box-shadow: none; transition: none;
+}
+.ait-card .ait-quote-pill { --pill-accent: var(--clr-quote, #e11d48); }
+.ait-card .insight-ref-chip { --pill-accent: #a855f7; }
+.ait-card .finding-ref-chip { --pill-accent: #14b8a6; }
+.ait-card .cart-btn { --pill-accent: var(--clr-accent); box-shadow: none; }
+.ait-card :is(.ait-quote-pill, .insight-ref-chip, .finding-ref-chip, .cart-btn) {
+  box-sizing: border-box; min-height: 28px; border-radius: 4px;
+  transition: none;
+}
+.ait-card .insight-ref-chip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.ait-card .insight-ref-chip:hover { background: #f3e8ff; color: #7e22ce !important; }
+.ait-card .finding-ref-chip:hover { background: #ccfbf1; color: #0f766e !important; }
+.ait-card .cart-btn:hover { background: var(--clr-accent); box-shadow: none; }
+.ait-card :is(.ait-quote-pill, .insight-ref-chip, .finding-ref-chip, .cart-btn):is(:hover, [aria-expanded="true"]) {
+  filter: brightness(1.12);
+}
+.ait-card :is(.ait-quote-pill, .insight-ref-chip, .finding-ref-chip, .cart-btn):focus-visible {
+  outline: 2px solid #fff; outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--pill-accent);
+}
+.ait-chips { max-width: calc(50% - 2.5rem); }
+@media (prefers-reduced-motion: no-preference) {
+  .ait-card :is(.ait-quote-pill, .insight-ref-chip, .finding-ref-chip, .cart-btn) {
+    transition: transform 150ms ease-out, filter 150ms ease-out;
+  }
+  .ait-card .ait-chip-list:not([hidden]), .ait-cart .purchase-dropdown.open {
+    animation: ait-pill-reveal 220ms cubic-bezier(.2,.7,.2,1);
+  }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .ait-card :is(.ait-quote-pill, .insight-ref-chip, .finding-ref-chip, .cart-btn):hover {
+    transform: translateY(-2px);
+  }
+}
+@keyframes ait-pill-reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .insight-ref-stripe, .finding-ref-stripe {
   position: absolute; top: 0; bottom: 0; width: 5px; z-index: 4;
   pointer-events: none;
@@ -1700,7 +1742,7 @@ button.chip-toggle { font-family: inherit; }
 
   .ait-topics { top: .5rem; right: .5rem; }
   .ait-quote-pill { top: .5rem; left: .5rem; }
-  .ait-overlay { padding: .75rem 1.25rem .5rem; }
+  .ait-overlay, .ait-overlay-exit { padding: .75rem 1.25rem .5rem; }
   .ait-overlay-caption { left: 1.25rem; top: .85rem; }
   .ait-quote-text { font-size: 1.35rem; overflow-wrap: anywhere; }
   .ait-overlay-mark { font-size: 5rem; top: 1.9rem; left: 1.1rem; }
@@ -1708,7 +1750,7 @@ button.chip-toggle { font-family: inherit; }
   .ait-cart { top: calc(.5rem + 28px + .4rem); right: .5rem; }
   /* chips are appended to the card *before* .ait-body in the DOM (harmless when
      absolute on desktop); once in flow they must sit after the text */
-  .ait-chips { position: static; order: 1; align-items: flex-start; margin-top: 1rem; }
+  .ait-chips { position: static; order: 1; align-items: flex-start; margin-top: 1rem; max-width: 100%; }
   .ait-finding-chips { position: static; max-width: 100%; align-self: flex-start; }
   /* the desktop viewport-based chip cap ignores the list's padding/border and
      overflows the card edge; let chips fill the popover instead */

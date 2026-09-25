@@ -17,6 +17,7 @@ export class MediaOverlay {
 
   open(returnFocusEl = null) {
     if (this.el) return;
+    this._clearExit();
     const { host, items, label, caption = '', className = '' } = this.opts;
     this._returnFocus = returnFocusEl;
     this.index = 0;
@@ -101,6 +102,7 @@ export class MediaOverlay {
     host.appendChild(el);
     host.classList.add('has-overlay');
     this._render();
+    this._animateOpen();
     el.focus({ preventScroll: true });
     this.opts.onOpen?.({ count: items.length });
   }
@@ -112,6 +114,36 @@ export class MediaOverlay {
     b.setAttribute('aria-label', label);
     b.textContent = glyph;
     return b;
+  }
+
+  _motionEnabled() {
+    return !this.opts.reducedMotion && typeof this.el?.animate === 'function' &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  _animateOpen() {
+    if (!this._motionEnabled()) return;
+    const timing = { duration: 220, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' };
+    this.el.animate([
+      { opacity: 0, transform: 'scale(.985)' },
+      { opacity: 1, transform: 'scale(1)' },
+    ], timing);
+    const rise = [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'translateY(0)' }];
+    this.el.querySelector('.ait-overlay-mark').animate(rise, timing);
+    for (const child of this._scroll.children) {
+      child.animate(rise, { ...timing, delay: child.matches('.ait-quote-speaker') ? 120 : 60 });
+    }
+  }
+
+  _clearExit() {
+    this._exit?.remove();
+    this._exit = null;
+  }
+
+  _clearPage() {
+    this._outgoing?.remove();
+    this._outgoing = null;
+    this.el?.getAnimations({ subtree: true }).forEach(animation => animation.cancel());
   }
 
   _render() {
@@ -144,13 +176,54 @@ export class MediaOverlay {
   step(delta) {
     const n = this.opts.items.length;
     if (!this.el || n < 2) return;
+    this._clearPage();
+    const motion = this._motionEnabled();
+    // A non-interactive copy preserves the outgoing text's fitted size and scroll
+    // position while the live content, link and announcement update immediately.
+    let outgoing;
+    if (motion) {
+      outgoing = this._scroll.cloneNode(true);
+      outgoing.setAttribute('aria-hidden', 'true');
+      outgoing.inert = true;
+      Object.assign(outgoing.style, {
+        position: 'absolute', pointerEvents: 'none',
+        top: `${this._scroll.offsetTop}px`, left: `${this._scroll.offsetLeft}px`,
+        width: `${this._scroll.offsetWidth}px`, height: `${this._scroll.offsetHeight}px`,
+      });
+      this.el.appendChild(outgoing);
+      outgoing.scrollTop = this._scroll.scrollTop;
+      this._outgoing = outgoing;
+    }
     this.index = (this.index + delta + n) % n;
     this._render();
+    if (motion) {
+      const x = Math.sign(delta) * 8;
+      const timing = { duration: 180, easing: 'ease-out' };
+      outgoing.animate([{ opacity: 1, transform: 'translateX(0)' },
+        { opacity: 0, transform: `translateX(${-x}px)` }], timing)
+        .finished.then(() => outgoing.remove(), () => outgoing.remove());
+      this._scroll.animate([{ opacity: 0, transform: `translateX(${x}px)` },
+        { opacity: 1, transform: 'translateX(0)' }], timing);
+    }
     this.opts.onNav?.({ index: this.index, item: this.opts.items[this.index] });
   }
 
-  close({ restoreFocus = true } = {}) {
+  close({ restoreFocus = true, animate = true } = {}) {
     if (!this.el) return;
+    this._clearPage();
+    if (animate && this._motionEnabled()) {
+      const exit = this.el.cloneNode(true);
+      exit.classList.replace('ait-overlay', 'ait-overlay-exit');
+      exit.removeAttribute('role');
+      exit.removeAttribute('tabindex');
+      exit.setAttribute('aria-hidden', 'true');
+      exit.inert = true;
+      this.opts.host.appendChild(exit);
+      exit.querySelector('.ait-overlay-scroll').scrollTop = this._scroll.scrollTop;
+      this._exit = exit;
+      exit.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 150, easing: 'ease-out' })
+        .finished.then(() => exit.remove(), () => exit.remove());
+    }
     document.removeEventListener('pointerdown', this._onOutside, true);
     window.removeEventListener('resize', this._onResize);
     this._onOutside = null;
@@ -161,5 +234,8 @@ export class MediaOverlay {
     this.opts.onClose?.();
   }
 
-  destroy() { this.close({ restoreFocus: false }); }
+  destroy() {
+    this.close({ restoreFocus: false, animate: false });
+    this._clearExit();
+  }
 }
