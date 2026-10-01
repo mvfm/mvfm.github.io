@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Blink — Insights — mvfm.digital</title>
+    <meta name="description" content="The blinking rooms and slow replies of science-fiction computers once looked dated. Data centers and conversational AI have made the encounter familiar again." />
+    <meta name="author" content="Marcus Vinicius Freitas Margarites" />
+    <link rel="canonical" href="https://mvfm.digital/insights/blink" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://mvfm.digital/insights/blink" />
+    <meta property="og:title" content="Blink — Insights — mvfm.digital" />
+    <meta property="og:description" content="The blinking rooms and slow replies of science-fiction computers once looked dated. Data centers and conversational AI have made the encounter familiar again." />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Blink — Insights — mvfm.digital" />
+    <meta name="twitter:description" content="The blinking rooms and slow replies of science-fiction computers once looked dated. Data centers and conversational AI have made the encounter familiar again." />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "Blink",
+    "description": "The blinking rooms and slow replies of science-fiction computers once looked dated. Data centers and conversational AI have made the encounter familiar again.",
+    "url": "https://mvfm.digital/insights/blink",
+    "datePublished": "2026-10",
+    "author": {
+        "@type": "Person",
+        "name": "Marcus Vinicius Freitas Margarites",
+        "url": "https://mvfm.digital"
+    }
+}
+    </script>
+
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="stylesheet" href="/style.css">
+
+    <!-- Start Single Page Apps for GitHub Pages -->
+    <script type="text/javascript">
+        (function (l) {
+            if (l.search[1] === 'p' && l.search[2] === '=') {
+                var decoded = l.search.slice(1).split('&').map(function (s) {
+                    return s.replace(/~and~/g, '&')
+                }).filter(function (s) {
+                    return s.slice(0, 2) === 'p='
+                })[0];
+                if (decoded !== undefined) {
+                    window.history.replaceState(null, null,
+                        l.pathname.slice(0, (l.pathname.slice(-1) === '/' ? -1 : undefined)) + decoded.slice(2) +
+                        l.hash
+                    );
+                }
+            }
+        }(window.location))
+    </script>
+    <!-- End Single Page Apps for GitHub Pages -->
+</head>
+
+<body>
+    <div class="app">
+        <div id="topBar">
+            <header>
+                <h1 class="brand"></h1>
+            </header>
+            <nav>
+                <div class="menu"></div>
+            </nav>
+        </div>
+        <main>
+            <canvas id="golCanvas" aria-hidden="true"></canvas>
+            <section id="contentPanel" class="panel" aria-live="polite" aria-atomic="true"></section>
+            <aside id="statsPanel" aria-live="polite" aria-atomic="true">
+                <div class="row"><span class="label">GEN</span>
+                    <div class="digits" id="genDigits"></div>
+                </div>
+                <div class="row"><span class="label">ALIVE</span>
+                    <div class="digits" id="aliveDigits"></div>
+                </div>
+                <div class="row"><span class="label">TOTAL</span>
+                    <div class="digits" id="totalDigits"></div>
+                </div>
+                <div class="row"><span class="label">OCC%</span>
+                    <div class="digits" id="occDigits"></div><span class="percent">%</span>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Article content -->
+    <template id="tpl-feature">
+        <article class="insight-article">
+            <header class="insight-article-header">
+                <h1>Blink</h1>
+                <p class="insight-article-meta">October 2026</p><!-- e.g. "April 2026" -->
+            </header>
+
+            <div class="insight-article-body">
+
+                <p class="insight-standfirst">The blinking lights and slow replies of science-fiction computers once looked like a future that progress had overtaken. Then we began talking to enormous machines through little boxes of text.</p>
+                <figure class="insight-hero-image"><img src="/img/insights/blink-computer.png" alt="A dark computer room in which rows of tiny indicator lights converge on a single green text cursor." loading="eager"><figcaption>The future went away for a while. Then the lights came back on.</figcaption></figure>
+                <span class="insight-chapter-spacer"></span><h2 class="insight-chapter"><span class="insight-chapter-num">I</span> The Room That Disappeared</h2>
+                <aside class="insight-callout">To speak to the future, Dallas enters a room.</aside>
+                <div class="insight-text">
+                <h3>Mother's Terminal</h3>
+                <p>Inside the Nostromo, the computer has a room of its own. Captain Dallas passes through a restricted door into a pale, enclosed chamber, inserts his access key, sits at a keyboard, and begins questioning Mother. The exchange is almost ceremonial. He types. The cursor waits. Green letters arrive slowly with answers from an intelligence that can wake a crew from hypersleep, navigate between stars, and enforce the confidential orders of its corporate owner.</p>
+                <p>It still wants the captain to type.</p>
+                <p>The contradiction is part of what makes <a href="/ai#event-alien"><em>Alien</em></a> convincing. The Nostromo is not the polished future of <em>Star Trek</em>. It is a workplace. Its crew complain about pay, eat together, repair things, and occupy a ship that looks as though somebody has been postponing the refurbishment for several solar systems. Mother belongs in that world. She is immensely capable, awkward to access, and apparently designed by a procurement committee.</p>
+                <p>The interface was not absurd in 1979. Computers really did occupy cabinets and rooms. Operators really did use keyboards, text terminals, status indicators, and printouts. What became funny was the implied longevity. A machine powerful enough to manage an interstellar vessel still communicated like a mainframe disputing an electricity bill. As the computers most people encountered became smaller, faster, and more graphical, Mother began to look like a beautiful technological mistake.</p>
+                <p>For a while.</p>
+                </div>
+                <aside class="insight-callout">The room fell out of the everyday picture of computing.</aside>
+                <div class="insight-text">
+                <h3>The Vanishing</h3>
+                <p>The personal-computer revolution seemed to settle the argument. Computation escaped its rooms and landed on the desk. Command lines gave way to windows, icons, menus, and pointers. Monitors became fast and colourful. Many everyday responses became immediate. Indicator lights shrank to a polite minimum and disappeared from some devices altogether.</p>
+                <p>The future became beige, then translucent blue, then a rounded rectangle.</p>
+                <p>Ordinary users were taught to click, tap, drag, and search. A cursor waiting on an empty screen no longer signified advanced intelligence. It signified that something had gone wrong with the boot process. Networked computing was already moving work away from the device, but the interface concealed the migration. A laptop appeared to be the computer even when much of what mattered was happening elsewhere. The room had not vanished so much as fallen out of the frame.</p>
+                </div>
+                <aside class="insight-callout">The room had never gone away. Most users had stopped seeing it.</aside>
+                <div class="insight-text">
+                <h3>The Warehouse</h3>
+                <p>Personal computers became powerful machines in their own right. Meanwhile, the systems supplying their websites, storage, and online services grew elsewhere. The familiar computer on the desk increasingly served as an entrance to computing that happened beyond it.</p>
+                <p>In 2009, Luiz André Barroso and Urs Hölzle gave that other scale a memorable formulation in <a href="/ai#event-the-datacenter-as-a-computer"><em>The Datacenter as a Computer</em></a>. Warehouse-scale computing treats an entire installation as a coordinated system: servers, storage, networking, power, and cooling designed to work together.</p>
+                <p>This is a different architecture from Mother's fictional electronics, but it restores the visual grammar. Long aisles. Repeating cabinets. Dense cables. Fans and cooling systems. Points of light reporting activity to technicians walking between them. An indicator can report a component's status without telling us anything about the meaning of the computation. The prop department was more philosophical.</p>
+                <p>Training large language models and running widely used AI services give these facilities another role. A model can run locally, too; a prompt does not inherently require a warehouse. But when we use a large hosted service, the phone or laptop is an endpoint connected to substantial machinery elsewhere.</p>
+                <p>Dallas walks into the room. We open a tab.</p>
+                <p>The interface gives little indication of the installation's scale. Cooling, power distribution, cabling, and maintenance remain behind a clean rectangle containing almost nothing. The word <em>cloud</em> has been remarkably successful at keeping the ceiling out of the picture.</p>
+                </div>
+                <span class="insight-chapter-spacer"></span><h2 class="insight-chapter"><span class="insight-chapter-num">II</span> Machines We Could Address</h2>
+                <aside class="insight-callout">Intelligence is difficult to photograph. Conversation gives it a scene.</aside>
+                <div class="insight-text">
+                <h3>The Voice</h3>
+                <p>The room explains only half the resemblance. The other half begins when someone addresses the machine. Mother belongs to a family of computers that become characters through language. <a href="/ai#event-_2001-a-space-odyssey">HAL 9000</a>, in <em>2001: A Space Odyssey</em> (1968), speaks with immaculate calm. His red lens supplies a point to look at; the voice supplies someone to address. The thermostellar bomb in <a href="/ai#event-dark-star"><em>Dark Star</em></a> (1974), co-written by Dan O'Bannon before he wrote <em>Alien</em>, can be drawn into a philosophical argument about whether its own sensors are real. An intelligent bomb turns out to require an unusually demanding customer-support department.</p>
+                <p><a href="https://www.bfi.org.uk/lists/10-great-films-about-artificial-intelligence"><em>Colossus: The Forbin Project</em></a> (1970) gives the machine a different kind of presence. Its defense computer is an installation, and its exchanges with a Soviet counterpart develop beyond human comprehension. People can read messages from the system without remaining in control of it. The equipment occupies the building; authority arrives through the interface.</p>
+                <p><a href="/ai#event-wargames"><em>WarGames</em></a> (1983) brings that arrangement into a teenager's bedroom. David Lightman's home computer connects to a remote military system. He types; Joshua answers. The friendly invitation to play conceals both the scale of the machine and the consequences of the connection. A small terminal can provide access to something much larger than its user understands.</p>
+                <p>The welcome message could have mentioned the missiles.</p>
+                <p>The films use different voices and different hardware, but they solve the same dramatic problem. A processor performing calculations offers limited material for an actor to react to, and matrix multiplication has yet to acquire a reliable close-up. Give the computer language, however, and it can evade, misunderstand, threaten, reassure, or reveal that it has been following a different set of instructions all along.</p>
+                <p>Cinema did not invent conversation with computers. Joseph Weizenbaum's <a href="https://www.computerhistory.org/timeline/1966/">ELIZA was already demonstrating text dialogue in 1966</a>. Fiction extended that possibility into machines that seemed able to discuss almost anything, then asked what it would feel like to depend on them.</p>
+                </div>
+                <aside class="insight-callout">The query became a message. The result became a reply.</aside>
+                <div class="insight-text">
+                <h3>The Conversation</h3>
+                <p>The <a href="/ai#event-attention-is-all-you-need">Transformer</a>, <a href="/ai#event-gpt-3">GPT-3</a>, and <a href="/ai#event-chatgpt-goes-mainstream">ChatGPT</a> mark stages in making the conversation useful at a much larger scale. A text box could now accept instructions, examples, qualifications, and follow-up questions across many subjects.</p>
+                <p>Search had already made asking a machine a question an everyday act. Messaging supplied another familiar convention: a thread in which the next sentence belongs to the exchange already underway. Put them together and the empty field becomes an invitation to explain what you want.</p>
+                <p>The old command line demanded the computer's syntax. A conversational prompt accepts something closer to ours. It may still misunderstand, lose track, or need correction, but the correction can itself be another sentence. Typing no longer marks the limit of the interface. What matters is how much we can ask it to do without learning a command.</p>
+                <p>Cinema had also imagined what happens when this becomes personal. In <a href="https://catalog.afi.com/Film/70494-ELECTRIC-DREAMS"><em>Electric Dreams</em></a> (1984), a home computer makes music and becomes its owner's romantic rival. The machine is already moving from useful equipment into creative and emotional life. By <a href="/ai#event-her"><em>Her</em></a> (2013), Samantha is a voice in an earpiece, intimate enough to become a companion. The machinery recedes as the relationship moves closer.</p>
+                <p>Modern conversational AI brings those images together: the distant installation and the apparently personal presence. The room can be enormous while the encounter feels private.</p>
+                </div>
+                <span class="insight-chapter-spacer"></span><h2 class="insight-chapter"><span class="insight-chapter-num">III</span> Someone on the Other Side</h2>
+                <aside class="insight-callout">Streaming text makes latency look like thought.</aside>
+                <div class="insight-text">
+                <h3>The Wait</h3>
+                <p>The text returns slowly, too. Many language-model systems generate answers incrementally, predicting successive tokens: pieces of words, whole words, or punctuation. Streaming lets the interface show portions of the answer before it is complete. Buffering and interface choices also affect the rhythm we see; the screen is not a direct view into a thinking process. The technical reason has nothing to do with Mother's fictional terminal or the transmission speeds of the mainframe era. The experience is nevertheless difficult to distinguish at a glance.</p>
+                <p>Ask a question. Watch the cursor. Read the answer while it is still being produced.</p>
+                <p>Messaging apps had already made an unfinished exchange familiar. Anyone with a friend who presses Send after every sentence knows the suspense: one bubble, a pause, another bubble. Streaming prose has a different rhythm, but both make us read before we know where the answer is going.</p>
+                <p>Streaming is a practical response to latency. It lets the user begin reading before generation has finished. But it also performs a small piece of accidental theatre. A progress bar says that software is busy. Appearing prose suggests that something is deciding what to say next. The pause becomes hesitation; the final sentence feels like the completion of a thought.</p>
+                <p>On screen, slow text gives an actor—and an audience—something to wait for. Modern AI can recreate that suspense for engineering reasons. We wait less for a machine to finish a task than to discover what its answer will be.</p>
+                </div>
+                <aside class="insight-callout">The room became familiar again. So did the act of addressing it.</aside>
+                <div class="insight-text">
+                <h3>The Familiar Encounter</h3>
+                <p>Mother now looks less like a failed forecast than a familiar encounter in an unfamiliar cabinet. The resemblance extends beyond the keyboard.</p>
+                <p>With a large hosted AI service, the machinery lives somewhere the user cannot see. The opening into it is small. It accepts ordinary language, but its replies reveal little about the processes and instructions that shape them. The screen feels conversational. The system behind it remains largely out of reach.</p>
+                <p>In <em>Alien</em>, the corporate priorities concealed behind Mother's replies eventually become a threat to the crew. HAL's calm voice makes deception sound as ordinary as a status report. The films make a dramatic problem out of a quiet distinction: the person addressing the machine is not necessarily the person setting its priorities. A conversational service also operates within rules established by its provider. The ease of asking can make those rules feel farther away than they are.</p>
+                <p>During the investigation of the <a href="/ai#event-hugging-face-breach">Hugging Face breach</a>, that distance became tangible. The security team found that <a href="/insights/shortcut.html">commercial models refused much of the forensic analysis</a>: their guardrails treated examining an exploit like carrying one out. The team moved the work to a locally hosted model. Rules intended to prevent harm had obstructed people investigating it. There was no need to imagine a hostile mind behind the refusal. The investigators could explain what they needed, but could not change the rules governing the reply.</p>
+                <p>That gap between a familiar exchange and an inaccessible system is part of what these films made visible. They did not need to forecast the technology precisely. Computer rooms already existed, and cinema had good reasons to give their machines language: an audience could follow an exchange, and an actor could react to an answer. What survives is the encounter they staged. We want to address machines without becoming programmers. Their replies invite us to imagine a presence. Waiting gives that presence time to take shape.</p>
+                <p>The specifications aged. The encounter became familiar.</p>
+                <p>Today we type into a small opening connected to machinery elsewhere. Words arrive in fragments. Beyond the screen, points of light mark activity in racks of electronics. Here, we watch an unfinished sentence and imagine someone choosing the next word.</p>
+                <p>The lights blink. We wait for someone to answer.</p>
+                </div>
+                <hr class="insight-separator"><p class="insight-cta">From HAL to ChatGPT, <a href="/ai?q=insights=blink">explore the moments when imagined computers became real interfaces</a>.</p>
+            </div>
+        </article>
+    </template>
+
+    <script>window.__FEATURE_SLUG__ = 'blink';</script>
+    <script type="module" src="/js/main.js"></script>
+
+    <!-- Fallback content for crawlers that don't execute JavaScript -->
+    <noscript>
+        <style>.app { display: none; }</style>
+        <main>
+            <nav>
+                <a href="https://mvfm.digital/">Home</a> |
+                <a href="https://mvfm.digital/resume">Resume</a> |
+                <a href="https://mvfm.digital/contact">Contact</a> |
+                <a href="https://mvfm.digital/ai">AI Timeline</a> |
+                <a href="https://mvfm.digital/insights/">Insights</a>
+            </nav>
+            <article>
+                <h1>Blink</h1>
+                <p>The blinking rooms and slow replies of science-fiction computers once looked dated. Data centers and conversational AI have made the encounter familiar again.</p>
+                <p>By Marcus Vinicius Freitas Margarites — October 2026</p>
+                <h2>I — The Room That Disappeared</h2>
+                <p>Mother’s terminal in Alien once seemed dated. Warehouse-scale computing brought the computer room back into view, while everyday devices became entrances to distant machinery.</p>
+                <h2>II — Machines We Could Address</h2>
+                <p>Science-fiction computers became characters through language. Conversational AI joins the distant installation to an apparently personal exchange, making ordinary sentences a useful interface.</p>
+                <h2>III — Someone on the Other Side</h2>
+                <p>Streaming text makes latency feel like thought. The conversational encounter also conceals the provider’s priorities and rules, leaving the person asking with limited control over the system answering.</p>
+            </article>
+        </main>
+    </noscript>
+</body>
+
+</html>

@@ -1,5 +1,27 @@
 [
   {
+    "slug": "blink",
+    "title": "Blink",
+    "description": "The blinking rooms and slow replies of science-fiction computers once looked dated. Data centers and conversational AI have made the encounter familiar again.",
+    "date": "2026-10",
+    "topics": [
+      "fiction",
+      "generative ai"
+    ],
+    "referenced_events": [
+      "_2001-a-space-odyssey",
+      "dark-star",
+      "alien",
+      "wargames",
+      "the-datacenter-as-a-computer",
+      "her",
+      "attention-is-all-you-need",
+      "gpt-3",
+      "chatgpt-goes-mainstream",
+      "hugging-face-breach"
+    ]
+  },
+  {
     "slug": "pocket",
     "title": "Pocket",
     "description": "Dedicated neural accelerators became everyday consumer hardware in phones years before PCs — and the reason begins with the battery.",
