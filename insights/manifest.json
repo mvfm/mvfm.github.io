@@ -1,5 +1,39 @@
 [
   {
+    "slug": "still",
+    "title": "Still",
+    "description": "AI winters interrupted grand ambitions. Some of the useful work survived in a less conspicuous form: ordinary software.",
+    "date": "2026-11",
+    "topics": [
+      "foundations",
+      "tools",
+      "industry"
+    ],
+    "referenced_events": [
+      "frames",
+      "semantic-networks",
+      "csps",
+      "perceptron-limitations",
+      "rosenblatts-death",
+      "newton-fixes-handwriting",
+      "lenet-5",
+      "mycin",
+      "xcon",
+      "lisp-machines",
+      "the-first-ai-winter",
+      "the-second-ai-winter",
+      "scripts",
+      "lisp",
+      "the-perceptron",
+      "backpropagation-vi",
+      "convolutional-neural-networks",
+      "fifth-generation",
+      "chatgpt-goes-mainstream",
+      "github-copilot",
+      "llamacpp"
+    ]
+  },
+  {
     "slug": "blink",
     "title": "Blink",
     "description": "The blinking rooms and slow replies of science-fiction computers once looked dated. Data centers and conversational AI have made the encounter familiar again.",

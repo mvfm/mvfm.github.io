@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Still — Insights — mvfm.digital</title>
+    <meta name="description" content="AI winters interrupted grand ambitions. Some of the useful work survived in a less conspicuous form: ordinary software." />
+    <meta name="author" content="Marcus Vinicius Freitas Margarites" />
+    <link rel="canonical" href="https://mvfm.digital/insights/still" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://mvfm.digital/insights/still" />
+    <meta property="og:title" content="Still — Insights — mvfm.digital" />
+    <meta property="og:description" content="AI winters interrupted grand ambitions. Some of the useful work survived in a less conspicuous form: ordinary software." />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Still — Insights — mvfm.digital" />
+    <meta name="twitter:description" content="AI winters interrupted grand ambitions. Some of the useful work survived in a less conspicuous form: ordinary software." />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Still",
+      "description": "AI winters interrupted grand ambitions. Some of the useful work survived in a less conspicuous form: ordinary software.",
+      "url": "https://mvfm.digital/insights/still",
+      "datePublished": "2026-11",
+      "author": {
+        "@type": "Person",
+        "name": "Marcus Vinicius Freitas Margarites",
+        "url": "https://mvfm.digital"
+      }
+    }
+    </script>
+
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="stylesheet" href="/style.css">
+
+    <!-- Start Single Page Apps for GitHub Pages -->
+    <script type="text/javascript">
+        (function (l) {
+            if (l.search[1] === 'p' && l.search[2] === '=') {
+                var decoded = l.search.slice(1).split('&').map(function (s) {
+                    return s.replace(/~and~/g, '&')
+                }).filter(function (s) {
+                    return s.slice(0, 2) === 'p='
+                })[0];
+                if (decoded !== undefined) {
+                    window.history.replaceState(null, null,
+                        l.pathname.slice(0, (l.pathname.slice(-1) === '/' ? -1 : undefined)) + decoded.slice(2) +
+                        l.hash
+                    );
+                }
+            }
+        }(window.location))
+    </script>
+    <!-- End Single Page Apps for GitHub Pages -->
+</head>
+
+<body>
+    <div class="app">
+        <div id="topBar">
+            <header>
+                <h1 class="brand"></h1>
+            </header>
+            <nav>
+                <div class="menu"></div>
+            </nav>
+        </div>
+        <main>
+            <canvas id="golCanvas" aria-hidden="true"></canvas>
+            <section id="contentPanel" class="panel" aria-live="polite" aria-atomic="true"></section>
+            <aside id="statsPanel" aria-live="polite" aria-atomic="true">
+                <div class="row"><span class="label">GEN</span>
+                    <div class="digits" id="genDigits"></div>
+                </div>
+                <div class="row"><span class="label">ALIVE</span>
+                    <div class="digits" id="aliveDigits"></div>
+                </div>
+                <div class="row"><span class="label">TOTAL</span>
+                    <div class="digits" id="totalDigits"></div>
+                </div>
+                <div class="row"><span class="label">OCC%</span>
+                    <div class="digits" id="occDigits"></div><span class="percent">%</span>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Article content -->
+    <template id="tpl-feature">
+        <article class="insight-article">
+            <header class="insight-article-header">
+                <h1>Still</h1>
+                <p class="insight-article-meta">November 2026</p>
+            </header>
+
+            <div class="insight-article-body">
+
+                <p class="insight-standfirst">AI history is usually told as weather. Spring: a new idea blooms, the press arrives, and someone explains that general intelligence is now mostly an engineering problem. Winter: the idea meets maintenance costs, messy inputs, and the discovery that the world contains more than the demo. The <a href="/ai#event-the-first-ai-winter">first AI winter</a> interrupted the early ambitions; the <a href="/ai#event-the-second-ai-winter">second</a> caught a field that had found commercial customers and expensive hardware to sell them.</p>
+
+                <figure class="insight-hero-image">
+                    <img src="/img/insights/still-studs.png" alt="A section of drywall has been removed from an otherwise finished wall, exposing the wooden studs and wiring behind it." loading="eager">
+                    <figcaption>Nobody photographs the studs. Nobody has to. They are already holding the house up.</figcaption>
+                </figure>
+
+                <!-- ─── CHAPTER I ──────────────────────────────────────────────── -->
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">I</span>
+                    The Ideas That Avoided the Funeral
+                </h2>
+
+                <aside class="insight-callout">
+                    Every AI winter has a body count. These slipped out through the service entrance.
+                </aside>
+                <div class="insight-text">
+                    <p>The seasonal story captures the funding cuts and collapsed businesses. It is less good at following what happened to the work.</p>
+                    <p>Some of the ideas from those same doomed eras did not die at all. They simply changed clothes, stopped saying "artificial intelligence" at parties, and got hired by the rest of computing.</p>
+                    <p>AI has very good obituaries. The perceptron: mathematically humbled in 1969, then exiled from polite funding circles. Expert systems: briefly rich, then crushed under the weight of their own rulebooks. Lisp machines: elegant, expensive, and eventually defeated by cheaper computers with worse manners and better prices.</p>
+                    <p>Each of those stories has a beginning, a boom, a disappointment, and a retrospective. They fit the seasonal narrative neatly. They make excellent cautionary tales. They also make AI history sound as if the failed label took the work down with it.</p>
+                    <p>A failed research promise did not necessarily make the underlying technique useless.</p>
+                    <p>From the same symbolic AI culture came a quieter set of tools that never needed a comeback because they never quite left. Frames, semantic networks, and constraint satisfaction problems were born inside AI's grand project of making machines reason. Their influence, and sometimes a closely related engineering pattern, can be found in knowledge graphs, software object systems, schedulers, and configuration tools: the things still working after the keynote ends.</p>
+                    <p>This is the less dramatic form of survival: a useful technique becomes ordinary infrastructure, even when the theory around it loses support.</p>
+                </div>
+
+                <aside class="insight-callout">
+                    Marvin Minsky described a room. Software engineers have been quietly moving furniture into it ever since.
+                </aside>
+                <div class="insight-text">
+                    <h3>Everything Is Still a Slot</h3>
+                    <p>In June 1974, Marvin Minsky's <a href="/ai#event-frames">MIT AI Lab Memo 306</a> proposed a simple, powerful idea: understanding is often not deduction from scratch. It is recognition plus filling in blanks.</p>
+                    <p>You do not see a birthday party and derive the possibility of cake from first principles. You have expectations: candles, gifts, someone pretending not to care about the singing. The situation supplies a structure, and the mind spends its effort on what is unusual.</p>
+                    <p>Minsky called these structures <em>frames</em>. A frame had slots. Slots had default values. New information could override the defaults. It was a theory of ordinary understanding built around the most human of all computational strategies: assume the normal thing until reality becomes rude.</p>
+                    <p>A related idea, Roger Schank and Robert Abelson's <a href="/ai#event-scripts">scripts</a>, described familiar sequences such as ordering, eating, and paying in a restaurant. Frames organized expectations about a situation; scripts gave familiar events an order.</p>
+                    <p>Frames did not deliver general intelligence. Encoding the expected parts of a birthday party is easier than knowing why somebody has left it in tears.</p>
+                    <p>But the basic move survived beautifully.</p>
+                    <p>A fixed structure with named places for information? Defaults? Overrides? Inheritance? That is not a relic. That is Tuesday.</p>
+                    <p>The pattern is familiar in classes, schemas, configuration objects, and forms: named fields, expected values, and ways to handle exceptions. A customer profile does not need to understand its customer to give software a useful structure for handling one.</p>
+                    <p>This is a resemblance, not a claim that frames invented software objects. Simula's classes and Smalltalk's early objects predated Minsky's memo. Object-oriented programming had its own history, drawing from simulation, <a href="/ai#event-lisp">Lisp</a>, message passing, and other design pressures. Frame systems explored overlapping problems of slots, defaults, and inheritance. The useful continuity is the problem they addressed: how do you represent a thing without restating the entire universe every time?</p>
+                    <p>A representation could fall short as a theory of understanding and still be useful as a way to organize information. The smaller job did not require the larger promise to come true.</p>
+                </div>
+
+                <aside class="insight-callout">
+                    A canary did not need its own copy of everything known about birds.
+                </aside>
+                <div class="insight-text">
+                    <h3>A Search Engine Walks Into a Canary</h3>
+                    <p>In the 1960s, Ross Quillian proposed that memory for word meanings might be organized as a network. Concepts were nodes. Relationships were edges. Facts could be inherited through connections. A canary is a bird. A bird is an animal. Animals breathe. The canary inherits the fact about breathing. The graph saves it a separate entry.</p>
+                    <p>Quillian and Allan Collins tested the idea with reaction times. People were faster to confirm "a canary is a bird" than "a canary is an animal." Their model explained the difference as an extra step through the hierarchy. It was a way to turn a proposed structure of memory into a prediction somebody could measure.</p>
+                    <p>The AI dream was that <a href="/ai#event-semantic-networks">semantic networks</a> might give machines a structure for meaning. Not just words in a list, but concepts related to other concepts: inheritance, association, hierarchy, implication. Meaning as geography.</p>
+                    <p>That dream, in its strongest form, ran into all the usual difficulties. Human concepts are not tidy. Categories leak. Context changes everything. A penguin is a bird, but it defeats the default expectation about flying. A tomato's useful category changes between botany and the kitchen. "Bank" depends on whether you are holding money, standing near a river, or explaining why a language model just invented a citation.</p>
+                    <p>Still, the graph survived.</p>
+                    <p>Modern knowledge graphs retain that central move: represent entities and the relationships between them explicitly. Google putting a person's birth date, films, spouse, and awards into a box beside the search results. Wikidata linking entities through "instance of," "subclass of," "part of," and a thousand other relations. Recommendation systems, entity resolution pipelines, fraud detection networks, biomedical databases, corporate data catalogs: all of them depend on the same basic refusal to treat facts as lonely little islands.</p>
+                    <p>The funny part is that the idea became most successful after it stopped insisting it had solved meaning. A knowledge graph does not need to understand "canary" the way a person does. It needs to know that canaries are birds, birds are animals, animals have properties, and users get cranky when the answer box decides Paris Hilton is a hotel in France.</p>
+                    <p>That is enough to be useful. It does not establish human-like understanding. It gives other software something dependable to work with.</p>
+                </div>
+
+                <aside class="insight-callout">
+                    Alan Mackworth gave search one of its most humane rules: before you panic, delete the impossible.
+                </aside>
+                <div class="insight-text">
+                    <h3>The Great Art of Not Even Trying the Bad Options</h3>
+                    <p>Search is one of those words that sounds harmless until you ask how many possibilities there are. Then it becomes a horror film with math.</p>
+                    <p>Scheduling a set of exams is not hard because nobody knows what an exam is. It is hard because students cannot sit two exams at the same time, rooms have capacities, instructors have availability, courses overlap in annoying ways, and every solution that satisfies one constraint appears to insult three others. Airline crews are worse. Chip layouts are worse. Delivery routes are worse in a way that involves both mathematics and traffic.</p>
+                    <p>The naive solution is simple: try combinations until one works. This is also how you turn a computer into a small, expensive space heater.</p>
+                    <p>In 1977, Alan Mackworth's <a href="/ai#event-csps">"Consistency in Networks of Relations"</a> helped formalize a better approach. A constraint satisfaction problem has variables, possible values for those variables, and rules about which combinations are allowed. Instead of blindly searching the whole space, propagate constraints first. If one choice makes another impossible, remove it. If a value can never participate in a valid solution, throw it out before search begins.</p>
+                    <p>Arc consistency is difficult to put in a cinematic trailer. Its practical appeal is easier to explain: do not spend effort on choices you can already rule out. Local checks do not guarantee a complete solution, but they can leave much less work for the search.</p>
+
+                    <figure class="insight-diagram" role="img" aria-labelledby="still-constraints-title still-constraints-desc">
+                        <svg viewBox="0 0 760 360" xmlns="http://www.w3.org/2000/svg">
+                            <title id="still-constraints-title">Removing an impossible exam slot</title>
+                            <desc id="still-constraints-desc">Two exams share students, so they cannot overlap. Chemistry is fixed in the morning. Calculus initially has morning and afternoon available. Removing morning from calculus leaves afternoon. This is a small example of propagating a constraint, not a guarantee that an entire timetable is solved.</desc>
+                            <rect x="20" y="20" width="720" height="320" rx="18" fill="#edf6fa" stroke="#b4d4e4" />
+                            <g font-family="Arial, sans-serif" text-anchor="middle">
+                                <text x="380" y="55" fill="#12354d" font-size="19" font-weight="bold">Shared students: the exams cannot overlap</text>
+                                <text x="240" y="95" fill="#1b6b93" font-size="17">Available slots</text>
+                                <text x="575" y="95" fill="#1b6b93" font-size="17">After propagation</text>
+                            </g>
+                            <g fill="#fff" stroke="#1b6b93" stroke-width="2">
+                                <rect x="145" y="112" width="190" height="52" rx="10" />
+                                <rect x="480" y="112" width="190" height="52" rx="10" />
+                                <rect x="145" y="200" width="190" height="90" rx="10" />
+                                <rect x="480" y="200" width="190" height="90" rx="10" />
+                            </g>
+                            <g fill="#12354d" font-family="Arial, sans-serif" font-size="17" text-anchor="middle">
+                                <text x="83" y="144">Chemistry</text>
+                                <text x="83" y="251">Calculus</text>
+                                <text x="240" y="144">Morning</text>
+                                <text x="575" y="144">Morning</text>
+                                <text x="240" y="233">Morning</text>
+                                <text x="240" y="271">Afternoon</text>
+                                <text x="575" y="233" fill="#8b3b18">Morning</text>
+                                <text x="575" y="271">Afternoon</text>
+                            </g>
+                            <path d="M530 227 L620 227" stroke="#8b3b18" stroke-width="2" />
+                            <path d="M350 245 L461 245 M451 235 L461 245 L451 255" fill="none" stroke="#1b6b93" stroke-width="3" />
+                            <text x="405" y="215" fill="#12354d" font-family="Arial, sans-serif" font-size="15" text-anchor="middle">rule out</text>
+                            <text x="380" y="320" fill="#12354d" font-family="Arial, sans-serif" font-size="16" text-anchor="middle">One fixed choice removes an incompatible choice elsewhere.</text>
+                        </svg>
+                        <figcaption>Chemistry is fixed in the morning. Shared students rule out that slot for calculus, leaving afternoon. Larger problems repeat local checks like this; search may still be needed.</figcaption>
+                    </figure>
+
+                    <p>That principle is everywhere.</p>
+                    <p>A Sudoku solver removes candidates. A university timetable keeps chemistry finals from colliding with calculus. A configuration tool rejects incompatible options before somebody orders the product. Constraint programming shares this territory with operations research and other traditions; its usefulness does not depend on assigning the whole territory to AI.</p>
+                    <p>In ordinary use, these systems are often described by the job: scheduling, planning, configuration. The name tells the customer what the software does. It makes a less exciting keynote.</p>
+                    <p>But the family resemblance is direct: AI tried to make search smarter by making the impossible visible early. That idea did not need to become conscious. It just needed to save time.</p>
+                </div>
+
+                <!-- ─── CHAPTER II ─────────────────────────────────────────────── -->
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">II</span>
+                    The Net That Kept Working
+                </h2>
+
+                <aside class="insight-callout">
+                    The single-layer perceptron had limits. Neural-network research had more places to go.
+                </aside>
+                <div class="insight-text">
+                    <h3>The Limit Was Not the Whole Field</h3>
+                    <p>Neural networks complicate the story. Unlike a frame-like structure disappearing into a schema, the method remained recognizably a neural network. What changed was the scale of the job it had to justify.</p>
+                    <p><a href="/ai#event-perceptron-limitations">Minsky and Papert's 1969 critique</a> examined limitations of perceptrons. A single-layer network cannot represent XOR; that is a limit of the architecture, not simply a failure to train it long enough. It is also not a proof that multilayer networks cannot work. The reception of the book helped make an already difficult research direction harder to pursue.</p>
+                    <p><a href="/ai#event-rosenblatts-death">Frank Rosenblatt</a>, the <a href="/ai#event-the-perceptron">perceptron's inventor</a>, died in a boating accident in 1971. He did not live to see the later systems. But the research did not stop with him, and the route from his work to a bank's check reader was not an unchanged algorithm waiting quietly for employment.</p>
+                </div>
+
+                <aside class="insight-callout">
+                    The work changed before it reached the customer.
+                </aside>
+                <div class="insight-text">
+                    <h3>The Research That Continued</h3>
+                    <p>By 1986, Rumelhart, Hinton, and Williams had helped bring <a href="/ai#event-backpropagation-vi">backpropagation for multilayer networks</a> to a much wider research audience. In 1989, Yann LeCun and colleagues demonstrated <a href="/ai#event-convolutional-neural-networks">convolutional networks recognizing handwritten digits</a>. Architectures, training methods, and engineering practice were changing. There was a research revival before there were products to put in a pocket.</p>
+                </div>
+
+                <aside class="insight-callout">
+                    A bank needed the number. It did not need a theory of intelligence.
+                </aside>
+                <div class="insight-text">
+                    <h3>The Products That Shipped</h3>
+                    <p>Apple supplied one of those products. Its <a href="/ai#event-newton-fixes-handwriting">Newton handwriting recognizer</a>, developed by Larry Yaeger, Brandyn Webb, and Richard Lyon, paired a neural-network character classifier with a search through possible character groupings and words. It began shipping in Newton OS 2.0 devices in late 1995. The network supplied evidence; the surrounding software helped turn that evidence into a word.</p>
+                    <p>LeCun and colleagues' <a href="/ai#event-lenet-5">1998 work on document recognition and LeNet-5</a> described another route into ordinary use. Their broader check-reading system combined learned recognition with machinery for locating, segmenting, and interpreting the amount. Commercial systems from that work had been deployed in banks from 1996. A network recognizing digits was an important component. A bank needed the rest of the system, too.</p>
+                    <p>Neither product settled the question of general intelligence. Both showed that learned recognition could earn its place inside software people used.</p>
+                    <p>The distinction matters to the argument. Neural networks survived through continued research as well as practical deployment. They did not have to disguise their mathematics, and their funding history cannot be reduced to a change of label. But to a customer, the result could still disappear into an ordinary feature: handwriting recognition, document processing, the thing that finally reads the number correctly.</p>
+                </div>
+
+                <!-- ─── CHAPTER III ────────────────────────────────────────────── -->
+                <span class="insight-chapter-spacer"></span>
+                <h2 class="insight-chapter">
+                    <span class="insight-chapter-num">III</span>
+                    From Magic to Plumbing
+                </h2>
+
+                <aside class="insight-callout">
+                    A useful component does not have to fulfill the ambition of an entire research programme.
+                </aside>
+                <div class="insight-text">
+                    <h3>The Smaller Job</h3>
+                    <p>Why did these ideas remain useful when the larger promises faltered?</p>
+                    <p>A modest job helped, but modesty alone is not the explanation. <a href="/ai#event-mycin">MYCIN</a> explored a bounded medical problem. <a href="/ai#event-xcon">XCON</a> configured computer systems. <a href="/ai#event-lisp-machines">Lisp machines</a> served a particular computing community. Narrow scope did not exempt them from maintenance costs, deployment barriers, or cheaper competition.</p>
+                    <p>Nor were frames and semantic networks born without grand ambitions. They belonged to attempts to explain understanding and meaning. The difference was that useful parts could be taken out of those theories and asked to do less.</p>
+                    <p><a href="/ai#event-fifth-generation">Fifth Generation computing</a> proposed a much larger programme built around logic programming and parallel inference. A scheduler could be judged on whether it produced a workable timetable. A knowledge graph could improve retrieval without becoming a complete theory of meaning. A handwriting recognizer could fail to understand the note and still transcribe it.</p>
+                    <p>The practical advantage was an answer somebody could check, attached to a job somebody needed done. That did not guarantee survival. It gave the work a reason to continue when the larger story lost its audience.</p>
+                </div>
+
+                <aside class="insight-callout">
+                    An idea becomes truly successful when nobody invites it to the futurism panel anymore.
+                </aside>
+                <div class="insight-text">
+                    <h3>When the Label Disappears</h3>
+                    <p>There is a strange lifecycle for computing ideas. At first they are magic. Then they are research. Then they are product. Then they are infrastructure. Then they are so normal that people only notice them when they break.</p>
+                    <p>AI suffers from this more than most fields because the label keeps chasing the frontier. Once something works reliably, it often stops feeling like AI. Optical character recognition becomes document processing. Route planning becomes logistics. Constraint solving becomes scheduling. Knowledge representation becomes data modeling. Structures resembling frames become familiar as schemas, templates, and forms. A neural network becomes "the handwriting feature" or "the check reader," and the word "neural" quietly drops off the packaging.</p>
+                    <p>This can create a historical illusion: AI appears to fail repeatedly, while some of its useful techniques become ordinary computing. The change is partly technical and partly a change in what people expect the label to mean.</p>
+                    <p>The failures remain in the story because they kept the name. The successes disappear because they became normal.</p>
+                    <p>That is why the survivors are so easy to miss. They do not look like monuments. They look like plumbing. They do not announce a new era. They make the old era's software keep running. Nobody thanks a constraint solver when a flight crew schedule works. Nobody sees a knowledge graph when the search box answers correctly. A default value in a form gives its user no reason to think about knowledge representation. A note recognized by a PDA gives its writer no reason to follow the history of neural-network training.</p>
+                    <p>This is unfair, but also a compliment. The highest form of software success is becoming too useful to be interesting.</p>
+                </div>
+
+                <aside class="insight-callout">
+                    A winter could close the company. The useful part would still need somewhere to run.
+                </aside>
+                <div class="insight-text">
+                    <h3>What This Winter Would Leave</h3>
+                    <p>That distinction gives the old winters a present use. A research programme, a business, and a useful technique can have different fates. Losing confidence in the first, or money in the second, does not settle the value of the third.</p>
+                    <p>When people predict another AI winter, they may mean several things: investment retreating, customers declining to pay what services cost, or progress falling short of promises about general intelligence. Any of those could do real damage. Earlier winters interrupted careers and made worthwhile work harder to pursue. Useful ideas did not survive by being immune to economics. They needed people, machines, and institutions willing to keep them working.</p>
+                    <p>The question is what the language-model era has already made useful enough to keep.</p>
+                    <p>One candidate is the instruction field. <a href="/ai#event-chatgpt-goes-mainstream">ChatGPT</a> made a particular encounter familiar: describe what you want, receive an attempt, then explain what needs changing. The exchange can sit inside a writing tool, a search service, or an application somebody already uses. It does not need to remain a separate product with a name that sounds like a research project. Menus still offer precision. Ordinary language offers a way to ask for something before you know which menu contains it.</p>
+                    <p>Another is the cheap first attempt. A translation, an outline, a formula, an explanation of an error: each can be useful without being the final answer. The important condition is that somebody can assess it. A plausible mistake can cost more than a blank page, but an editable draft can save work without taking responsibility for the result. That smaller bargain has a better chance of surviving than the promise of an employee who never needs supervision.</p>
+                    <p>Code makes the change particularly tangible. <a href="/ai#event-github-copilot">GitHub Copilot</a> put generated suggestions inside the editor. Conversational tools also let someone who can describe a problem attempt a script they could not have written unaided. The script still needs testing. Explaining what you want has become more useful; knowing whether you got it has become more important. That is a change in access to technical work, even when it does not amount to independent expertise.</p>
+                    <p>There is also a practical difference between financing the next model and running an existing one. <a href="/ai#event-llamacpp">llama.cpp</a> helped put language models on ordinary computers. Local deployment does not reproduce every capability of a large hosted service, and it has costs of its own. But where an existing model is adequate, its use need not depend on another company winning the race to build a larger one. A stalled frontier could still leave room for smaller, less expensive applications of what already works.</p>
+                    <p>The inheritance is not entirely welcome. Once convincing prose and images can be generated cheaply, polish becomes weaker evidence of the knowledge or effort behind them. An investment collapse would not restore that evidence. Checking a source, establishing who made something, and deciding whom to trust would remain part of the work. Some things persist because they are useful. Others persist because the difficulty of producing them has already fallen.</p>
+                    <p>None of this makes every deployment inevitable. Prices can rise, services can disappear, and a feature can prove less useful than its demonstration. But the historical test is more demanding than asking whether the boom was justified: which jobs are worth keeping the machinery for, even if the next breakthrough never arrives?</p>
+                </div>
+
+                <aside class="insight-callout">
+                    A funding cycle can end while useful work continues elsewhere.
+                </aside>
+                <div class="insight-text">
+                    <h3>Still There</h3>
+                    <p>The old winters offer no guarantee that today's systems will become tomorrow's infrastructure. They offer examples of how that happens: useful work survives when it can be supported, adapted, and judged on a job smaller than the promise that introduced it.</p>
+                    <p>Frames, semantic networks, constraint methods, and neural recognition each followed a different route. The language-model era will leave its own uneven inheritance. Some capabilities may disappear with the services that supply them. Others may become so familiar inside ordinary software that their origin stops being interesting.</p>
+                    <p>A winter could make the next model harder to finance. It would not, by itself, make an existing one forget how to translate a message or help someone write a small program. The company might disappear. The expectation that software should help with those things would be harder to remove.</p>
+                    <p>AI did not only leave behind cautionary tales.</p>
+                    <p>It left studs in the wall.</p>
+                    <p>The next winter would test which of the new ones are carrying weight.</p>
+                </div>
+
+                <hr class="insight-separator">
+                <p class="insight-cta">From frames to handwriting recognition, <a href="/ai?q=insights=still">explore the ideas that kept working</a>.</p>
+
+            </div>
+        </article>
+    </template>
+
+    <script>window.__FEATURE_SLUG__ = 'still';</script>
+    <script type="module" src="/js/main.js"></script>
+
+    <!-- Fallback content for crawlers that don't execute JavaScript -->
+    <noscript>
+        <style>.app { display: none; }</style>
+        <main>
+            <nav>
+                <a href="https://mvfm.digital/">Home</a> |
+                <a href="https://mvfm.digital/resume">Resume</a> |
+                <a href="https://mvfm.digital/contact">Contact</a> |
+                <a href="https://mvfm.digital/ai">AI Timeline</a> |
+                <a href="https://mvfm.digital/insights/">Insights</a>
+            </nav>
+            <article>
+                <h1>Still</h1>
+                <p>AI winters interrupted grand ambitions. Some of the useful work survived in a less conspicuous form: ordinary software.</p>
+                <p>By Marcus Vinicius Freitas Margarites — November 2026</p>
+                <h2>I — The Ideas That Avoided the Funeral</h2>
+                <p>Frames, semantic networks, and constraint satisfaction were born inside symbolic AI. Their ideas survive in schemas, knowledge graphs, schedulers, and configuration tools, long after the label lost its shine.</p>
+                <h2>II — The Net That Kept Working</h2>
+                <p>The perceptron's limits did not end neural-network research. Backpropagation and convolutional networks led to products such as Apple's Newton handwriting recognizer and bank check readers.</p>
+                <h2>III — From Magic to Plumbing</h2>
+                <p>Smaller, checkable jobs let useful techniques outlive the promises that introduced them. A future winter could close companies while leaving behind the language-model features that already work.</p>
+            </article>
+        </main>
+    </noscript>
+</body>
+
+</html>
