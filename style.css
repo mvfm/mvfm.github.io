@@ -1420,28 +1420,28 @@ main {
 .ait-media-caption {
   text-align: left; margin-top: 10px;
   font-size: 11px; line-height: 12px; color: #666;
-  font-family: "PT Serif", Georgia, "Times New Roman", serif;
+  font-family: "PT Serif", "PT Serif Fallback", "PT Serif Fallback Times", serif;
   word-wrap: break-word;
 }
 .ait-media-credit {
   text-align: right; margin-top: 6px;
   font-size: 10px; line-height: 13px; color: #999;
-  font-family: "PT Serif", Georgia, "Times New Roman", serif;
+  font-family: "PT Serif", "PT Serif Fallback", "PT Serif Fallback Times", serif;
 }
 
 .ait-body {
   position: relative; flex: 0 0 50%; min-width: 120px; align-self: center;
   padding: 16px 20px 0;
-  font-family: "PT Serif", Georgia, "Times New Roman", serif;
+  font-family: "PT Serif", "PT Serif Fallback", "PT Serif Fallback Times", serif;
 }
 .ait-headline-date {
-  font-family: "PT Sans Narrow", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  font-family: "PT Sans Narrow", "PT Sans Narrow Fallback", "PT Sans Narrow Fallback Roboto", "PT Sans Narrow Fallback Arial", sans-serif;
   font-size: 15px; line-height: 15px; font-weight: 400; text-transform: uppercase;
   margin: 0 0 3px; color: var(--clr-primary, #0c2d6b);
 }
 .ait-headline {
   margin: 0 0 5px;
-  font-family: "PT Sans Narrow", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  font-family: "PT Sans Narrow", "PT Sans Narrow Fallback", "PT Sans Narrow Fallback Roboto", "PT Sans Narrow Fallback Arial", sans-serif;
   font-weight: 700; font-size: 46px; line-height: 46px; text-transform: uppercase;
   color: #000;
 }
@@ -1458,7 +1458,7 @@ main {
   position: absolute; top: 45%; z-index: 8;
   background: none; border: 0; padding: 0; cursor: pointer;
   width: 92px; display: flex; flex-direction: column;
-  font-family: "PT Serif", Georgia, serif;
+  font-family: "PT Serif", "PT Serif Fallback", "PT Serif Fallback Times", serif;
 }
 .ait-nav-prev { left: 10px; align-items: flex-start; text-align: left; }
 .ait-nav-next { right: 10px; align-items: flex-end; text-align: right; }

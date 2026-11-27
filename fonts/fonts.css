@@ -1,0 +1,116 @@
+/*
+ * Timeline card fonts, self-hosted (PT Sans Narrow + PT Serif, ParaType, SIL OFL 1.1: see OFL.txt).
+ * Files come from Google Fonts (latin + latin-ext subsets). Self-hosting keeps local, headless
+ * and production rendering identical, and removes the third-party request that could fail.
+ *
+ * Below the real faces are metric-matched fallbacks: local system fonts scaled with
+ * size-adjust so their text WIDTH matches the PT font. If the web font is slow or fails,
+ * lines wrap almost exactly as they would with the real font, so a slide that fits keeps
+ * fitting. Ratios measured in Chromium on real headlines and entry text (2026-11-26).
+ */
+@font-face {
+  font-family: 'PT Sans Narrow';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/fonts/pt-sans-narrow-400-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'PT Sans Narrow';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/fonts/pt-sans-narrow-400-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'PT Sans Narrow';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(/fonts/pt-sans-narrow-700-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'PT Sans Narrow';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(/fonts/pt-sans-narrow-700-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'PT Serif';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/fonts/pt-serif-400-italic-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'PT Serif';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/fonts/pt-serif-400-italic-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'PT Serif';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/fonts/pt-serif-400-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'PT Serif';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/fonts/pt-serif-400-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'PT Serif';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(/fonts/pt-serif-700-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'PT Serif';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(/fonts/pt-serif-700-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- Metric-matched fallbacks for PT Sans Narrow (headline + date line) ---- */
+@font-face { font-family: 'PT Sans Narrow Fallback'; font-weight: 400;
+  src: local('Arial Narrow'), local('ArialNarrow'); size-adjust: 88.95%; }
+@font-face { font-family: 'PT Sans Narrow Fallback'; font-weight: 700;
+  src: local('Arial Narrow Bold'), local('ArialNarrow-Bold'); size-adjust: 85.85%; }
+@font-face { font-family: 'PT Sans Narrow Fallback Roboto'; font-weight: 700;
+  src: local('Roboto Condensed Bold'), local('RobotoCondensed-Bold'); size-adjust: 89.07%; }
+@font-face { font-family: 'PT Sans Narrow Fallback Arial'; font-weight: 400;
+  src: local('Arial'), local('ArialMT'); size-adjust: 72.94%; }
+@font-face { font-family: 'PT Sans Narrow Fallback Arial'; font-weight: 700;
+  src: local('Arial Bold'), local('Arial-BoldMT'); size-adjust: 70.39%; }
+
+/* ---- Metric-matched fallbacks for PT Serif (body text, captions) ---- */
+@font-face { font-family: 'PT Serif Fallback'; font-weight: 400; font-style: normal;
+  src: local('Georgia'); size-adjust: 100.61%; }
+@font-face { font-family: 'PT Serif Fallback'; font-weight: 700; font-style: normal;
+  src: local('Georgia Bold'), local('Georgia-Bold'); size-adjust: 93.21%; }
+@font-face { font-family: 'PT Serif Fallback'; font-weight: 400; font-style: italic;
+  src: local('Georgia Italic'), local('Georgia-Italic'); size-adjust: 93.86%; }
+@font-face { font-family: 'PT Serif Fallback Times'; font-weight: 400; font-style: normal;
+  src: local('Times New Roman'), local('TimesNewRomanPSMT'); size-adjust: 110.68%; }
+@font-face { font-family: 'PT Serif Fallback Times'; font-weight: 700; font-style: normal;
+  src: local('Times New Roman Bold'), local('TimesNewRomanPS-BoldMT'); size-adjust: 111.81%; }
+@font-face { font-family: 'PT Serif Fallback Times'; font-weight: 400; font-style: italic;
+  src: local('Times New Roman Italic'), local('TimesNewRomanPS-ItalicMT'); size-adjust: 104.96%; }

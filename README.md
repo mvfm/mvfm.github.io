@@ -217,7 +217,7 @@ intended single source of truth. Local dev targets `http://localhost:8080`;
 | Rendering | `<template>` cloning; `innerHTML` with manual escaping; Canvas 2D; programmatic SVG |
 | Platform APIs | `fetch` + `AbortController`, `navigator.sendBeacon`, `crypto.randomUUID`, `ResizeObserver`, `matchMedia('(prefers-reduced-motion)')`, `visibilitychange` / `pagehide` |
 | Styling | One `style.css`: CSS custom properties as design tokens, `clamp()` fluid type, Flexbox/Grid, glass-morphism, JS-measured `--topbar-height` |
-| Fonts | Google Fonts — PT Sans Narrow + PT Serif (timeline card typography) |
+| Fonts | PT Sans Narrow + PT Serif, self-hosted in `fonts/` (`fonts/fonts.css`, OFL) with metric-matched local fallbacks (timeline card typography) |
 | Charts (dashboard only) | Chart.js 4 via CDN |
 | Hosting | GitHub Pages + `spa-github-pages` `404.html` redirect trick |
 | Backend | FastAPI on PythonAnywhere |
@@ -377,9 +377,10 @@ test suites (`tests/*.test.html`) cover `analytics.js`, `findings-model.js`, and
 
 ### Phase 3 — Performance
 
-1. **Fonts:** self-host PT Sans Narrow + PT Serif (or `font-display: optional`)
-   and load them **only on `/ai`**. Removes two render-blocking cross-origin
-   requests on every other route.
+1. **Fonts:** ~~self-host PT Sans Narrow + PT Serif~~ done 2026-11-26 (`fonts/`,
+   with size-adjusted Arial Narrow / Roboto Condensed / Arial and Georgia / Times
+   fallbacks). Remaining: load them **only on `/ai`** (`index.html` still
+   preloads them on every route).
 2. **Cache-busting for ES modules:** append a content hash (`?v=<hash>`) to
    `main.js` and its imports at deploy time, so a partial deploy can't serve a
    stale module graph against a fresh `index.html`.
@@ -399,8 +400,8 @@ test suites (`tests/*.test.html`) cover `analytics.js`, `findings-model.js`, and
 
 1. **Content-Security-Policy.** Add a `<meta http-equiv="Content-Security-Policy">`
    (a real header if the host ever allows one) restricting `script-src` to `self`
-   + `cdn.jsdelivr.net` (dashboard only), `style-src` `self` + `fonts.googleapis.com`,
-   `font-src` `fonts.gstatic.com`, `img-src` `self` `data:` `i.ytimg.com`,
+   + `cdn.jsdelivr.net` (dashboard only), `style-src` `self`,
+   `font-src` `self`, `img-src` `self` `data:` `i.ytimg.com`,
    `frame-src` `youtube-nocookie.com`, `connect-src` `self`
    `mvfm.pythonanywhere.com` `localhost:8080` (I12).
 2. **Pin + verify the CDN dependency.** `chart.js@4` → an exact version with
